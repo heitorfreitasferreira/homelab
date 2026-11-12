@@ -27,9 +27,15 @@ Fonte de verdade das escolhas do homelab pessoal. Cada decisao com o porque e o 
 10. Acesso remoto: Tailscale substitui o WireGuard manual.
 11. Runs do TCC geradas na VM: branch `backup/vm-runs-20261112` no repo `tcc` (commit `881af6e`).
 
+12. Postgres do Ente: backup barman do CNPG em `r2:htr-backups/cnpg/ente-db` (WAL continuo + base diaria 04:00, retencao 30 dias).
+13. Firefly III: MariaDB 11.8 em StatefulSet, restaurado do dump legado com o `APP_KEY` original. Importer descartado (sem uso).
+14. n8n: instalacao nova. A legada tinha 0 workflows e 0 credenciais.
+15. Pi-hole: `hostNetwork` com DNS preso em `tailscale0` (100.104.129.86). Web em `:8053`, so pela tailnet. Heimdall descartado.
+16. Script do BBB: CronJob `jobs/notificar-bbb` 21:00 America/Sao_Paulo.
+
 ## Em aberto
 
-- Servicos que voltam: Firefly III, n8n, Heimdall (ou Homepage), script do BBB como CronJob.
-- Provedor da copia de backup (R2, AWS Glacier Deep Archive ou outro).
+- Copia off-site no AWS Glacier Deep Archive: depende da conta AWS pessoal.
+- Rotacionar o token R2 `htr-ente-rw` (vazou em log) e revogar `htr-migracao-rw` depois da importacao das fotos.
 
 Estado da VM antes do reinstall: `docs/inventario-vm-atual.md`.
