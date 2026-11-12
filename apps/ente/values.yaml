@@ -1,0 +1,99 @@
+# Upstream images moved from ghcr.io/ente-io to ghcr.io/ente. Pinned by digest (tag "latest" on 2026-11-12).
+museum:
+  image:
+    repository: ghcr.io/ente/server
+    tag: latest@sha256:c59a19e16626a4fc3e9231c9a11c6fca0b342ba464c9b879635f549b977369fb
+  resources:
+    requests: {cpu: 50m, memory: 96Mi}
+    limits: {memory: 512Mi}
+  config:
+    s3:
+      areLocalBuckets: false
+      usePathStyleUrls: true
+    internal:
+      # Accounts are created once (owner and parents), then registration is closed here.
+      disableRegistration: false
+  ingress:
+    enabled: true
+    className: traefik
+    annotations:
+      cert-manager.io/cluster-issuer: letsencrypt
+    hosts:
+      - host: api.htrlab.duckdns.org
+        paths: [{path: /, pathType: Prefix}]
+    tls:
+      - secretName: ente-api-tls
+        hosts: [api.htrlab.duckdns.org]
+
+credentials:
+  existingSecret: ente-credentials
+
+externalDatabase:
+  host: ente-db-rw.ente.svc.cluster.local
+  port: 5432
+  database: app
+  user: app
+  existingSecret:
+    enabled: true
+    secretName: ente-db-app
+    passwordKey: password
+
+web:
+  image:
+    repository: ghcr.io/ente/web
+    tag: latest@sha256:f135d345510d9f85545960543961a7b6cd0b78d20e004704a2a0165b7692f3ef
+  photos:
+    resources:
+      requests: {cpu: 10m, memory: 32Mi}
+      limits: {memory: 128Mi}
+    ingress:
+      enabled: true
+      className: traefik
+      annotations:
+        cert-manager.io/cluster-issuer: letsencrypt
+      hosts:
+        - host: photos.htrlab.duckdns.org
+          paths: [{path: /, pathType: Prefix}]
+      tls:
+        - secretName: ente-photos-tls
+          hosts: [photos.htrlab.duckdns.org]
+  accounts:
+    resources:
+      requests: {cpu: 10m, memory: 32Mi}
+      limits: {memory: 128Mi}
+    ingress:
+      enabled: true
+      className: traefik
+      annotations:
+        cert-manager.io/cluster-issuer: letsencrypt
+      hosts:
+        - host: accounts.htrlab.duckdns.org
+          paths: [{path: /, pathType: Prefix}]
+      tls:
+        - secretName: ente-accounts-tls
+          hosts: [accounts.htrlab.duckdns.org]
+  albums:
+    resources:
+      requests: {cpu: 10m, memory: 32Mi}
+      limits: {memory: 128Mi}
+    ingress:
+      enabled: true
+      className: traefik
+      annotations:
+        cert-manager.io/cluster-issuer: letsencrypt
+      hosts:
+        - host: albums.htrlab.duckdns.org
+          paths: [{path: /, pathType: Prefix}]
+      tls:
+        - secretName: ente-albums-tls
+          hosts: [albums.htrlab.duckdns.org]
+  auth:
+    enabled: false
+  cast:
+    enabled: false
+  share:
+    enabled: false
+
+metrics:
+  serviceMonitor:
+    enabled: false

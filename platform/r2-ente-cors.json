@@ -1,0 +1,9 @@
+[
+  {
+    "AllowedOrigins": ["https://photos.htrlab.duckdns.org", "https://albums.htrlab.duckdns.org", "https://accounts.htrlab.duckdns.org", "https://photos.htrlab.eu.org", "https://albums.htrlab.eu.org", "https://accounts.htrlab.eu.org"],
+    "AllowedMethods": ["GET", "HEAD", "POST", "PUT", "DELETE"],
+    "AllowedHeaders": ["*"],
+    "ExposeHeaders": ["ETag"],
+    "MaxAgeSeconds": 3600
+  }
+]

@@ -5,3 +5,4 @@ resources:
   - apps/cert-manager.yaml
   - apps/cloudnative-pg.yaml
   - apps/platform.yaml
+  - apps/ente.yaml
