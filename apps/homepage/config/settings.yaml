@@ -1,0 +1,8 @@
+title: homelab
+theme: dark
+color: slate
+headerStyle: clean
+language: pt-BR
+layout:
+  Admin: {style: row, columns: 3}
+  Apps: {style: row, columns: 4}

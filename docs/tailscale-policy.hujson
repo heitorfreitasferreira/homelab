@@ -1,0 +1,22 @@
+// Tailscale policy (copy of what is saved in the admin console, Access controls).
+// tag:k8s-operator: the Tailscale Kubernetes operator. tag:k8s: the proxies it creates per service.
+{
+	"tagOwners": {
+		"tag:k8s-operator": [],
+		"tag:k8s":          ["tag:k8s-operator"],
+	},
+
+	"grants": [
+		// Allow all connections between my devices and the cluster services.
+		{"src": ["*"], "dst": ["*"], "ip": ["*"]},
+	],
+
+	"ssh": [
+		{
+			"action": "check",
+			"src":    ["autogroup:member"],
+			"dst":    ["autogroup:self"],
+			"users":  ["autogroup:nonroot", "root"],
+		},
+	],
+}

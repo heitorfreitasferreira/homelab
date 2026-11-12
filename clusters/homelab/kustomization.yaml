@@ -10,3 +10,5 @@ resources:
   - apps/n8n.yaml
   - apps/pihole.yaml
   - apps/jobs.yaml
+  - apps/tailscale.yaml
+  - apps/homepage.yaml

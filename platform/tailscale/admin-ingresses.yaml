@@ -1,0 +1,33 @@
+# Admin UIs reachable only from the tailnet.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: argocd
+  namespace: argocd
+spec:
+  ingressClassName: tailscale
+  defaultBackend:
+    service: {name: argocd-server, port: {number: 80}}
+  tls:
+    - hosts: [argocd]
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: pihole-web
+  namespace: pihole
+spec:
+  selector: {app: pihole}
+  ports: [{port: 80, targetPort: 8053}]
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: pihole
+  namespace: pihole
+spec:
+  ingressClassName: tailscale
+  defaultBackend:
+    service: {name: pihole-web, port: {number: 80}}
+  tls:
+    - hosts: [pihole]

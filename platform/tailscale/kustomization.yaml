@@ -1,0 +1,26 @@
+# Tailscale Kubernetes operator: exposes admin UIs only on the tailnet (Ingress class "tailscale"),
+# each with its own MagicDNS name and a valid HTTPS cert (*.tail76c1c6.ts.net).
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - namespace.yaml
+  - admin-ingresses.yaml
+generators:
+  - secret-generator.yaml
+helmCharts:
+  - name: tailscale-operator
+    repo: https://pkgs.tailscale.com/helmcharts
+    version: 1.104.4
+    releaseName: tailscale-operator
+    namespace: tailscale
+    valuesInline:
+      # OAuth credentials come from the SOPS secret operator-oauth (created by the generator).
+      oauth: {}
+      operatorConfig:
+        hostname: k8s-operator-racknerd
+        defaultTags: ["tag:k8s-operator"]
+        resources:
+          requests: {cpu: 10m, memory: 48Mi}
+          limits: {memory: 192Mi}
+      proxyConfig:
+        defaultTags: "tag:k8s"

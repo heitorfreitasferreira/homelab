@@ -1,0 +1,11 @@
+- Infra:
+    - Repo homelab:
+        - href: https://github.com/heitorfreitasferreira/homelab
+    - Cloudflare R2:
+        - href: https://dash.cloudflare.com/8ef031572e6694f614275029be68313a/r2/overview
+    - Tailscale:
+        - href: https://login.tailscale.com/admin/machines
+    - RackNerd:
+        - href: https://ctrl.racknerd.com/control.php?vserverid=497219
+    - DuckDNS:
+        - href: https://www.duckdns.org/domains

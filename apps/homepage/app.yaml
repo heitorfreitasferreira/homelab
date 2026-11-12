@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: homepage
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {app: homepage}
+  template:
+    metadata:
+      labels: {app: homepage}
+    spec:
+      serviceAccountName: homepage
+      automountServiceAccountToken: true
+      containers:
+        - name: homepage
+          image: ghcr.io/gethomepage/homepage:v2.8.0@sha256:019d8f063a7299e7c1c51ee4a70b692291809af3244894fbec2c2ac7d1f71b18
+          env:
+            - {name: HOMEPAGE_ALLOWED_HOSTS, value: "home.tail76c1c6.ts.net"}
+          ports: [{containerPort: 3000}]
+          resources:
+            requests: {cpu: 10m, memory: 96Mi}
+            limits: {memory: 256Mi}
+          volumeMounts:
+            - {name: writable, mountPath: /app/config}
+            - {name: config, mountPath: /app/config/settings.yaml, subPath: settings.yaml}
+            - {name: config, mountPath: /app/config/services.yaml, subPath: services.yaml}
+            - {name: config, mountPath: /app/config/widgets.yaml, subPath: widgets.yaml}
+            - {name: config, mountPath: /app/config/kubernetes.yaml, subPath: kubernetes.yaml}
+            - {name: config, mountPath: /app/config/bookmarks.yaml, subPath: bookmarks.yaml}
+            - {name: config, mountPath: /app/config/docker.yaml, subPath: docker.yaml}
+      volumes:
+        - name: config
+          configMap: {name: homepage-config}
+        - name: writable
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: homepage
+spec:
+  selector: {app: homepage}
+  ports: [{port: 80, targetPort: 3000}]
+---
+# Tailnet only: https://home.tail76c1c6.ts.net
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: homepage
+spec:
+  ingressClassName: tailscale
+  defaultBackend:
+    service: {name: homepage, port: {number: 80}}
+  tls:
+    - hosts: [home]

@@ -1,0 +1,43 @@
+- Admin:
+    - Argo CD:
+        icon: argo-cd.png
+        href: https://argocd.tail76c1c6.ts.net
+        description: GitOps (tailnet)
+        siteMonitor: http://argocd-server.argocd.svc
+        namespace: argocd
+        app: argocd-server
+    - Pi-hole:
+        icon: pi-hole.png
+        href: https://pihole.tail76c1c6.ts.net/admin/
+        description: DNS da tailnet
+        siteMonitor: http://pihole-web.pihole.svc
+    - Tailscale:
+        icon: tailscale.png
+        href: https://login.tailscale.com/admin/machines
+        description: maquinas e DNS da tailnet
+- Apps:
+    - Ente Photos:
+        icon: ente-photos.png
+        href: https://photos.htrlab.duckdns.org
+        description: fotos (R2)
+        siteMonitor: https://api.htrlab.duckdns.org/ping
+        namespace: ente
+        app: ente-photos
+    - Firefly III:
+        icon: firefly.png
+        href: https://firefly.htrlab.duckdns.org
+        description: financas
+        siteMonitor: http://firefly.firefly.svc/health
+        namespace: firefly
+        app: firefly
+    - n8n:
+        icon: n8n.png
+        href: https://n8n.htrlab.duckdns.org
+        description: automacoes
+        siteMonitor: http://n8n.n8n.svc/healthz
+        namespace: n8n
+        app: n8n
+    - BBB (CronJob):
+        icon: mdi-television-classic
+        href: https://ntfy.sh/heitorfreitasf
+        description: aviso diario 21h via ntfy
