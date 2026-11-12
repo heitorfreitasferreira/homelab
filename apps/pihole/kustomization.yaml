@@ -6,3 +6,8 @@ resources:
   - app.yaml
 generators:
   - secret-generator.yaml
+configMapGenerator:
+  # pihole-updatelists reads this file (BLOCKLISTS_URL) every weekly run.
+  - name: pihole-adlists
+    files:
+      - adlists.txt

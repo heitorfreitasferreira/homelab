@@ -32,7 +32,7 @@ Fonte de verdade das escolhas do homelab pessoal. Cada decisao com o porque e o 
 14. n8n: instalacao nova. A legada tinha 0 workflows e 0 credenciais.
 15. Pi-hole: `hostNetwork` com DNS preso em `tailscale0` (100.104.129.86). Web em `:8053`, so pela tailnet. Heimdall descartado.
 16. Script do BBB: CronJob `jobs/notificar-bbb` 21:00 America/Sao_Paulo.
-17. Pi-hole blocklists: as listas "ticked" do Firebog, sem a categoria Malicious (URLhaus, Phishing Army e afins dão falso positivo e quebram login). 16 fontes em `apps/pihole/adlists.txt`, aplicadas via API v6 e persistidas no `gravity.db` do PVC; o repo documenta e tem `apply-adlists.sh` para reaplicar. StevenBlack (padrão migrado) mantido.
+17. Pi-hole blocklists: as listas "ticked" do Firebog, sem a categoria Malicious (URLhaus, Phishing Army e afins dão falso positivo e quebram login). 16 fontes em `apps/pihole/adlists.txt` (ConfigMap), sincronizadas no `gravity.db` pelo pihole-updatelists todo sábado 03:25, que também roda o gravity. Imagem `jacklul/pihole` (oficial + php/updatelists) pinada por digest. StevenBlack (padrão migrado) mantido e fora do gerenciamento.
 
 ## Em aberto
 
