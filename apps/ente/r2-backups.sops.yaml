@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: Secret
+metadata:
+    name: r2-backups
+    namespace: ente
+stringData:
+    ACCESS_KEY_ID: ENC[AES256_GCM,data:RhLX5pyvG4BVYzCtBq+aKIq2FTTdIr6vTpo3aNTd/LE=,iv:6nugtMZtbGkAtH5u2cI2VEfuF1P7X79p2Y5ldH89O2g=,tag:i036X0sBvhXgaX3J/pTVXg==,type:str]
+    ACCESS_SECRET_KEY: ENC[AES256_GCM,data:RefOUeEP+pQlgpGRMp6tZ5HFJVVk3B/AVepjrylOPkpWgElWJGIv1SoAaivn20iZJUG8Z6lBEFFCEON4wFH8/w==,iv:I29EKE/wve4y86PFEzmqmHc2jdwQwUdJveOamOP3Ps0=,tag:WGzBQBT1r1RM1eMt5K6cHw==,type:str]
+sops:
+    age:
+        - enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSB3UFNQcVRQVUhQejUvZUhs
+            T1JxMm5VZDA3L2lKVlltcXpxUVZwM0xhWW00CmJuRWp3dWZiZ3RhSmtmTTVqN2ZF
+            ckpxWHBSRkhZcXVSTDA1M2xVNXZOTFUKLS0tIDFiVkZrdC9kV0xtMjdCWmFJWW5C
+            ZkRHTmVoYmhSUjZNVU5HeTljUHJXVEEKbKhZpKEzNcsKvuJ/qpHu6uoCClw+JtQU
+            gM6/qeDozyWFVvD8o14TG7pYSupdEbJhJHL4LgASfqD5lUbY5hyNTA==
+            -----END AGE ENCRYPTED FILE-----
+          recipient: age1m27q9ve7grcseq47reuhmgyqsdndht5gjfjkvk33l0w05fdqeqjs6rzug2
+    encrypted_regex: ^(data|stringData)$
+    lastmodified: "2026-11-12T21:02:24Z"
+    mac: ENC[AES256_GCM,data:W5Xs0mdCygEtqZy58hRYUNf61mD42exQQvwx0NQA8LSXjkh4OY5KR54ZIeEPiEGr/+GEI3f4afkrlJhC4ZgqcY03Ef91nx7NDAecvjbO4t/TowqmwDb1Z+EqqxfBKvXbtPKF2rRpJ0F3tzm2bCqREEpwN2jmVWjZc5dKxkHLov8=,iv:Rd+n5xi4o6g2unHzG8QreGmDUy7rsqGRfCcf/keGj24=,tag:VyhuRfe1gp/pDgeiSuWioQ==,type:str]
+    version: 3.13.3

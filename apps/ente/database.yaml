@@ -13,7 +13,32 @@ spec:
   resources:
     requests: {cpu: 50m, memory: 192Mi}
     limits: {memory: 512Mi}
+  # Base backup + continuous WAL to R2 (point-in-time recovery), 30 days kept.
+  backup:
+    retentionPolicy: 30d
+    barmanObjectStore:
+      destinationPath: s3://htr-backups/cnpg/ente-db
+      endpointURL: https://8ef031572e6694f614275029be68313a.r2.cloudflarestorage.com
+      s3Credentials:
+        accessKeyId: {name: r2-backups, key: ACCESS_KEY_ID}
+        secretAccessKey: {name: r2-backups, key: ACCESS_SECRET_KEY}
+      wal:
+        compression: gzip
+      data:
+        compression: gzip
   postgresql:
     parameters:
       shared_buffers: 64MB
       max_connections: "50"
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: ScheduledBackup
+metadata:
+  name: ente-db-daily
+  namespace: ente
+spec:
+  schedule: "0 0 4 * * *"
+  backupOwnerReference: self
+  immediate: true
+  cluster:
+    name: ente-db
