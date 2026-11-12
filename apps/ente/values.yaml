@@ -102,3 +102,13 @@ web:
 metrics:
   serviceMonitor:
     enabled: false
+
+# Chart 0.2.0 NetworkPolicy omits the albums web port (3002), which made it return 502.
+networkPolicy:
+  additionalIngressRules:
+    - from:
+        - namespaceSelector: {}
+          podSelector: {}
+      ports:
+        - protocol: TCP
+          port: 3002
