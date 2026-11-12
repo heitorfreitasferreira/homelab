@@ -11,7 +11,8 @@ DEST="${1:?uso: $0 <destino-local> [streams]}"
 STREAMS="${2:-16}"
 SSH=(ssh -o BatchMode=yes -o ServerAliveInterval=30 "$VM")
 MOUNTS='-v /home/htr:/home/htr:ro -v /path/to/heimdall:/path/to/heimdall:ro -v /var/lib/docker/volumes:/var/lib/docker/volumes:ro'
-RSYNC_REMOTE="docker run --rm -i $MOUNTS instrumentisto/rsync-ssh rsync"
+# --log-driver none: rsync streams file data over stdout, json-file logging would copy it to the VM disk.
+RSYNC_REMOTE="docker run --rm -i --log-driver none $MOUNTS instrumentisto/rsync-ssh rsync"
 VOLUMES="n8n_n8n_data n8n_traefik_data firefly_firefly_iii_upload firefly_firefly_iii_db nextcloud_nextcloud nextcloud_db"
 LISTS="$DEST/.lists"
 

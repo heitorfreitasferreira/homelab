@@ -22,7 +22,7 @@ fi
 
 echo "== sha256 de 300 originais do Immich"
 (cd "$ROOT" && find home/htr/lab/immich/library/library -type f | shuf -n 300) | sort > /tmp/sample.lst
-sed 's#^#/#' /tmp/sample.lst | ssh -o BatchMode=yes "$VM" "docker run --rm -i $MOUNTS alpine xargs -d '\n' sha256sum" \
+sed 's#^#/#' /tmp/sample.lst | ssh -o BatchMode=yes "$VM" "docker run --rm -i --log-driver none $MOUNTS alpine xargs -d '\n' sha256sum" \
   | sed 's#  /#  #' | sort -k2 > /tmp/remote.sha
 (cd "$ROOT" && xargs -d '\n' sha256sum < /tmp/sample.lst) | sort -k2 > /tmp/local.sha
 if [ -s /tmp/remote.sha ] && diff -q /tmp/remote.sha /tmp/local.sha >/dev/null; then echo "   ok"; else echo "   DIVERGENCIA"; fail=1; fi
