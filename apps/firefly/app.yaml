@@ -1,0 +1,107 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: firefly-upload
+spec:
+  accessModes: [ReadWriteOnce]
+  resources: {requests: {storage: 1Gi}}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: firefly
+spec:
+  replicas: 1
+  strategy: {type: Recreate}
+  selector:
+    matchLabels: {app: firefly}
+  template:
+    metadata:
+      labels: {app: firefly}
+    spec:
+      initContainers:
+        - name: wait-for-db
+          image: busybox:1.37@sha256:a7dbc319b1438115a207e11930dc4bb3e643dcb3ec0bdd694bb36cd8fad289ec
+          command: ["sh", "-c", "until nc -z -w 2 firefly-db 3306; do sleep 3; done"]
+      containers:
+        - name: firefly
+          image: fireflyiii/core:version-6.7.9@sha256:d51ab6a3a7b91a5c892441578e0da7f2935f84f36bd1151fc3833acc6e060871
+          env:
+            - {name: APP_ENV, value: production}
+            - {name: APP_URL, value: "https://firefly.htrlab.duckdns.org"}
+            - {name: TRUSTED_PROXIES, value: "**"}
+            - {name: TZ, value: America/Sao_Paulo}
+            - {name: DEFAULT_LANGUAGE, value: pt_BR}
+            - {name: DB_CONNECTION, value: mysql}
+            - {name: DB_HOST, value: firefly-db}
+            - {name: DB_PORT, value: "3306"}
+            - {name: DB_DATABASE, value: firefly}
+            - {name: DB_USERNAME, value: firefly}
+            - name: DB_PASSWORD
+              valueFrom: {secretKeyRef: {name: firefly-secrets, key: DB_PASSWORD}}
+            - name: APP_KEY
+              valueFrom: {secretKeyRef: {name: firefly-secrets, key: APP_KEY}}
+            - name: STATIC_CRON_TOKEN
+              valueFrom: {secretKeyRef: {name: firefly-secrets, key: STATIC_CRON_TOKEN}}
+          ports: [{containerPort: 8080}]
+          readinessProbe:
+            httpGet: {path: /health, port: 8080}
+            initialDelaySeconds: 20
+            periodSeconds: 15
+          resources:
+            requests: {cpu: 20m, memory: 128Mi}
+            limits: {memory: 384Mi}
+          volumeMounts: [{name: upload, mountPath: /var/www/html/storage/upload}]
+      volumes:
+        - name: upload
+          persistentVolumeClaim: {claimName: firefly-upload}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: firefly
+spec:
+  selector: {app: firefly}
+  ports: [{port: 80, targetPort: 8080}]
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: firefly
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: firefly.htrlab.duckdns.org
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend: {service: {name: firefly, port: {number: 80}}}
+  tls:
+    - hosts: [firefly.htrlab.duckdns.org]
+      secretName: firefly-tls
+---
+# Replaces the legacy alpine cron container: daily recurring transactions and rules.
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: firefly-cron
+spec:
+  schedule: "0 3 * * *"
+  timeZone: America/Sao_Paulo
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      template:
+        spec:
+          restartPolicy: OnFailure
+          containers:
+            - name: cron
+              image: busybox:1.37@sha256:a7dbc319b1438115a207e11930dc4bb3e643dcb3ec0bdd694bb36cd8fad289ec
+              command: ["sh", "-c", "wget -qO- http://firefly/api/v1/cron/$STATIC_CRON_TOKEN"]
+              env:
+                - name: STATIC_CRON_TOKEN
+                  valueFrom: {secretKeyRef: {name: firefly-secrets, key: STATIC_CRON_TOKEN}}

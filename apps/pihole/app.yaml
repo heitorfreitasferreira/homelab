@@ -1,0 +1,50 @@
+# DNS only for the tailnet: hostNetwork + bind to tailscale0. Nothing listens on the public IP
+# (the legacy setup was an open resolver on 0.0.0.0:53). nftables also drops 53/8053 outside tailscale0.
+# Clients: Tailscale admin > DNS > nameserver 100.104.129.86 (racknerd tailnet IP).
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: pihole-etc
+spec:
+  accessModes: [ReadWriteOnce]
+  resources: {requests: {storage: 1Gi}}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pihole
+spec:
+  replicas: 1
+  strategy: {type: Recreate}
+  selector:
+    matchLabels: {app: pihole}
+  template:
+    metadata:
+      labels: {app: pihole}
+    spec:
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
+      containers:
+        - name: pihole
+          image: pihole/pihole:2026.11.0@sha256:66c798d79a95c2691f280329c3611dba1746117c61c9f331907ca35a06a52778
+          env:
+            - {name: TZ, value: America/Sao_Paulo}
+            - {name: FTLCONF_dns_listeningMode, value: BIND}
+            - {name: FTLCONF_dns_interface, value: tailscale0}
+            - {name: FTLCONF_dns_upstreams, value: "1.1.1.1;9.9.9.9"}
+            - {name: FTLCONF_webserver_port, value: "8053"}
+            # Query history kept for 30 days (the legacy DB had grown to 1 GB).
+            - {name: FTLCONF_database_maxDBdays, value: "30"}
+            - name: FTLCONF_webserver_api_password
+              valueFrom: {secretKeyRef: {name: pihole-secrets, key: FTLCONF_webserver_api_password}}
+          readinessProbe:
+            tcpSocket: {port: 8053}
+            initialDelaySeconds: 15
+            periodSeconds: 15
+          resources:
+            requests: {cpu: 10m, memory: 64Mi}
+            limits: {memory: 256Mi}
+          volumeMounts: [{name: etc, mountPath: /etc/pihole}]
+      volumes:
+        - name: etc
+          persistentVolumeClaim: {claimName: pihole-etc}

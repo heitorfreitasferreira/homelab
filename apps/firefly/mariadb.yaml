@@ -1,0 +1,47 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: firefly-db
+spec:
+  selector: {app: firefly-db}
+  ports: [{port: 3306}]
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: firefly-db
+spec:
+  serviceName: firefly-db
+  replicas: 1
+  selector:
+    matchLabels: {app: firefly-db}
+  template:
+    metadata:
+      labels: {app: firefly-db}
+    spec:
+      containers:
+        - name: mariadb
+          image: mariadb:11.8@sha256:d36f18d65a0459510b8b0f643b226a6d299e3206486e2b64ff20754a6d291707
+          env:
+            - {name: MARIADB_DATABASE, value: firefly}
+            - {name: MARIADB_USER, value: firefly}
+            - name: MARIADB_PASSWORD
+              valueFrom: {secretKeyRef: {name: firefly-secrets, key: MARIADB_PASSWORD}}
+            - name: MARIADB_ROOT_PASSWORD
+              valueFrom: {secretKeyRef: {name: firefly-secrets, key: MARIADB_ROOT_PASSWORD}}
+            # Small footprint: the dataset is tiny.
+            - {name: MARIADB_INNODB_BUFFER_POOL_SIZE, value: 64M}
+          args: ["--innodb-buffer-pool-size=64M", "--performance-schema=OFF"]
+          ports: [{containerPort: 3306}]
+          readinessProbe:
+            exec: {command: ["healthcheck.sh", "--connect", "--innodb_initialized"]}
+            periodSeconds: 10
+          resources:
+            requests: {cpu: 20m, memory: 128Mi}
+            limits: {memory: 384Mi}
+          volumeMounts: [{name: data, mountPath: /var/lib/mysql}]
+  volumeClaimTemplates:
+    - metadata: {name: data}
+      spec:
+        accessModes: [ReadWriteOnce]
+        resources: {requests: {storage: 2Gi}}

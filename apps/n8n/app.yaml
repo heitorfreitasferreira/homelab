@@ -1,0 +1,79 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: n8n-data
+spec:
+  accessModes: [ReadWriteOnce]
+  resources: {requests: {storage: 2Gi}}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: n8n
+spec:
+  replicas: 1
+  strategy: {type: Recreate}
+  selector:
+    matchLabels: {app: n8n}
+  template:
+    metadata:
+      labels: {app: n8n}
+    spec:
+      securityContext:
+        fsGroup: 1000
+      containers:
+        - name: n8n
+          image: n8nio/n8n:2.47.5@sha256:e29e9cc965a16d07d989f115f729f8a1c7aff58688d4850247fa495d4d7aae2f
+          env:
+            - {name: N8N_HOST, value: n8n.htrlab.duckdns.org}
+            - {name: N8N_PROTOCOL, value: https}
+            - {name: N8N_PORT, value: "5678"}
+            - {name: WEBHOOK_URL, value: "https://n8n.htrlab.duckdns.org/"}
+            - {name: N8N_PROXY_HOPS, value: "1"}
+            - {name: GENERIC_TIMEZONE, value: America/Sao_Paulo}
+            - {name: TZ, value: America/Sao_Paulo}
+            - {name: N8N_RUNNERS_ENABLED, value: "true"}
+            - {name: N8N_DIAGNOSTICS_ENABLED, value: "false"}
+            - {name: EXECUTIONS_DATA_PRUNE, value: "true"}
+            - {name: EXECUTIONS_DATA_MAX_AGE, value: "168"}
+            - name: N8N_ENCRYPTION_KEY
+              valueFrom: {secretKeyRef: {name: n8n-secrets, key: N8N_ENCRYPTION_KEY}}
+          ports: [{containerPort: 5678}]
+          readinessProbe:
+            httpGet: {path: /healthz, port: 5678}
+            initialDelaySeconds: 20
+            periodSeconds: 15
+          resources:
+            requests: {cpu: 20m, memory: 192Mi}
+            limits: {memory: 768Mi}
+          volumeMounts: [{name: data, mountPath: /home/node/.n8n}]
+      volumes:
+        - name: data
+          persistentVolumeClaim: {claimName: n8n-data}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: n8n
+spec:
+  selector: {app: n8n}
+  ports: [{port: 80, targetPort: 5678}]
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: n8n
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: n8n.htrlab.duckdns.org
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend: {service: {name: n8n, port: {number: 80}}}
+  tls:
+    - hosts: [n8n.htrlab.duckdns.org]
+      secretName: n8n-tls

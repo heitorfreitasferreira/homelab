@@ -6,3 +6,7 @@ resources:
   - apps/cloudnative-pg.yaml
   - apps/platform.yaml
   - apps/ente.yaml
+  - apps/firefly.yaml
+  - apps/n8n.yaml
+  - apps/pihole.yaml
+  - apps/jobs.yaml
