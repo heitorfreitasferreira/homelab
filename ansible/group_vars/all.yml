@@ -17,5 +17,6 @@ k3s_cluster_cidr: 10.42.0.0/16
 k3s_service_cidr: 10.43.0.0/16
 
 argocd_chart_version: 10.10.5
+ksops_version: v4.5.1
 gitops_repo_url: https://github.com/heitorfreitasferreira/homelab.git
 gitops_repo_revision: main

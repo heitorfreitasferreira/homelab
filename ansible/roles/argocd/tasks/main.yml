@@ -1,5 +1,23 @@
 # Bootstrap via k3s' auto-deploy dir: the embedded helm-controller installs Argo CD,
 # then the root Application hands everything else to Git (clusters/homelab).
+- name: Argo CD namespace
+  ansible.builtin.command: k3s kubectl create namespace argocd
+  register: ns_create
+  changed_when: ns_create.rc == 0
+  failed_when: ns_create.rc != 0 and 'AlreadyExists' not in ns_create.stderr
+
+# The only secret that cannot live in Git: the age key that decrypts the others.
+- name: SOPS age key secret
+  ansible.builtin.shell: >-
+    set -o pipefail &&
+    k3s kubectl -n argocd create secret generic sops-age --from-file=keys.txt=/dev/stdin
+    --dry-run=client -o yaml | k3s kubectl apply -f -
+  args:
+    executable: /bin/bash
+    stdin: "{{ lookup('file', lookup('env', 'HOME') + '/.config/sops/age/keys.txt') }}"
+  no_log: true
+  changed_when: false
+
 - name: Argo CD HelmChart
   ansible.builtin.template:
     src: argocd.yaml.j2

@@ -1,0 +1,23 @@
+# Proves the decryption path end to end. Holds no real secret.
+apiVersion: v1
+kind: Secret
+metadata:
+    name: ksops-smoke-test
+    namespace: platform
+stringData:
+    hello: ENC[AES256_GCM,data:hmqGW/TmULcc5A1fqr1q6KcY,iv:qkUpCZd1ELxEljQQuZrsa+jxbh15LSpSVQtXpJpjpRY=,tag:xyCJnTLdrEfC/dSgP5RYhg==,type:str]
+sops:
+    age:
+        - enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBZN3hEbDQ1STMxWFByV1dB
+            Ly9CSEZTaU9tUGZMc3c0Y3c2YTFmUTMzZ0ZNClBsNzRvQW1UbVZnRGp1ZTlGbUkw
+            aE04dnBPM2tIVlBzWERMZ3R3Q1lsODgKLS0tIGpNUjJPdUVUU2dsMWZRTXZnb0k2
+            NEwwakxESzVHS2FDOVJiZ0VPSVBXYW8KNHh2UV+7fOq8mrWZt9uT9yvU2JUeGwjz
+            7xEOBS2zJdr61D6rhnqDlAomVjfWOx7IL9EZc1ILImOidgzUPVCCIg==
+            -----END AGE ENCRYPTED FILE-----
+          recipient: age1m27q9ve7grcseq47reuhmgyqsdndht5gjfjkvk33l0w05fdqeqjs6rzug2
+    encrypted_regex: ^(data|stringData)$
+    lastmodified: "2026-11-12T19:35:56Z"
+    mac: ENC[AES256_GCM,data:7bzhiBXkKFW2DxNQk5O8dxNbAFZtJ8Mn5bk6TEeHn/1UCtUcAUZ1CUlSnpYntBYemtOC5KjjA28nmyduljvPdOTHQV/1FokO7OQb0yVBZS8LC4ckLPsOGXvyvElBuHwqa22Tj4nwf794HWRjMQb30SgSgOYpxPoqQXUGKzPnrMI=,iv:ARyE72Wz2C+jJHj4GRsDd0uKl1z2U4ukKFmNcu/Hof4=,tag:XIrShDChvn2BgnnuVxoKTA==,type:str]
+    version: 3.13.3

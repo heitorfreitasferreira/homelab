@@ -1,0 +1,7 @@
+# App of apps: every Application of the homelab cluster.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - apps/cert-manager.yaml
+  - apps/cloudnative-pg.yaml
+  - apps/platform.yaml
