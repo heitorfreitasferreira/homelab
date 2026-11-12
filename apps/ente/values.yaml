@@ -6,6 +6,11 @@ museum:
   resources:
     requests: {cpu: 50m, memory: 96Mi}
     limits: {memory: 512Mi}
+  # museum panics if Postgres is not accepting connections at boot.
+  initContainers:
+    - name: wait-for-db
+      image: busybox:1.37
+      command: ["sh", "-c", "until nc -z -w 2 ente-db-rw 5432; do echo waiting for ente-db; sleep 3; done"]
   config:
     s3:
       areLocalBuckets: false

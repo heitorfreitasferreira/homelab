@@ -39,9 +39,9 @@ spec:
           value: /.config
         - name: SOPS_AGE_KEY_FILE
           value: /.config/sops/age/keys.txt
-        # ksops and its matching kustomize come first; the rest is the image default PATH.
+        # ksops binary from the image volume; kustomize and helm stay the Argo CD bundled ones.
         - name: PATH
-          value: /opt/ksops:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+          value: /usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/opt/ksops
       # ksops image is distroless (no shell to copy binaries), so it is mounted as an image volume.
       volumes:
         - name: ksops
