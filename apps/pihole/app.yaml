@@ -1,6 +1,8 @@
 # DNS only for the tailnet: hostNetwork + bind to tailscale0. Nothing listens on the public IP
 # (the legacy setup was an open resolver on 0.0.0.0:53). nftables also drops 53/8053 outside tailscale0.
 # Clients: Tailscale admin > DNS > nameserver 100.104.129.86 (racknerd tailnet IP).
+# Adlists: Firebog ticked sources are documented in adlists.txt and live in gravity.db
+# on the PVC (not reconciled by Argo). Re-apply with ./apply-adlists.sh --gravity.
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:

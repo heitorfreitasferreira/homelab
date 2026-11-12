@@ -1,0 +1,31 @@
+# Pi-hole adlists: Firebog "ticked" lists, minus the Malicious category.
+#
+# Source: https://firebog.net/ (read 2026-11-12). Only the lists marked green
+# with a tick were used. The Malicious category was left out on purpose: those
+# feeds (URLhaus, Phishing Army, quidsup, RPiList, ...) trade false positives
+# for coverage and break logins/browsing more often than they help here.
+#
+# Applied through the Pi-hole v6 API on 2026-11-12, gravity: 338.350 unique
+# domains from 16 lists (+ StevenBlack, kept from the migrated setup).
+# Argo CD does not reconcile this file: the sources live in gravity.db on the
+# pihole-etc PVC. Re-apply with ./apps/pihole/apply-adlists.sh --gravity.
+#
+# Suspicious
+https://raw.githubusercontent.com/PolishFiltersTeam/KADhosts/master/KADhosts.txt
+https://raw.githubusercontent.com/FadeMind/hosts.extras/master/add.Spam/hosts
+https://v.firebog.net/hosts/static/w3kbl.txt
+# Advertising
+https://adaway.org/hosts.txt
+https://v.firebog.net/hosts/AdguardDNS.txt
+https://v.firebog.net/hosts/Admiral.txt
+https://raw.githubusercontent.com/anudeepND/blacklist/master/adservers.txt
+https://v.firebog.net/hosts/Easylist.txt
+https://pgl.yoyo.org/adservers/serverlist.php?hostformat=hosts&showintro=0&mimetype=plaintext
+https://raw.githubusercontent.com/FadeMind/hosts.extras/master/UncheckyAds/hosts
+https://raw.githubusercontent.com/bigdargon/hostsVN/master/hosts
+# Tracking & telemetry
+https://v.firebog.net/hosts/Easyprivacy.txt
+https://v.firebog.net/hosts/Prigent-Ads.txt
+https://raw.githubusercontent.com/FadeMind/hosts.extras/master/add.2o7Net/hosts
+https://raw.githubusercontent.com/crazy-max/WindowsSpyBlocker/master/data/hosts/spy.txt
+https://hostfiles.frogeye.fr/firstparty-trackers-hosts.txt
