@@ -1,0 +1,32 @@
+- name: Tailscale apt key
+  ansible.builtin.get_url:
+    url: https://pkgs.tailscale.com/stable/debian/trixie.noarmor.gpg
+    dest: /usr/share/keyrings/tailscale-archive-keyring.gpg
+    mode: "0644"
+
+- name: Tailscale apt repo
+  ansible.builtin.apt_repository:
+    repo: deb [signed-by=/usr/share/keyrings/tailscale-archive-keyring.gpg] https://pkgs.tailscale.com/stable/debian trixie main
+    filename: tailscale
+    state: present
+
+- name: Tailscale installed
+  ansible.builtin.apt:
+    name: tailscale
+    state: present
+    update_cache: true
+
+- name: Tailscale status
+  ansible.builtin.command: tailscale status --json
+  register: ts_status
+  changed_when: false
+  failed_when: false
+
+- name: Tailscale up (only when not logged in yet)
+  ansible.builtin.command: >-
+    tailscale up --authkey={{ tailscale_authkey }} --hostname={{ inventory_hostname }} --ssh=false
+  no_log: true
+  when: >-
+    ts_status.rc != 0 or
+    (ts_status.stdout | from_json).BackendState != 'Running'
+  failed_when: tailscale_authkey | length == 0

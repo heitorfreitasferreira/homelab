@@ -1,0 +1,23 @@
+# Bootstrap via k3s' auto-deploy dir: the embedded helm-controller installs Argo CD,
+# then the root Application hands everything else to Git (clusters/homelab).
+- name: Argo CD HelmChart
+  ansible.builtin.template:
+    src: argocd.yaml.j2
+    dest: /var/lib/rancher/k3s/server/manifests/argocd.yaml
+    mode: "0600"
+
+- name: Argo CD server available
+  ansible.builtin.command: >-
+    k3s kubectl -n argocd wait --for=condition=Available deploy/argocd-server --timeout=60s
+  register: argocd_wait
+  retries: 20
+  delay: 15
+  until: argocd_wait.rc == 0
+  changed_when: false
+
+# Applied after the CRDs exist. No resources finalizer: deleting root must not cascade to every app.
+- name: Root Application
+  ansible.builtin.template:
+    src: root-app.yaml.j2
+    dest: /var/lib/rancher/k3s/server/manifests/root-app.yaml
+    mode: "0600"

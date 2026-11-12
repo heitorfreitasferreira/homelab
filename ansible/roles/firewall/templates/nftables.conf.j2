@@ -1,0 +1,30 @@
+#!/usr/sbin/nft -f
+# Host input filter only. k3s/flannel manage their own tables (forward/nat), so this file
+# must not flush the whole ruleset: it only replaces table inet homelab.
+table inet homelab
+delete table inet homelab
+
+table inet homelab {
+  chain input {
+    type filter hook input priority filter; policy drop;
+
+    ct state established,related accept
+    ct state invalid drop
+    iif lo accept
+
+    # Pods, services and CNI interfaces (k3s flannel).
+    ip saddr {{ k3s_cluster_cidr }} accept
+    ip saddr {{ k3s_service_cidr }} accept
+    iifname { "cni0", "flannel.1" } accept
+
+    # Tailscale: everything private (k8s API, admin UIs) is reachable only from the tailnet.
+    iifname "tailscale0" accept
+    udp dport 41641 accept
+
+    meta l4proto { icmp, ipv6-icmp } accept
+
+    tcp dport {{ ssh_port }} accept
+    # Public HTTP(S) only for things explicitly exposed through the ingress.
+    tcp dport { 80, 443 } accept
+  }
+}

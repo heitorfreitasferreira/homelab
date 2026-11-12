@@ -1,0 +1,16 @@
+write-kubeconfig-mode: "0600"
+cluster-cidr: {{ k3s_cluster_cidr }}
+service-cidr: {{ k3s_service_cidr }}
+node-name: {{ inventory_hostname }}
+# The API is reached over the tailnet (nftables blocks 6443 on the public interface).
+# Home machines will join later with k3s' native Tailscale integration (--vpn-auth).
+tls-san:
+  - {{ ansible_host }}
+{% if tailscale_enabled | bool and ts_ip.stdout | default('') %}
+  - {{ ts_ip.stdout }}
+  - {{ inventory_hostname }}
+{% endif %}
+secrets-encryption: true
+kubelet-arg:
+  - "eviction-hard=memory.available<200Mi,nodefs.available<5%"
+  - "system-reserved=memory=300Mi"

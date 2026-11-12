@@ -1,0 +1,21 @@
+admin_user: htr
+admin_ssh_pubkey: "{{ lookup('file', lookup('env', 'HOME') + '/.ssh/id_ed25519.pub') }}"
+ssh_port: 22
+
+timezone: America/Sao_Paulo
+
+# zram as primary swap (lz4-compressed RAM), plus a small swapfile as overflow.
+zram_percent: 50
+swapfile_size_mb: 2048
+
+tailscale_enabled: true
+# Auth key comes from the environment, never from the repo: TS_AUTHKEY=tskey-... ansible-playbook ...
+tailscale_authkey: "{{ lookup('env', 'TS_AUTHKEY') }}"
+
+k3s_version: v1.37.2+k3s1
+k3s_cluster_cidr: 10.42.0.0/16
+k3s_service_cidr: 10.43.0.0/16
+
+argocd_chart_version: 10.10.5
+gitops_repo_url: https://github.com/heitorfreitasferreira/homelab.git
+gitops_repo_revision: main

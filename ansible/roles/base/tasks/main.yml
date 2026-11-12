@@ -1,0 +1,117 @@
+- name: Base packages
+  ansible.builtin.apt:
+    name:
+      - sudo
+      - curl
+      - ca-certificates
+      - gnupg
+      - nftables
+      - zram-tools
+      - unattended-upgrades
+      - apt-listchanges
+      - open-iscsi
+      - nfs-common
+      - jq
+      - rsync
+    state: present
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: Timezone
+  community.general.timezone:
+    name: "{{ timezone }}"
+
+- name: Admin user
+  ansible.builtin.user:
+    name: "{{ admin_user }}"
+    shell: /bin/bash
+    groups: [sudo]
+    append: true
+
+- name: Admin SSH key (exclusive, removes any other key)
+  ansible.posix.authorized_key:
+    user: "{{ admin_user }}"
+    key: "{{ admin_ssh_pubkey }}"
+    exclusive: true
+
+# Key-only SSH and no root login, so sudo without password is the only way in after this.
+- name: Passwordless sudo for admin
+  ansible.builtin.copy:
+    dest: /etc/sudoers.d/90-{{ admin_user }}
+    content: "{{ admin_user }} ALL=(ALL) NOPASSWD:ALL\n"
+    mode: "0440"
+    validate: visudo -cf %s
+
+- name: SSH hardening
+  ansible.builtin.copy:
+    dest: /etc/ssh/sshd_config.d/10-homelab.conf
+    content: |
+      Port {{ ssh_port }}
+      PermitRootLogin no
+      PasswordAuthentication no
+      KbdInteractiveAuthentication no
+      PubkeyAuthentication yes
+      AllowUsers {{ admin_user }}
+      X11Forwarding no
+    mode: "0644"
+    validate: sshd -t -f %s
+  notify: Restart ssh
+
+- name: Unattended security upgrades
+  ansible.builtin.copy:
+    dest: /etc/apt/apt.conf.d/20auto-upgrades
+    content: |
+      APT::Periodic::Update-Package-Lists "1";
+      APT::Periodic::Unattended-Upgrade "1";
+    mode: "0644"
+
+- name: zram swap
+  ansible.builtin.copy:
+    dest: /etc/default/zramswap
+    content: |
+      ALGO=lz4
+      PERCENT={{ zram_percent }}
+      PRIORITY=100
+    mode: "0644"
+  notify: Restart zramswap
+
+- name: Swapfile exists
+  ansible.builtin.command: fallocate -l {{ swapfile_size_mb }}M /swapfile
+  args:
+    creates: /swapfile
+  register: swapfile_created
+
+- name: Swapfile permissions
+  ansible.builtin.file:
+    path: /swapfile
+    mode: "0600"
+
+- name: Format swapfile
+  ansible.builtin.command: mkswap /swapfile
+  when: swapfile_created.changed
+
+- name: Swapfile in fstab (low priority, zram first)
+  ansible.posix.mount:
+    src: /swapfile
+    path: none
+    fstype: swap
+    opts: sw,pri=10
+    state: present
+
+- name: Swapfile active
+  ansible.builtin.command: swapon -a
+  changed_when: false
+
+- name: Kernel settings for k3s and swap
+  ansible.posix.sysctl:
+    name: "{{ item.key }}"
+    value: "{{ item.value }}"
+    sysctl_file: /etc/sysctl.d/90-homelab.conf
+  loop: "{{ sysctls | dict2items }}"
+  vars:
+    sysctls:
+      vm.swappiness: 100
+      net.ipv4.ip_forward: 1
+      net.ipv6.conf.all.forwarding: 1
+      fs.inotify.max_user_instances: 1024
+      fs.inotify.max_user_watches: 524288

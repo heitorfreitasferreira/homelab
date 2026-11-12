@@ -1,0 +1,13 @@
+- name: nftables ruleset
+  ansible.builtin.template:
+    src: nftables.conf.j2
+    dest: /etc/nftables.conf
+    mode: "0644"
+    validate: nft -c -f %s
+  notify: Reload nftables
+
+- name: nftables enabled
+  ansible.builtin.service:
+    name: nftables
+    state: started
+    enabled: true
