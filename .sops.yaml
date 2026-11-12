@@ -1,0 +1,7 @@
+# Secrets in the repo are SOPS-encrypted for this age recipient.
+# Private key: ~/.config/sops/age/keys.txt (never committed).
+# Recovery copy of that key, encrypted with the master password: .sops/age-key.age
+creation_rules:
+  - path_regex: .*\.sops\.ya?ml$
+    encrypted_regex: ^(data|stringData)$
+    age: age1m27q9ve7grcseq47reuhmgyqsdndht5gjfjkvk33l0w05fdqeqjs6rzug2
