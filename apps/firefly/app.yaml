@@ -82,26 +82,3 @@ spec:
   tls:
     - hosts: [firefly.htrlab.duckdns.org]
       secretName: firefly-tls
----
-# Replaces the legacy alpine cron container: daily recurring transactions and rules.
-apiVersion: batch/v1
-kind: CronJob
-metadata:
-  name: firefly-cron
-spec:
-  schedule: "0 3 * * *"
-  timeZone: America/Sao_Paulo
-  concurrencyPolicy: Forbid
-  jobTemplate:
-    spec:
-      backoffLimit: 2
-      template:
-        spec:
-          restartPolicy: OnFailure
-          containers:
-            - name: cron
-              image: busybox:1.37@sha256:a7dbc319b1438115a207e11930dc4bb3e643dcb3ec0bdd694bb36cd8fad289ec
-              command: ["sh", "-c", "wget -qO- http://firefly/api/v1/cron/$STATIC_CRON_TOKEN"]
-              env:
-                - name: STATIC_CRON_TOKEN
-                  valueFrom: {secretKeyRef: {name: firefly-secrets, key: STATIC_CRON_TOKEN}}
