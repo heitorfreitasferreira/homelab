@@ -1,3 +1,14 @@
+- Casa:
+    - Home Assistant:
+        icon: home-assistant.png
+        href: https://casa.tail76c1c6.ts.net
+        description: automacao (tailnet)
+        siteMonitor: https://casa.tail76c1c6.ts.net
+    - Pi-hole casa:
+        icon: pi-hole.png
+        href: https://casa.tail76c1c6.ts.net:8443/admin/
+        description: DNS da casa
+        siteMonitor: https://casa.tail76c1c6.ts.net:8443/admin/
 - Admin:
     - Argo CD:
         icon: argo-cd.png
