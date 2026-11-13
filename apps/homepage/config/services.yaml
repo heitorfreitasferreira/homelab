@@ -37,7 +37,3 @@
         siteMonitor: http://n8n.n8n.svc/healthz
         namespace: n8n
         podSelector: app=n8n
-    - BBB (CronJob):
-        icon: mdi-television-classic
-        href: https://ntfy.sh/heitorfreitasf
-        description: aviso diario 21h via ntfy
