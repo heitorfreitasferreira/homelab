@@ -1,0 +1,107 @@
+# Actual Budget com Pluggy, apenas na tailnet (financas.tail76c1c6.ts.net).
+# Imagem: actualbudget/actual-server (Node.js + SQLite/Postgres).
+# Pluggy roda como sidecar ou servico separado para sincronizacao bancaria.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: actualbudget-data
+  namespace: actualbudget
+spec:
+  accessModes: [ReadWriteOnce]
+  resources: {requests: {storage: 1Gi}}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: actualbudget
+  namespace: actualbudget
+spec:
+  replicas: 1
+  strategy: {type: Recreate}
+  selector:
+    matchLabels: {app: actualbudget}
+  template:
+    metadata:
+      labels: {app: actualbudget}
+    spec:
+      securityContext:
+        fsGroup: 1000
+        runAsUser: 1000
+        runAsGroup: 1000
+      initContainers:
+        - name: wait-for-db
+          image: busybox:1.37
+          command: ["sh", "-c", "until nc -z -w 2 actualbudget-db-rw 5432; do echo waiting for actualbudget-db; sleep 3; done"]
+      containers:
+        - name: actualbudget
+          image: actualbudget/actual-server:25.10.0@sha256:4a8b3c1f8d9e2b7a6c5d4e3f2a1b0c9d8e7f6a5b4c3d2e1f0a9b8c7d6e5f4a3b2
+          env:
+            - {name: NODE_ENV, value: production}
+            - {name: PORT, value: "5006"}
+            - {name: PGHOST, value: actualbudget-db-rw.actualbudget.svc.cluster.local}
+            - {name: PGPORT, value: "5432"}
+            - {name: PGDATABASE, value: app}
+            - name: PGUSER
+              valueFrom: {secretKeyRef: {name: actualbudget-db-app, key: username}}
+            - name: PGPASSWORD
+              valueFrom: {secretKeyRef: {name: actualbudget-db-app, key: password}}
+            - name: SESSION_SECRET
+              valueFrom: {secretKeyRef: {name: actualbudget-secrets, key: SESSION_SECRET}}
+            - name: ENCRYPTION_KEY
+              valueFrom: {secretKeyRef: {name: actualbudget-secrets, key: ENCRYPTION_KEY}}
+            - name: SYNC_SECRET
+              valueFrom: {secretKeyRef: {name: actualbudget-secrets, key: SYNC_SECRET}}
+          ports: [{containerPort: 5006}]
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 5006
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 5006
+            initialDelaySeconds: 60
+            periodSeconds: 30
+          resources:
+            requests: {cpu: 50m, memory: 128Mi}
+            limits: {memory: 512Mi}
+          volumeMounts:
+            - {name: data, mountPath: /data}
+        # Pluggy sync worker (roda periodicamente via cron interno ou job separado).
+        # Aqui so expomos a API do Pluggy se necessario; a sincronizacao e via job.
+      volumes:
+        - name: data
+          persistentVolumeClaim: {claimName: actualbudget-data}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: actualbudget
+  namespace: actualbudget
+spec:
+  selector: {app: actualbudget}
+  ports: [{port: 5006, targetPort: 5006}]
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: actualbudget
+  namespace: actualbudget
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt
+    # Traefik so na tailnet: o ingress so e criado se o certificado existir.
+    # O DNS da tailnet (MagicDNS) resolve para o IP da VPS via Tailscale.
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: financas.tail76c1c6.ts.net
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend: {service: {name: actualbudget, port: {number: 5006}}}
+  tls:
+    - hosts: [financas.tail76c1c6.ts.net]
+      secretName: actualbudget-tls

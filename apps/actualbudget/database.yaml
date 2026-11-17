@@ -1,0 +1,43 @@
+# Metadados do Actual Budget (contas, transacoes, orcamentos).
+# CNPG cria o secret actualbudget-db-app (usuario "app", banco "app").
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: actualbudget-db
+  namespace: actualbudget
+spec:
+  instances: 1
+  imageName: ghcr.io/cloudnative-pg/postgresql:17
+  storage:
+    size: 2Gi
+  resources:
+    requests: {cpu: 50m, memory: 128Mi}
+    limits: {memory: 256Mi}
+  backup:
+    retentionPolicy: 30d
+    barmanObjectStore:
+      destinationPath: s3://htr-backups/cnpg/actualbudget-db
+      endpointURL: https://8ef031572e6694f614275029be68313a.r2.cloudflarestorage.com
+      s3Credentials:
+        accessKeyId: {name: r2-backups, key: ACCESS_KEY_ID}
+        secretAccessKey: {name: r2-backups, key: ACCESS_SECRET_KEY}
+      wal:
+        compression: gzip
+      data:
+        compression: gzip
+  postgresql:
+    parameters:
+      shared_buffers: 32MB
+      max_connections: "30"
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: ScheduledBackup
+metadata:
+  name: actualbudget-db-daily
+  namespace: actualbudget
+spec:
+  schedule: "0 0 4 * * *"
+  backupOwnerReference: self
+  immediate: true
+  cluster:
+    name: actualbudget-db
