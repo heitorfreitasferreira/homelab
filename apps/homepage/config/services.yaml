@@ -17,6 +17,16 @@
         href: https://pihole.tail76c1c6.ts.net/admin/
         description: DNS da tailnet
         siteMonitor: http://pihole-web.pihole.svc/admin/
+    - Grafana:
+        icon: grafana.png
+        href: https://grafana.tail76c1c6.ts.net
+        description: metricas e paineis (tailnet)
+        siteMonitor: http://grafana.monitoring.svc/api/health
+    - VictoriaMetrics:
+        icon: victoriametrics.png
+        href: https://metricas.tail76c1c6.ts.net/vmui/
+        description: consultas e alvos (tailnet)
+        siteMonitor: http://vmui.monitoring.svc:8428/health
     - Tailscale:
         icon: tailscale.png
         href: https://login.tailscale.com/admin/machines
