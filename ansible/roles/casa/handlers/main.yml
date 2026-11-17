@@ -1,0 +1,54 @@
+- name: Restart ssh
+  ansible.builtin.service:
+    name: ssh
+    state: restarted
+
+- name: Reload nftables
+  ansible.builtin.command: nft -f /etc/nftables.conf
+
+- name: Update grub
+  ansible.builtin.command: update-grub
+
+- name: Restart logind
+  ansible.builtin.service:
+    name: systemd-logind
+    state: restarted
+
+- name: Reexec systemd
+  ansible.builtin.systemd_service:
+    daemon_reexec: true
+
+- name: Restart journald
+  ansible.builtin.service:
+    name: systemd-journald
+    state: restarted
+
+- name: Restart zram
+  ansible.builtin.systemd_service:
+    name: systemd-zram-setup@zram0.service
+    state: restarted
+    daemon_reload: true
+
+- name: Reload systemd
+  ansible.builtin.systemd_service:
+    daemon_reload: true
+
+- name: Restart homeassistant
+  ansible.builtin.systemd_service:
+    name: homeassistant.service
+    state: restarted
+    daemon_reload: true
+
+- name: Restart avahi
+  ansible.builtin.service:
+    name: avahi-daemon
+    state: restarted
+
+- name: Restart mdns-homeassistant
+  ansible.builtin.systemd_service:
+    name: mdns-homeassistant.service
+    state: restarted
+    daemon_reload: true
+
+- name: Update initramfs
+  ansible.builtin.command: update-initramfs -u -k all

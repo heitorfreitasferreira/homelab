@@ -1,7 +1,7 @@
 # First run on a fresh Debian install: -e ansible_user=root (root + key from the provider).
 # Later runs: ansible_user defaults to admin_user with sudo.
 - name: Homelab host
-  hosts: all
+  hosts: homelab:lab
   become: true
   vars:
     ansible_user: "{{ bootstrap_user | default(admin_user) }}"

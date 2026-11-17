@@ -1,0 +1,26 @@
+#!/usr/sbin/nft -f
+# Filtro de entrada do host. Substitui so a tabela inet casa: o Tailscale (iptables-nft) e o
+# Podman mantem as proprias tabelas, entao este arquivo nao pode dar flush ruleset.
+table inet casa
+delete table inet casa
+
+table inet casa {
+  chain input {
+    type filter hook input priority filter; policy drop;
+
+    ct state established,related accept
+    ct state invalid drop
+    iif lo accept
+
+    meta l4proto { icmp, ipv6-icmp } accept
+
+    # Tailscale: tudo que vem da tailnet (SSH, Home Assistant).
+    iifname "tailscale0" accept
+    udp dport 41641 accept
+
+    # DHCP do Huawei e a rede local de casa.
+    udp sport 67 udp dport 68 accept
+    ip saddr {{ casa_lan_cidr }} accept
+    ip6 saddr fe80::/10 accept
+  }
+}

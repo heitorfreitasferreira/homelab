@@ -1,0 +1,10 @@
+# Notebook de casa (host `casa`). Sem k3s: Podman + Quadlet (DECISIONS.md, item 17).
+# ansible-playbook casa.yml            (de qualquer lugar, pela tailnet)
+# ansible-playbook casa.yml -e ansible_host=192.168.100.207   (pela LAN)
+- name: Servidor de casa
+  hosts: servidor_casa
+  become: true
+  roles:
+    - role: tailscale
+      tags: [tailscale]
+    - casa

@@ -30,3 +30,9 @@
     ts_status.rc != 0 or
     (ts_status.stdout | from_json).BackendState != 'Running'
   failed_when: tailscale_authkey | length == 0
+
+# O servidor nao usa o DNS da tailnet: o Pi-hole da tailnet roda neste cluster, e o CoreDNS
+# ficaria sem DNS sempre que o pod do Pi-hole reiniciasse. Nomes *.ts.net: platform/coredns.
+- name: Tailscale without tailnet DNS
+  ansible.builtin.command: tailscale set --accept-dns=false
+  changed_when: false

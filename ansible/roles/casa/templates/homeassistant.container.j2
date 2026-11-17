@@ -1,0 +1,21 @@
+[Unit]
+Description=Home Assistant
+After=network-online.target
+Wants=network-online.target
+
+[Container]
+Image={{ casa_ha_image }}
+ContainerName=homeassistant
+Network=host
+Environment=TZ={{ timezone }}
+Volume=/var/lib/homeassistant:/config:Z
+PodmanArgs=--memory={{ casa_ha_memory }}
+# Descoberta por DHCP e Bluetooth.
+AddCapability=NET_ADMIN NET_RAW
+
+[Service]
+Restart=always
+TimeoutStartSec=900
+
+[Install]
+WantedBy=multi-user.target

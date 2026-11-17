@@ -1,0 +1,18 @@
+# Sobrescreve group_vars/all.yml para o notebook de casa.
+admin_user: home
+
+casa_hostname: casa
+casa_lan_cidr: 192.168.100.0/24
+casa_lan_ip: 192.168.100.207
+casa_lan_iface: enp2s0f5
+casa_lan_mac: "80:ee:73:4d:de:f4"
+
+# zram como swap principal. RAM: 1,8 GB (2 GB fisicos, DVMT da BIOS no minimo).
+casa_zram_size: ram / 2
+casa_swappiness: 100
+
+# Atualizacoes de seguranca reiniciam a maquina so se o kernel pedir, nesta hora.
+casa_reboot_time: "04:30"
+
+casa_ha_image: ghcr.io/home-assistant/home-assistant@sha256:1e25a28cb9ee48dbcd33b65cbdcf2919d01991fe11f71cdae0a09c9fc3017ebb
+casa_ha_memory: 700m
