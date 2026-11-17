@@ -46,11 +46,12 @@ spec:
             enabled: true
             size: 10Gi
           resources:
-            requests: {cpu: 50m, memory: 128Mi}
-            limits: {memory: 384Mi}
+            requests: {cpu: 50m, memory: 192Mi}
+            limits: {memory: 512Mi}
           extraArgs:
-            # Limita a RAM do cache ao orcamento do pod.
-            memory.allowedBytes: 256MiB
+            # Caches com 40% do limite do pod. Com allowedBytes=256MiB e limite de 384Mi,
+            # sobrava pouco para o resto do processo e o pod morria por OOM na subida.
+            memory.allowedPercent: "40"
           scrape:
             enabled: true
             config:
