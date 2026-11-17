@@ -1,0 +1,147 @@
+# Nextcloud com armazenamento primario em S3 (R2). A escolha vale na instalacao:
+# com OBJECTSTORE_S3_BUCKET definido no primeiro boot, todo arquivo novo vai para o bucket.
+# Nao trocar para disco local depois de ter arquivos.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: nextcloud-html
+spec:
+  accessModes: [ReadWriteOnce]
+  resources: {requests: {storage: 1Gi}}
+---
+# Hook de primeiro boot: instala os apps e ajusta preview e cron.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nextcloud-hooks
+data:
+  10-apps.sh: |
+    #!/bin/sh
+    set -e
+    # occ roda como www-data para nao deixar arquivos de dono root no Nextcloud.
+    occ() { runuser -u www-data -- php /var/www/html/occ "$@"; }
+    occ app:install memories || occ app:enable memories
+    occ app:install previewgenerator || occ app:enable previewgenerator
+    occ app:install photos || occ app:enable photos
+    occ background:cron
+    occ config:system:set preview_max_x --value=2048 --type=integer
+    occ config:system:set preview_max_y --value=2048 --type=integer
+    occ config:system:set default_phone_region --value=BR
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nextcloud
+spec:
+  replicas: 1
+  strategy: {type: Recreate}
+  selector:
+    matchLabels: {app: nextcloud}
+  template:
+    metadata:
+      labels: {app: nextcloud}
+    spec:
+      securityContext:
+        fsGroup: 33
+      initContainers:
+        - name: wait-for-db
+          image: busybox:1.37
+          command: ["sh", "-c", "until nc -z -w 2 nextcloud-db-rw 5432; do echo waiting for nextcloud-db; sleep 3; done"]
+      containers:
+        - name: nextcloud
+          image: nextcloud:35.0.3-apache@sha256:8a7a65b8bae82a79568fec2ed9cf3e374a1944eda2a22ebe130d79463336fee3
+          env:
+            - {name: NEXTCLOUD_TRUSTED_DOMAINS, value: nuvem.htrlab.duckdns.org}
+            - {name: OVERWRITEPROTOCOL, value: https}
+            - {name: TRUSTED_PROXIES, value: "10.42.0.0/16"}
+            - {name: PHP_MEMORY_LIMIT, value: 512M}
+            - {name: POSTGRES_HOST, value: nextcloud-db-rw.nextcloud.svc.cluster.local}
+            - {name: POSTGRES_DB, value: app}
+            - name: POSTGRES_USER
+              valueFrom: {secretKeyRef: {name: nextcloud-db-app, key: username}}
+            - name: POSTGRES_PASSWORD
+              valueFrom: {secretKeyRef: {name: nextcloud-db-app, key: password}}
+            - name: NEXTCLOUD_ADMIN_USER
+              valueFrom: {secretKeyRef: {name: nextcloud-secrets, key: ADMIN_USER}}
+            - name: NEXTCLOUD_ADMIN_PASSWORD
+              valueFrom: {secretKeyRef: {name: nextcloud-secrets, key: ADMIN_PASSWORD}}
+            - {name: OBJECTSTORE_S3_BUCKET, value: htr-nextcloud}
+            - {name: OBJECTSTORE_S3_HOST, value: 8ef031572e6694f614275029be68313a.r2.cloudflarestorage.com}
+            - {name: OBJECTSTORE_S3_PORT, value: "443"}
+            - {name: OBJECTSTORE_S3_SSL, value: "true"}
+            - {name: OBJECTSTORE_S3_REGION, value: auto}
+            - {name: OBJECTSTORE_S3_USEPATH_STYLE, value: "true"}
+            - {name: OBJECTSTORE_S3_AUTOCREATE, value: "false"}
+            - name: OBJECTSTORE_S3_KEY
+              valueFrom: {secretKeyRef: {name: nextcloud-secrets, key: OBJECTSTORE_S3_KEY}}
+            - name: OBJECTSTORE_S3_SECRET
+              valueFrom: {secretKeyRef: {name: nextcloud-secrets, key: OBJECTSTORE_S3_SECRET}}
+          ports: [{containerPort: 80}]
+          # Host fixo: o kubelet envia o IP do pod, que nao esta em NEXTCLOUD_TRUSTED_DOMAINS.
+          readinessProbe:
+            httpGet:
+              path: /status.php
+              port: 80
+              httpHeaders: [{name: Host, value: nuvem.htrlab.duckdns.org}]
+            initialDelaySeconds: 60
+            periodSeconds: 15
+          livenessProbe:
+            httpGet:
+              path: /status.php
+              port: 80
+              httpHeaders: [{name: Host, value: nuvem.htrlab.duckdns.org}]
+            initialDelaySeconds: 120
+            periodSeconds: 30
+          resources:
+            requests: {cpu: 50m, memory: 256Mi}
+            limits: {memory: 768Mi}
+          volumeMounts:
+            - {name: html, mountPath: /var/www/html}
+            - {name: hooks, mountPath: /docker-entrypoint-hooks.d/post-installation}
+        # Cron do Nextcloud (a cada 5 min) e os jobs do Memories e do Preview Generator.
+        - name: cron
+          image: nextcloud:35.0.3-apache@sha256:8a7a65b8bae82a79568fec2ed9cf3e374a1944eda2a22ebe130d79463336fee3
+          command:
+            - sh
+            - -c
+            - |
+              until [ -f /var/www/html/config/config.php ]; do sleep 10; done
+              while true; do php -f /var/www/html/cron.php; sleep 300; done
+          securityContext: {runAsUser: 33, runAsGroup: 33}
+          resources:
+            requests: {cpu: 10m, memory: 64Mi}
+            limits: {memory: 384Mi}
+          volumeMounts:
+            - {name: html, mountPath: /var/www/html}
+      volumes:
+        - name: html
+          persistentVolumeClaim: {claimName: nextcloud-html}
+        - name: hooks
+          configMap: {name: nextcloud-hooks, defaultMode: 0755}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nextcloud
+spec:
+  selector: {app: nextcloud}
+  ports: [{port: 80, targetPort: 80}]
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: nextcloud
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: nuvem.htrlab.duckdns.org
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend: {service: {name: nextcloud, port: {number: 80}}}
+  tls:
+    - hosts: [nuvem.htrlab.duckdns.org]
+      secretName: nextcloud-tls

@@ -10,3 +10,4 @@ resources:
   - apps/tailscale.yaml
   - apps/homepage.yaml
   - apps/monitoring.yaml
+  - apps/nextcloud.yaml

@@ -48,7 +48,8 @@ Fonte de verdade das escolhas do homelab pessoal. Cada decisao com o porque e o 
 - Ligar o notebook de longe: um segundo aparelho sempre ligado na LAN (Pi Zero 2 W) e um nobreak para o notebook e a ONT.
 
 - Copia off-site no AWS Glacier Deep Archive: depende da conta AWS pessoal.
-- Criar o bucket `htr-nextcloud`, o token R2 com escopo so nele, cifrar `apps/nextcloud/nextcloud-secrets.sops.yaml` e subir o app (`clusters/homelab/apps/nextcloud.yaml`). Precisa de um token da API da Cloudflare, que nao existe localmente.
-- Revogar o token R2 `htr-ente-rw` (vazou em log) e apagar o bucket `htr-ente` (vazio). Precisa da API da Cloudflare. Revogar `htr-migracao-rw` depois da importacao das fotos.
+- Importar os originais do Immich (53 GB, `r2:htr-migracao`) na conta do dono no Nextcloud, por WebDAV, e conferir a contagem antes de revogar o token `htr-migracao-rw`.
+- Revogar o token R2 `htr-ente-rw` (vazou em log) e apagar o bucket `htr-ente` (vazio).
+- Apagar o backup barman do Ente em `r2:htr-backups/cnpg/ente-db` (1367 objetos, 47 MB).
 
 Estado da VM antes do reinstall: `docs/inventario-vm-atual.md`.
