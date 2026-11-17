@@ -134,10 +134,6 @@ spec:
                   params: {module: [http_2xx]}
                   static_configs:
                     - targets:
-                        - https://photos.htrlab.duckdns.org
-                        - https://api.htrlab.duckdns.org/ping
-                        - https://firefly.htrlab.duckdns.org/health
-                        - https://n8n.htrlab.duckdns.org/healthz
                         - https://casa.tail76c1c6.ts.net
                   relabel_configs:
                     - source_labels: [__address__]

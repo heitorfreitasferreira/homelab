@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Baixa os originais do Immich do bucket de migracao (R2) para este PC, para importar no Ente.
+# Baixa os originais do Immich do bucket de migracao (R2) para este PC, para importar no Nextcloud.
 # Credenciais: ~/.config/homelab/r2-migracao.env. Idempotente: rodar de novo retoma e confere checksums.
 # Uso: scripts/baixar-fotos-r2.sh [destino]
 set -euo pipefail

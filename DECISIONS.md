@@ -18,7 +18,7 @@ Fonte de verdade das escolhas do homelab pessoal. Cada decisao com o porque e o 
 1. Kubernetes: k3s. Nos de casa entram no futuro como agents via Tailscale (`--vpn-auth`). Talos descartado: exige VM por no e a VPS nao tem virtualizacao aninhada.
 2. Clusters de projetos separados: vcluster dentro do k3s principal. k3d descartado por custo de RAM.
 3. Repo publico, secrets cifrados com SOPS + age. A senha mestra do usuario protege a chave age e a senha do restic.
-4. Fotos: Ente Photos (S3 nativo, ML no aparelho, museum ~200 MB de RAM) substitui o Immich. Usuarios: o dono e os pais, uso basico, sem uso ativo hoje. Immich + bucket montado (rclone/JuiceFS/S3QL) descartado: FUSE sob milhares de `stat()` derruba a montagem.
+4. Fotos: Nextcloud com Memories, Photos e Preview Generator, com armazenamento primario em S3 no R2 (bucket `htr-nextcloud`). Os originais viram objetos `urn:oid:` no bucket, e o Postgres (item 12) guarda nomes, pastas e albuns. Ente Photos saiu em 2026-11-17, sem uso e com 0 objetos no bucket `htr-ente`. Immich descartado: o 3.4 ainda grava so em disco local, e bucket montado (rclone/JuiceFS/S3QL) derruba a montagem sob milhares de `stat()`. Rostos (Recognize) ficam desligados ate sobrar RAM.
 5. Object storage principal: Cloudflare R2 (US$0,015/GB/mes, 10 GB gratis, egress gratis). Copia unica de backup no AWS Glacier Deep Archive via rclone. B2 descartado: cadastro travou no navegador. AWS S3 como primario descartado: US$0,09/GB de egress.
 6. Conta AWS pessoal, se existir, usa profile proprio e nunca o default (a maquina tem a AWS da empresa configurada).
 7. Migracao: backup completo da VM para o PC local (`~/backups/racknerd-20261112`), verificado, depois reinstall do Debian do zero. Migracao no lugar descartada: VM sem espaco e sem nada que valha preservar alem dos dados.
@@ -27,9 +27,9 @@ Fonte de verdade das escolhas do homelab pessoal. Cada decisao com o porque e o 
 10. Acesso remoto: Tailscale substitui o WireGuard manual.
 11. Runs do TCC geradas na VM: branch `backup/vm-runs-20261112` no repo `tcc` (commit `881af6e`).
 
-12. Postgres do Ente: backup barman do CNPG em `r2:htr-backups/cnpg/ente-db` (WAL continuo + base diaria 04:00, retencao 30 dias).
-13. Firefly III: MariaDB 11.8 em StatefulSet, restaurado do dump legado com o `APP_KEY` original. Importer descartado (sem uso).
-14. n8n: instalacao nova. A legada tinha 0 workflows e 0 credenciais.
+12. Postgres do Nextcloud (a implantar): CNPG `nextcloud-db` com backup barman em `r2:htr-backups/cnpg/nextcloud-db` (WAL continuo + base diaria 04:00, retencao 30 dias). Sem o banco, os arquivos no bucket perdem o nome. O backup antigo do Ente (`cnpg/ente-db`, 1367 objetos, 47 MB) ficou no bucket para apagar depois.
+13. Firefly III: removido em 2026-11-17, sem uso e sem dump. Substituto aprovado: Actual Budget com Pluggy, so na tailnet (ainda nao criado).
+14. n8n: removido em 2026-11-17, sem uso. A instalacao nova tinha 0 workflows e 0 credenciais.
 15. Pi-hole: `hostNetwork` com DNS preso em `tailscale0` (100.104.129.86). Web em `:8053`, so pela tailnet. Heimdall descartado.
 16. Script do BBB: removido em 2026-11-13, sem uso. O script esta no historico do git (`apps/jobs/notificar_do_bbb.py`).
 17. Pi-hole blocklists: as listas "ticked" do Firebog, sem a categoria Malicious (URLhaus, Phishing Army e afins dão falso positivo e quebram login). 16 fontes em `apps/pihole/adlists.txt` (ConfigMap), sincronizadas no `gravity.db` pelo pihole-updatelists todo sábado 03:25, que também roda o gravity. Imagem `jacklul/pihole` (oficial + php/updatelists) pinada por digest. StevenBlack (padrão migrado) mantido e fora do gerenciamento.
@@ -48,6 +48,7 @@ Fonte de verdade das escolhas do homelab pessoal. Cada decisao com o porque e o 
 - Ligar o notebook de longe: um segundo aparelho sempre ligado na LAN (Pi Zero 2 W) e um nobreak para o notebook e a ONT.
 
 - Copia off-site no AWS Glacier Deep Archive: depende da conta AWS pessoal.
-- Rotacionar o token R2 `htr-ente-rw` (vazou em log) e revogar `htr-migracao-rw` depois da importacao das fotos.
+- Criar o bucket `htr-nextcloud`, o token R2 com escopo so nele, cifrar `apps/nextcloud/nextcloud-secrets.sops.yaml` e subir o app (`clusters/homelab/apps/nextcloud.yaml`). Precisa de um token da API da Cloudflare, que nao existe localmente.
+- Revogar o token R2 `htr-ente-rw` (vazou em log) e apagar o bucket `htr-ente` (vazio). Precisa da API da Cloudflare. Revogar `htr-migracao-rw` depois da importacao das fotos.
 
 Estado da VM antes do reinstall: `docs/inventario-vm-atual.md`.

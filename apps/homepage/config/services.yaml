@@ -31,25 +31,3 @@
         icon: tailscale.png
         href: https://login.tailscale.com/admin/machines
         description: maquinas e DNS da tailnet
-- Apps:
-    - Ente Photos:
-        icon: ente-photos.png
-        href: https://photos.htrlab.duckdns.org
-        description: fotos (R2)
-        siteMonitor: https://api.htrlab.duckdns.org/ping
-        namespace: ente
-        app: ente-photos
-    - Firefly III:
-        icon: firefly.png
-        href: https://firefly.htrlab.duckdns.org
-        description: financas
-        siteMonitor: http://firefly.firefly.svc/health
-        namespace: firefly
-        podSelector: app=firefly
-    - n8n:
-        icon: n8n.png
-        href: https://n8n.htrlab.duckdns.org
-        description: automacoes
-        siteMonitor: http://n8n.n8n.svc/healthz
-        namespace: n8n
-        podSelector: app=n8n

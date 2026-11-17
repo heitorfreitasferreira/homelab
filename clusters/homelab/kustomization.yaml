@@ -6,9 +6,6 @@ resources:
   - apps/cloudnative-pg.yaml
   - apps/platform.yaml
   - apps/coredns.yaml
-  - apps/ente.yaml
-  - apps/firefly.yaml
-  - apps/n8n.yaml
   - apps/pihole.yaml
   - apps/tailscale.yaml
   - apps/homepage.yaml
