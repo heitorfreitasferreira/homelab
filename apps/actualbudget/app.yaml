@@ -100,12 +100,25 @@ spec:
           - path: /
             pathType: Prefix
             backend: {service: {name: actualbudget, port: {number: 5006}}}
-    - host: financas.tail76c1c6.ts.net
-      http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend: {service: {name: actualbudget, port: {number: 5006}}}
   tls:
     - hosts: [financas.htrlab.duckdns.org]
       secretName: actualbudget-tls
+---
+# Ingress Tailscale (MagicDNS) para acesso so na tailnet: financas.tail76c1c6.ts.net
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: actualbudget-tailscale
+  namespace: actualbudget
+  annotations:
+    argocd.argoproj.io/sync-wave: "20"
+spec:
+  ingressClassName: tailscale
+  defaultBackend:
+    service:
+      name: actualbudget
+      port:
+        number: 5006
+  tls:
+    - hosts:
+        - financas
