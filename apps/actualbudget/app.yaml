@@ -34,7 +34,7 @@ spec:
           command: ["sh", "-c", "until nc -z -w 2 actualbudget-db-rw 5432; do echo waiting for actualbudget-db; sleep 3; done"]
       containers:
         - name: actualbudget
-          image: actualbudget/actual-server:25.10.0@sha256:4a8b3c1f8d9e2b7a6c5d4e3f2a1b0c9d8e7f6a5b4c3d2e1f0a9b8c7d6e5f4a3b2
+          image: actualbudget/actual-server:edge-alpine@sha256:e7d429e8e6c95606e0b6c4c8e01d3fd5a08ea0f36964f0310210f6165510bbb1
           env:
             - {name: NODE_ENV, value: production}
             - {name: PORT, value: "5006"}
