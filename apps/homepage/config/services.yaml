@@ -4,6 +4,12 @@
         href: https://casa.tail76c1c6.ts.net
         description: automacao (tailnet)
         siteMonitor: https://casa.tail76c1c6.ts.net
+- Financas:
+    - Actual Budget:
+        icon: actualbudget.png
+        href: https://financas.tail76c1c6.ts.net
+        description: orcamento + Pluggy (tailnet)
+        siteMonitor: http://actualbudget.actualbudget.svc:5006/health
 - Nuvem:
     - Nextcloud:
         icon: nextcloud.png

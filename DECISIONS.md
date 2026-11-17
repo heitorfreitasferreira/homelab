@@ -55,8 +55,9 @@ Fonte de verdade das escolhas do homelab pessoal. Cada decisao com o porque e o 
 - Ligar o notebook de longe: um segundo aparelho sempre ligado na LAN (Pi Zero 2 W) e um nobreak para o notebook e a ONT.
 
 - Copia off-site no AWS Glacier Deep Archive: depende da conta AWS pessoal.
-- Importar os originais do Immich (53 GB, `r2:htr-migracao`) na conta do dono no Nextcloud, por WebDAV, e conferir a contagem antes de revogar o token `htr-migracao-rw`.
-- Revogar o token R2 `htr-ente-rw` (vazou em log) e apagar o bucket `htr-ente` (vazio).
+- Importar os originais do Immich (53 GB, `r2:htr-migracao`) na conta do dono no Nextcloud, por WebDAV, e conferir a contagem antes de revogar o token `htr-migracao-rw`. (job `import-immich` rodando)
+- Revogar o token R2 `htr-ente-rw` (vazou em log) e apagar o bucket `htr-ente` (vazio). FEITO.
 - Apagar o backup barman do Ente em `r2:htr-backups/cnpg/ente-db` (1367 objetos, 47 MB).
+- Actual Budget com Pluggy: implantado em `financas.tail76c1c6.ts.net` (certificado via `financas.htrlab.duckdns.org`). Credenciais Pluggy pendentes em `pluggy-secrets.sops.yaml`.
 
 Estado da VM antes do reinstall: `docs/inventario-vm-atual.md`.
