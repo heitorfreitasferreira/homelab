@@ -1,0 +1,454 @@
+# Observabilidade, etapa 1: metricas e alertas (DECISIONS.md, item 20).
+# VictoriaMetrics coleta, vmalert avalia as regras, o Alertmanager manda para o Telegram e
+# pinga o Healthchecks.io (dead man's switch: se a VPS cair, o Healthchecks avisa).
+# apps/monitoring: namespace, ingresses da tailnet e o Secret do Alertmanager (SOPS).
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: monitoring
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "15"
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/heitorfreitasferreira/homelab.git
+    targetRevision: main
+    path: apps/monitoring
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: monitoring
+  syncPolicy:
+    automated: {prune: true, selfHeal: true}
+    retry:
+      limit: 10
+      backoff: {duration: 30s, factor: 2, maxDuration: 5m}
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: monitoring-vmsingle
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "16"
+spec:
+  project: default
+  source:
+    repoURL: https://victoriametrics.github.io/helm-charts/
+    chart: victoria-metrics-single
+    targetRevision: 0.51.0
+    helm:
+      valuesObject:
+        server:
+          fullnameOverride: vmsingle
+          retentionPeriod: 90d
+          persistentVolume:
+            enabled: true
+            size: 10Gi
+          resources:
+            requests: {cpu: 50m, memory: 128Mi}
+            limits: {memory: 384Mi}
+          extraArgs:
+            # Limita a RAM do cache ao orcamento do pod.
+            memory.allowedBytes: 256MiB
+          scrape:
+            enabled: true
+            config:
+              global:
+                scrape_interval: 30s
+              scrape_configs:
+                - job_name: victoriametrics
+                  static_configs:
+                    - targets: [localhost:8428]
+                - job_name: kubernetes-nodes
+                  scheme: https
+                  tls_config:
+                    ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+                    insecure_skip_verify: true
+                  bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+                  kubernetes_sd_configs: [{role: node}]
+                  relabel_configs:
+                    - action: labelmap
+                      regex: __meta_kubernetes_node_label_(.+)
+                - job_name: kubernetes-nodes-cadvisor
+                  scheme: https
+                  tls_config:
+                    ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+                    insecure_skip_verify: true
+                  bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+                  kubernetes_sd_configs: [{role: node}]
+                  metrics_path: /metrics/cadvisor
+                  honor_timestamps: false
+                  relabel_configs:
+                    - action: labelmap
+                      regex: __meta_kubernetes_node_label_(.+)
+                # node-exporter, kube-state-metrics e afins: Service com prometheus.io/scrape.
+                - job_name: kubernetes-service-endpoints
+                  kubernetes_sd_configs: [{role: endpoints}]
+                  relabel_configs:
+                    - action: drop
+                      source_labels: [__meta_kubernetes_pod_container_init]
+                      regex: true
+                    - action: keep_if_equal
+                      source_labels: [__meta_kubernetes_service_annotation_prometheus_io_port, __meta_kubernetes_pod_container_port_number]
+                    - action: keep
+                      source_labels: [__meta_kubernetes_service_annotation_prometheus_io_scrape]
+                      regex: true
+                    - action: replace
+                      source_labels: [__meta_kubernetes_service_annotation_prometheus_io_path]
+                      target_label: __metrics_path__
+                      regex: (.+)
+                    - action: replace
+                      source_labels: [__address__, __meta_kubernetes_service_annotation_prometheus_io_port]
+                      target_label: __address__
+                      regex: ([^:]+)(?::\d+)?;(\d+)
+                      replacement: $1:$2
+                    - action: replace
+                      source_labels: [__meta_kubernetes_namespace]
+                      target_label: namespace
+                    - action: replace
+                      source_labels: [__meta_kubernetes_service_name]
+                      target_label: service
+                    - action: replace
+                      source_labels: [__meta_kubernetes_pod_node_name]
+                      target_label: node
+                # O casa pela tailnet (node-exporter do Debian, papel Ansible casa).
+                - job_name: casa
+                  static_configs:
+                    - targets: [100.112.62.47:9100]
+                      labels: {instance: casa}
+                - job_name: vmalert
+                  static_configs:
+                    - targets: [vmalert:8880]
+                - job_name: alertmanager
+                  static_configs:
+                    - targets: [alertmanager:9093]
+                # Sondas HTTPS: o que o usuario usa, de fora para dentro.
+                - job_name: probe-https
+                  metrics_path: /probe
+                  params: {module: [http_2xx]}
+                  static_configs:
+                    - targets:
+                        - https://photos.htrlab.duckdns.org
+                        - https://api.htrlab.duckdns.org/ping
+                        - https://firefly.htrlab.duckdns.org/health
+                        - https://n8n.htrlab.duckdns.org/healthz
+                        - https://casa.tail76c1c6.ts.net
+                  relabel_configs:
+                    - source_labels: [__address__]
+                      target_label: __param_target
+                    - source_labels: [__param_target]
+                      target_label: instance
+                    - target_label: __address__
+                      replacement: blackbox:9115
+                # DNS da tailnet: o Pi-hole do racknerd responde?
+                - job_name: probe-dns
+                  metrics_path: /probe
+                  params: {module: [dns_github]}
+                  static_configs:
+                    - targets: [100.104.129.86:53]
+                  relabel_configs:
+                    - source_labels: [__address__]
+                      target_label: __param_target
+                    - source_labels: [__param_target]
+                      target_label: instance
+                    - target_label: __address__
+                      replacement: blackbox:9115
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: monitoring
+  syncPolicy:
+    automated: {prune: true, selfHeal: true}
+    syncOptions: [CreateNamespace=true]
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: monitoring-vmalert
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "16"
+spec:
+  project: default
+  source:
+    repoURL: https://victoriametrics.github.io/helm-charts/
+    chart: victoria-metrics-alert
+    targetRevision: 0.53.0
+    helm:
+      valuesObject:
+        server:
+          fullnameOverride: vmalert
+          datasource:
+            url: http://vmsingle:8428
+          remoteWrite:
+            url: http://vmsingle:8428
+          remoteRead:
+            url: http://vmsingle:8428
+          notifier:
+            alertmanager:
+              url: http://alertmanager:9093
+          extraArgs:
+            external.url: https://grafana.tail76c1c6.ts.net
+          resources:
+            requests: {cpu: 10m, memory: 32Mi}
+            limits: {memory: 96Mi}
+          config:
+            alerts:
+              groups:
+                - name: watchdog
+                  rules:
+                    # Sempre disparado. O Alertmanager pinga o Healthchecks.io com ele.
+                    - alert: Watchdog
+                      expr: vector(1)
+                      labels: {severity: none}
+                      annotations:
+                        summary: Pipeline de alertas vivo
+                - name: hosts
+                  rules:
+                    - alert: AlvoFora
+                      expr: up == 0
+                      for: 3m
+                      labels: {severity: critical}
+                      annotations:
+                        summary: "{{ $labels.job }} ({{ $labels.instance }}) sem resposta ha 3 min"
+                    - alert: MemoriaBaixa
+                      expr: node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes < 0.10
+                      for: 10m
+                      labels: {severity: warning}
+                      annotations:
+                        summary: "{{ $labels.instance }}: {{ $value | humanizePercentage }} de RAM livre"
+                    - alert: DiscoQuaseCheio
+                      expr: node_filesystem_avail_bytes{fstype=~"ext4|xfs|btrfs"} / node_filesystem_size_bytes < 0.10
+                      for: 15m
+                      labels: {severity: warning}
+                      annotations:
+                        summary: "{{ $labels.instance }} {{ $labels.mountpoint }}: {{ $value | humanizePercentage }} livre"
+                    - alert: TemperaturaAlta
+                      expr: max by (instance) (node_hwmon_temp_celsius) > 85
+                      for: 10m
+                      labels: {severity: warning}
+                      annotations:
+                        summary: "{{ $labels.instance }} a {{ $value }} C"
+                    - alert: InterfaceDoCaboFora
+                      expr: node_network_up{instance="casa", device="enp2s0f5"} == 0 or absent(node_network_up{instance="casa", device="enp2s0f5"})
+                      for: 5m
+                      labels: {severity: critical}
+                      annotations:
+                        summary: "casa sem a placa enp2s0f5 (o cabo caiu ou a placa mudou de nome)"
+                - name: kubernetes
+                  rules:
+                    - alert: PodReiniciando
+                      expr: increase(kube_pod_container_status_restarts_total[30m]) > 3
+                      labels: {severity: warning}
+                      annotations:
+                        summary: "{{ $labels.namespace }}/{{ $labels.pod }} reiniciou {{ $value | printf \"%.0f\" }} vezes em 30 min"
+                    - alert: PodNaoPronto
+                      expr: sum by (namespace, pod) (kube_pod_status_ready{condition="false"} * on (namespace, pod) group_left kube_pod_status_phase{phase="Running"}) > 0
+                      for: 10m
+                      labels: {severity: warning}
+                      annotations:
+                        summary: "{{ $labels.namespace }}/{{ $labels.pod }} rodando sem ficar pronto ha 10 min"
+                - name: sondas
+                  rules:
+                    - alert: SiteFora
+                      expr: probe_success{job="probe-https"} == 0
+                      for: 3m
+                      labels: {severity: critical}
+                      annotations:
+                        summary: "{{ $labels.instance }} fora do ar"
+                    - alert: DNSDaTailnetFora
+                      expr: probe_success{job="probe-dns"} == 0
+                      for: 2m
+                      labels: {severity: critical}
+                      annotations:
+                        summary: "Pi-hole do racknerd nao responde: a tailnet esta sem DNS"
+                    - alert: CertificadoVencendo
+                      expr: (probe_ssl_earliest_cert_expiry - time()) / 86400 < 10
+                      for: 1h
+                      labels: {severity: warning}
+                      annotations:
+                        summary: "{{ $labels.instance }}: certificado vence em {{ $value | printf \"%.0f\" }} dias"
+        alertmanager:
+          enabled: true
+          fullnameOverride: alertmanager
+          retention: 120h
+          configSecret: alertmanager-config
+          persistentVolume:
+            enabled: true
+            size: 1Gi
+          resources:
+            requests: {cpu: 10m, memory: 32Mi}
+            limits: {memory: 96Mi}
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: monitoring
+  syncPolicy:
+    automated: {prune: true, selfHeal: true}
+    syncOptions: [CreateNamespace=true]
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: monitoring-node-exporter
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "16"
+spec:
+  project: default
+  source:
+    repoURL: https://prometheus-community.github.io/helm-charts
+    chart: prometheus-node-exporter
+    targetRevision: 5.1.0
+    helm:
+      valuesObject:
+        fullnameOverride: node-exporter
+        resources:
+          requests: {cpu: 10m, memory: 24Mi}
+          limits: {memory: 64Mi}
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: monitoring
+  syncPolicy:
+    automated: {prune: true, selfHeal: true}
+    syncOptions: [CreateNamespace=true]
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: monitoring-kube-state-metrics
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "16"
+spec:
+  project: default
+  source:
+    repoURL: https://prometheus-community.github.io/helm-charts
+    chart: kube-state-metrics
+    targetRevision: 9.0.1
+    helm:
+      valuesObject:
+        fullnameOverride: kube-state-metrics
+        resources:
+          requests: {cpu: 10m, memory: 32Mi}
+          limits: {memory: 128Mi}
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: monitoring
+  syncPolicy:
+    automated: {prune: true, selfHeal: true}
+    syncOptions: [CreateNamespace=true]
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: monitoring-blackbox
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "16"
+spec:
+  project: default
+  source:
+    repoURL: https://prometheus-community.github.io/helm-charts
+    chart: prometheus-blackbox-exporter
+    targetRevision: 11.21.3
+    helm:
+      valuesObject:
+        fullnameOverride: blackbox
+        resources:
+          requests: {cpu: 10m, memory: 16Mi}
+          limits: {memory: 64Mi}
+        config:
+          modules:
+            http_2xx:
+              prober: http
+              timeout: 10s
+              http:
+                preferred_ip_protocol: ip4
+                follow_redirects: true
+            dns_github:
+              prober: dns
+              timeout: 5s
+              dns:
+                query_name: github.com
+                query_type: A
+                transport_protocol: udp
+                preferred_ip_protocol: ip4
+                valid_rcodes: [NOERROR]
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: monitoring
+  syncPolicy:
+    automated: {prune: true, selfHeal: true}
+    syncOptions: [CreateNamespace=true]
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: monitoring-grafana
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "17"
+spec:
+  project: default
+  source:
+    repoURL: https://grafana.github.io/helm-charts
+    chart: grafana
+    targetRevision: 10.5.15
+    helm:
+      valuesObject:
+        fullnameOverride: grafana
+        resources:
+          requests: {cpu: 20m, memory: 96Mi}
+          limits: {memory: 256Mi}
+        persistence:
+          enabled: true
+          size: 1Gi
+        grafana.ini:
+          server:
+            root_url: https://grafana.tail76c1c6.ts.net
+          analytics:
+            reporting_enabled: false
+            check_for_updates: false
+          users:
+            default_language: pt-BR
+        datasources:
+          datasources.yaml:
+            apiVersion: 1
+            datasources:
+              - name: VictoriaMetrics
+                uid: victoriametrics
+                type: prometheus
+                url: http://vmsingle:8428
+                access: proxy
+                isDefault: true
+        dashboardProviders:
+          dashboardproviders.yaml:
+            apiVersion: 1
+            providers:
+              - name: default
+                orgId: 1
+                folder: ""
+                type: file
+                disableDeletion: true
+                options:
+                  path: /var/lib/grafana/dashboards/default
+        dashboards:
+          default:
+            node-exporter-full:
+              gnetId: 1860
+              revision: 41
+              datasource: VictoriaMetrics
+            k8s-global:
+              gnetId: 15757
+              revision: 43
+              datasource: VictoriaMetrics
+            k8s-pods:
+              gnetId: 15760
+              revision: 36
+              datasource: VictoriaMetrics
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: monitoring
+  syncPolicy:
+    automated: {prune: true, selfHeal: true}
+    syncOptions: [CreateNamespace=true]

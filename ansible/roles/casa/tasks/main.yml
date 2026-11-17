@@ -235,6 +235,19 @@
     - { path: /etc/containers/systemd, mode: "0755" }
     - { path: /var/lib/homeassistant, mode: "0755" }
 
+# Metricas do no para o VictoriaMetrics do racknerd, que coleta pela tailnet (100.112.62.47:9100).
+# O nftables so aceita a 9100 vinda da LAN e do tailscale0.
+- name: node-exporter
+  ansible.builtin.apt:
+    name: prometheus-node-exporter
+    state: present
+
+- name: node-exporter running
+  ansible.builtin.service:
+    name: prometheus-node-exporter
+    state: started
+    enabled: true
+
 # O DNS da tailnet ficou so no Pi-hole do racknerd (DECISIONS.md, item 18). O Pi-hole que
 # rodava aqui sai com o container, os dados e a publicacao :8443 do tailscale serve.
 - name: Pi-hole stopped

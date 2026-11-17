@@ -12,3 +12,4 @@ resources:
   - apps/pihole.yaml
   - apps/tailscale.yaml
   - apps/homepage.yaml
+  - apps/monitoring.yaml

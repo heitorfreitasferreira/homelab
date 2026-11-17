@@ -1,0 +1,22 @@
+# Grafana e a interface do VictoriaMetrics so pela tailnet.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: grafana
+spec:
+  ingressClassName: tailscale
+  defaultBackend:
+    service: {name: grafana, port: {number: 80}}
+  tls:
+    - hosts: [grafana]
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: vmui
+spec:
+  ingressClassName: tailscale
+  defaultBackend:
+    service: {name: vmsingle, port: {number: 8428}}
+  tls:
+    - hosts: [metricas]

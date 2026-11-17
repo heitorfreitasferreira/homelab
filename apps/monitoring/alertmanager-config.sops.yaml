@@ -1,0 +1,22 @@
+# Configuracao do Alertmanager (tokens do Telegram e do Healthchecks.io), criptografada com SOPS.
+apiVersion: v1
+kind: Secret
+metadata:
+    name: alertmanager-config
+stringData:
+    alertmanager.yaml: ENC[AES256_GCM,data:NG50UPELRAKA6CqcefG/HgbQhmXVDrxtjqopr+G05J3rWVWsHFM5CcCFx4dFRem1lWad4+vjGIXF+yOERIJpJKIigLNOMGbF8Cv+lKgm5ssYthOLUjiICdRy,iv:LMQSyx5m0MSxUOAqU6BYwlIm5HshXXi3Ax75rNyD4q8=,tag:HK7Y1jgE5/LT5EBm/M77tA==,type:str]
+sops:
+    age:
+        - enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBkblZ1czBreVlMa0g1TTFk
+            alFkanozRTA5aUFtMkh6OVRQS3QySTU0c2owCmEyZnphUnUrWFhhbUJkK3dkRWpB
+            clZUQTZNT3B1L2V6bjZrOTduZzJEbzQKLS0tIHlBbVUvMi9xUmpCR2s3eW12bHBZ
+            MUsrZVM0RzdFQ05kSVVEd1k5c05rdEkKFaTTCsz7L4v59bS0wwdoCf/JiI0PkveZ
+            792PnjgzHK29Eh6P45QvmsorDItd/yvnSnc63pN/OG+64cOZNPNkew==
+            -----END AGE ENCRYPTED FILE-----
+          recipient: age1m27q9ve7grcseq47reuhmgyqsdndht5gjfjkvk33l0w05fdqeqjs6rzug2
+    encrypted_regex: ^(data|stringData)$
+    lastmodified: "2026-11-17T03:36:57Z"
+    mac: ENC[AES256_GCM,data:3a7p8i9AkizJWu6wc9EYwyKXBokFUcoP91YHsfauxQwkX9L47RsSuVtR7TdLV5T3ICTq58lgY9H6NRkemZcUC3InD6zbjphtsTTpAJSJh85pGKOG6Nkb5zR6thqhWhCGJcQIN+A0aZNq+DRpiPa9SkRwsLbvU2v9HU4iowAU29U=,iv:e8pl4izuCCHo4g7JLTkWoiKXo4/mNKk0ccSDtugbVyQ=,tag:8DVDmZz4q1LH8hYNOCIbUA==,type:str]
+    version: 3.13.3
