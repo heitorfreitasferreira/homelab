@@ -1,0 +1,30 @@
+[Unit]
+Description=Home Assistant Matter Hub (ponte Matter para a Alexa)
+After=network-online.target homeassistant.service
+Wants=network-online.target
+
+[Container]
+Image={{ casa_matterhub_image }}
+ContainerName=matterhub
+# Matter precisa de mDNS e UDP na LAN, inclusive IPv6 link-local.
+Network=host
+Environment=TZ={{ timezone }}
+Environment=HAMH_HOME_ASSISTANT_URL=http://127.0.0.1:8123/
+Environment=HAMH_LOG_LEVEL=info
+Environment=HAMH_HTTP_PORT={{ casa_matterhub_http_port }}
+Environment=HAMH_MDNS_NETWORK_INTERFACE={{ casa_lan_iface }}
+# Interface web sem senha: so via `tailscale serve` (proxy em 127.0.0.1), em
+# https://{{ casa_matterhub_host }}:{{ casa_matterhub_serve_port }}.
+Environment=HAMH_HTTP_IP_WHITELIST=127.0.0.1
+Environment=HAMH_HTTP_ALLOWED_HOSTS={{ casa_matterhub_host }}
+# Token de longa duracao do HA, criado fora do repositorio (DECISIONS.md, item 26).
+EnvironmentFile=/etc/matter-hub.env
+Volume=/var/lib/matterhub:/data:Z
+PodmanArgs=--memory={{ casa_matterhub_memory }}
+
+[Service]
+Restart=always
+TimeoutStartSec=600
+
+[Install]
+WantedBy=multi-user.target

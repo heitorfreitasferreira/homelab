@@ -234,6 +234,7 @@
   loop:
     - { path: /etc/containers/systemd, mode: "0755" }
     - { path: /var/lib/homeassistant, mode: "0755" }
+    - { path: /var/lib/matterhub, mode: "0700" }
 
 # Metricas do no para o VictoriaMetrics do racknerd, que coleta pela tailnet (100.112.62.47:9100).
 # O nftables so aceita a 9100 vinda da LAN e do tailscale0.
@@ -265,12 +266,6 @@
     - /etc/pihole
     - /var/lib/pihole
   notify: Reload systemd
-
-- name: Tailscale Serve without the Pi-hole panel
-  ansible.builtin.command: tailscale serve --https=8443 off
-  register: serve_off
-  changed_when: serve_off.rc == 0
-  failed_when: false
 
 # --- mDNS: o OAuth do Xiaomi Home volta para http://homeassistant.local:8123 -------------
 - name: Avahi
@@ -384,18 +379,40 @@
     state: started
   when: ha_http_check.stdout != 'ok'
 
+# Ponte Matter para a Alexa (DECISIONS.md, item 26). O token do HA fica em /etc/matter-hub.env,
+# criado a mao com `auth/long_lived_access_token`, fora do repositorio.
+- name: Matter Hub token present
+  ansible.builtin.stat:
+    path: /etc/matter-hub.env
+  register: matterhub_env
+
+- name: Matter Hub token must exist before the container
+  ansible.builtin.assert:
+    that:
+      - matterhub_env.stat.exists
+      - matterhub_env.stat.mode == '0600'
+    fail_msg: "Crie /etc/matter-hub.env (0600) com HAMH_HOME_ASSISTANT_ACCESS_TOKEN=..."
+
+- name: Matter Hub quadlet
+  ansible.builtin.template:
+    src: matterhub.container.j2
+    dest: /etc/containers/systemd/matterhub.container
+    mode: "0644"
+  notify: Restart matterhub
+
 - name: Containers running (quadlet units start from their own [Install])
   ansible.builtin.systemd_service:
     name: "{{ item }}"
     state: started
     daemon_reload: true
-  loop: [homeassistant.service]
+  loop: [homeassistant.service, matterhub.service]
 
-# Nome HTTPS da tailnet: https://casa.tail76c1c6.ts.net (HA).
+# Nomes HTTPS da tailnet: https://casa.tail76c1c6.ts.net (HA) e :8443 (Matter Hub).
 # O certificado e o DNS ficam por conta do Tailscale, e nada e exposto fora da tailnet.
 - name: Tailscale Serve publications
   ansible.builtin.command: >-
     tailscale serve --bg --https={{ item.port }} http://127.0.0.1:{{ item.upstream }}
   loop:
     - { port: 443, upstream: 8123 }
+    - { port: "{{ casa_matterhub_serve_port }}", upstream: "{{ casa_matterhub_http_port }}" }
   changed_when: false
