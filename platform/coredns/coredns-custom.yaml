@@ -1,0 +1,15 @@
+# O host roda o Tailscale com --accept-dns=false: o DNS externo do cluster sai pelo
+# resolv.conf do provedor e nao depende do Pi-hole, que roda dentro do proprio cluster.
+# Os nomes da tailnet (casa.tail76c1c6.ts.net, usado pelo homepage) vao para o MagicDNS.
+# O k3s importa /etc/coredns/custom/*.server deste ConfigMap.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: coredns-custom
+data:
+  tailnet.server: |
+    tail76c1c6.ts.net:53 {
+        errors
+        cache 30
+        forward . 100.100.100.100
+    }
