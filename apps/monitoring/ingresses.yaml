@@ -10,6 +10,18 @@ spec:
   tls:
     - hosts: [grafana]
 ---
+# O Service do chart e headless (StatefulSet), e o operador do Tailscale nao encaminha para ele.
+apiVersion: v1
+kind: Service
+metadata:
+  name: vmui
+spec:
+  selector:
+    app: server
+    app.kubernetes.io/instance: monitoring-vmsingle
+    app.kubernetes.io/name: victoria-metrics-single
+  ports: [{name: http, port: 8428, targetPort: 8428}]
+---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -17,6 +29,6 @@ metadata:
 spec:
   ingressClassName: tailscale
   defaultBackend:
-    service: {name: vmsingle, port: {number: 8428}}
+    service: {name: vmui, port: {number: 8428}}
   tls:
     - hosts: [metricas]
