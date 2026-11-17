@@ -4,6 +4,12 @@
         href: https://casa.tail76c1c6.ts.net
         description: automacao (tailnet)
         siteMonitor: https://casa.tail76c1c6.ts.net
+- Nuvem:
+    - Nextcloud:
+        icon: nextcloud.png
+        href: https://nuvem.htrlab.duckdns.org
+        description: fotos e arquivos (R2)
+        siteMonitor: http://nextcloud.nextcloud.svc/status.php
 - Admin:
     - Argo CD:
         icon: argo-cd.png

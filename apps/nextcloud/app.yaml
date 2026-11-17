@@ -18,8 +18,8 @@ data:
   10-apps.sh: |
     #!/bin/sh
     set -e
-    # occ roda como www-data para nao deixar arquivos de dono root no Nextcloud.
-    occ() { runuser -u www-data -- php /var/www/html/occ "$@"; }
+    # O entrypoint ja executa este hook como www-data, entao occ roda direto.
+    occ() { php /var/www/html/occ "$@"; }
     occ app:install memories || occ app:enable memories
     occ app:install previewgenerator || occ app:enable previewgenerator
     occ app:install photos || occ app:enable photos
