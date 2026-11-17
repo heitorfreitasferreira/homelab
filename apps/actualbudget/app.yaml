@@ -91,11 +91,15 @@ metadata:
   namespace: actualbudget
   annotations:
     cert-manager.io/cluster-issuer: letsencrypt
-    # Traefik so na tailnet: o ingress so e criado se o certificado existir.
-    # O DNS da tailnet (MagicDNS) resolve para o IP da VPS via Tailscale.
 spec:
   ingressClassName: traefik
   rules:
+    - host: financas.htrlab.duckdns.org
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend: {service: {name: actualbudget, port: {number: 5006}}}
     - host: financas.tail76c1c6.ts.net
       http:
         paths:
@@ -103,5 +107,5 @@ spec:
             pathType: Prefix
             backend: {service: {name: actualbudget, port: {number: 5006}}}
   tls:
-    - hosts: [financas.tail76c1c6.ts.net]
+    - hosts: [financas.htrlab.duckdns.org]
       secretName: actualbudget-tls
