@@ -112,7 +112,7 @@ spec:
           securityContext: {runAsUser: 33, runAsGroup: 33}
           resources:
             requests: {cpu: 10m, memory: 64Mi}
-            limits: {memory: 384Mi}
+            limits: {memory: 768Mi}
           volumeMounts:
             - {name: html, mountPath: /var/www/html}
       volumes:
