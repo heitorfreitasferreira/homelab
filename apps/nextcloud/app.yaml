@@ -55,6 +55,8 @@ spec:
             - {name: OVERWRITEPROTOCOL, value: https}
             - {name: TRUSTED_PROXIES, value: "10.42.0.0/16"}
             - {name: PHP_MEMORY_LIMIT, value: 512M}
+            # O padrao do imagem e 512M, e um video do Immich tem 723 MB.
+            - {name: PHP_UPLOAD_LIMIT, value: 4G}
             - {name: POSTGRES_HOST, value: nextcloud-db-rw.nextcloud.svc.cluster.local}
             - {name: POSTGRES_DB, value: app}
             - name: POSTGRES_USER
