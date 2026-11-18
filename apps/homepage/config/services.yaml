@@ -5,16 +5,16 @@
         description: automacao (tailnet)
         siteMonitor: https://casa.tail76c1c6.ts.net
 - Financas:
-    - Actual Budget:
-        icon: actualbudget.png
-        href: https://financas.tail76c1c6.ts.net
-        description: orcamento + Pluggy (tailnet)
-        siteMonitor: http://actualbudget.actualbudget.svc:5006/health
-    - Securo (teste):
-        icon: securo.png
+    - Securo:
+        icon: https://securo.htrlab.duckdns.org/favicon.ico
         href: https://securo.htrlab.duckdns.org
-        description: financas em teste
+        description: financas + Pluggy
         siteMonitor: https://securo.htrlab.duckdns.org/api/health
+    - Actual Budget:
+        icon: actual-budget.png
+        href: https://financas.tail76c1c6.ts.net
+        description: alternativa (tailnet)
+        siteMonitor: http://actualbudget.actualbudget.svc:5006/health
 - Nuvem:
     - Nextcloud:
         icon: nextcloud.png
