@@ -6,3 +6,15 @@ resources:
   - ingresses.yaml
 generators:
   - secret-generator.yaml
+configMapGenerator:
+  # O sidecar do Grafana le ConfigMaps com grafana_dashboard=1 no namespace monitoring.
+  - name: grafana-dashboards-homelab
+    files:
+      - dashboards/visao-geral.json
+      - dashboards/casa-hardware.json
+      - dashboards/tailscale.json
+      - dashboards/sondas-alertas.json
+    options:
+      labels:
+        grafana_dashboard: "1"
+      disableNameSuffixHash: true

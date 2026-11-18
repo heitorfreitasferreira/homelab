@@ -249,6 +249,14 @@
     state: started
     enabled: true
 
+# Timers do pacote Debian que escrevem metricas APT, SMART e NVMe no textfile collector.
+- name: node-exporter textfile timers
+  ansible.builtin.systemd_service:
+    name: "prometheus-node-exporter-{{ item }}.timer"
+    state: started
+    enabled: true
+  loop: [apt, smartmon, nvme]
+
 # O DNS da tailnet ficou so no Pi-hole do racknerd (DECISIONS.md, item 18). O Pi-hole que
 # rodava aqui sai com o container, os dados e a publicacao :8443 do tailscale serve.
 - name: Pi-hole stopped

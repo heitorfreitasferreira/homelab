@@ -1,0 +1,8 @@
+[Unit]
+Description=Coleta metricas do Tailscale para o node-exporter
+After=tailscaled.service
+Wants=tailscaled.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/tailscale-prometheus

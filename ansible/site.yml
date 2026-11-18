@@ -10,5 +10,6 @@
     - firewall
     - role: tailscale
       when: tailscale_enabled | bool
+      tags: [tailscale]
     - k3s
     - argocd

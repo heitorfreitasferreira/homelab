@@ -1,22 +1,21 @@
-# Configuracao do Alertmanager (tokens do Telegram e do Healthchecks.io), criptografada com SOPS.
 apiVersion: v1
 kind: Secret
 metadata:
     name: alertmanager-config
 stringData:
-    alertmanager.yaml: ENC[AES256_GCM,data:FMu3wnxa7m4VavhcSVfH9UqEjLGoXS41oWqCPWkjwwMgBh8iAZMqzaFCAHBGyIKtrmHkvU4McCk0Tf+XUWq526qJG8jnEi9rcCZdesQB2z4d8CJKJHVouahOKPNqHIpom01ZfeEfnMmQKFi9LRd5icRoMTFPDm7wAc/M9ICN+glWuK3Dnoqy5XhonxWSPKLHsBmEnE9Cal8xUEBrKBtj3erzBF0bVDBAneO4GdQOxXtF97a7DdGrwjzINfHfLmxU+sV6ktCLptXiEWF+l9sleZ3puIwxiMOLfngM2zgi8b6uuNj0sooIfXGj9qfUQTBAtrHDgSdQ/00byWs1Kjd+uAMIa8y9g4fwjdmTOCp43zVpk0ZRbnjXpTuVdPNHWf2rSpWBbb9twHbs5HUc29/OLPkaSnzF1YejzRJZbh8NQ2tgLH6kaopiAIkrYLmXEMd6izmVLXiuzZ+hWZTxgNFCUKX7Jde66hv/M+iAblnfTyg0DmmUclESwrQRRKJGDzG6sZokxjS/Pq/hdKjZ41g6G68p8slTBhheGakhjxcFUGtM0GRFVYiAKZNmgZqWu3t+GbUxkQxfnuQDJAxMYf1zcrpFJBrAHxYgXlG3K51alO50B3maC3VYTGoKV7lkVQhhImIIKuO2jAGSKbviw23SI47izDJTMAHy6HUranRGY7ddjCjQiCpNkhVWINyW4o5t7Ih4W3+rXXxujFKV4M44JruRDaKGoM+BAcH7AuuAj+FJEVQ/JVY0x1ScBq6pPNEwrwGodSyUUYSvyCgfp7GbAhKQtzNV5ts9OxA2ZmumGnDLohndxheryTgcck9Y0AYR010szIYE99nMtvGeKrX3i+qoOwIhn2oExto6daUad7hTOX6JwOgGPvsBVDF1HAuqZkiafzBmuKcQ+oXMHoEHz6c9m/mbaLJS2l+3jAVpW9fjSpGvsWldxOcJfm0f7L+KLcnZym7aAEDwmSJLq43lIzYrHkOLBFqSt978OAGdwlw01LJPFWwZqDX0wi9+dvjCRglLaVMr0qjdv4AyyDXjLhOgigY67lP7fpxkz5AZX4HwlYACmr60Q16nEgrAnVxzHeuyVSArneMJPx2kwv0AauLIb66FeT5JRtEjLxXPrh4Lio93TQ3rTIJo/FG8PvS4e0Pr88KsLXNazEyADOdjfFddOyU2jFulwBMCmClok0vPjL0=,iv:wzS2OlSw/O/qkdyh46CvKhsOBkVAtKB/jd45KykqI7w=,tag:j6CLG/sP7qS/NLiE0hI1Qg==,type:str]
+    alertmanager.yaml: ENC[AES256_GCM,data:YfHzb3v8GWm54w1F1w09VxkrQMEhKLbtj9MZzHK68hqLBIpocNl0mGqH+RY6VJszO5VSYGPFW7U+yzVEJ+ebkRky1qMe+gyC073A3xnCP7qpEECqsBeI1cnq1j1eV4HBBmIxRW3VOxah2l/Pxb62dHD+g01MO+HR3Pe5eGPaTu8Gppf+VZLFbJhpQ62/ftNxuuvThJcT5fd2WV9KWQvCrhWZP09nDejmBdZh3+DIlAIuX3KsCSn9jp7twMG+4Kx3ebHM+qJ+ITImGy7IytGE9EHcYmD6dWFV9fQszVOq0Pa9QfuydECO39DJzgxr1g1r/zLVYorlc1m1OBhFUODXGo7O9UF/lHiSjMIE8LQUZ1uNLEIdopiuSbAPNCNHTUAwhLcWL2gPhV4BNoRhrtZBxayus5gniMbEaW8t0MCx6KjGxZn/Snx7RXrqj+D4LQhx9LwJB19l2mVx2T1cncpECiiRLWkVU1y0QJVFkdazBLLIknzx78wh7FV//ZktWy3KmToSSKCOr7QTgvkF5zADJinQ1gT14gHvbCIxBC5sKpHJm4qLfg6m1daK/7yPU3q0bB4dybgBImtr92kT8l8l1f9kxRXVxlOoqTUvYqtCaXg2E4WfGfA/siLfEn8MRM1DdwOgjbfjdX5wUKH5weiM/GqVK182Qq0tctejkT2sI0ezSPgFtiIGBZ3tMXIbbxbaf/Up0VlV+iHti9o3T0pPv5iNr833ZG4PSJFHd8nAOohBdaJS+090BKYtiNpjug9t06I2UI3B3GpHGVF3MedK1Xae7JXuoOFv+bCig4rzqnCrMw7EPT5dNUSM5diEpJLyDvEC2wiHgNE6yOdCxpxujuicPy/hWAHpjAycakuXcYnmN60XeACJSWHY/Chq7N2Of9QnDc1Iuo01UDaRfu6xCm9zJdeH/KKHrKlBXMrQGMIgiuJ8Ja/hFaduhDywXc3vdtsALygxlxe4q4ILLd5ek9WKit/ENS1Fd0CgIpKOrfELd+5TpCXfSbxdGyGpUdqgeXXN972b361uS6Sel+cwRETZ9SeF5KC8loe0GKbfVou5JIeIGoxV9BLMBC/ryA9HIgq5OgGRl9qKwraYKdL/rSf3GtYlozl2aaK746/J6NbC5mr5MFYQnlnVfLsupUuN2VRdVDXQCxFiM3f2LBLsHDrF/jKBvRrLZeHsTWexo3bQyY7/xVWHcFw66dVdmM1KOTml/o5iPvGOMCK20E4Stpim,iv:YqcfSimgrILT1CwohZKPSOC7HkrnfM9zBuH/1r6ar24=,tag:k/0YJs70G/PyHjK46cv6ag==,type:str]
 sops:
     age:
         - enc: |
             -----BEGIN AGE ENCRYPTED FILE-----
-            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSAyeUZMQU1VSU1FdVVDLzBP
-            dDRyWm8yZ3VwOXFKMFB0dWxsYWVUM1VvSlE4Cm5uOUVMNFpUSzRSTlA1TWp1aUdO
-            THozcDIyTEllT1ZKdCtuR0pvZUVkM2sKLS0tIFJYWEQyaC9ISDltVnJpak1ra3pt
-            UHM2V29EblU4R1lCWEpZMHpHeDBnaWcK2zN2E214EuZFrFiYl2wmwu0rqOTduUWu
-            1sZKOFUzDX8LMOuEylbFOney3ddBjYaMRTjDSXJ9Ix0qLO3t1a519A==
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSAvVVhPSnpEQUhyT1RWeDdF
+            UTdaVW9CUDZqM043U1JwQitwWCsvTmVCZjFJCjBVZzA0cHRvbGFsbkVqQkdMY1hV
+            M3NyQVEvYW5vOVVlVWNHNlVQY1F2STQKLS0tIHY0ZXZUR0tBRzJNVnp3WG5oQVlh
+            UjVxRDNLZWdvbWJqOVBwTng1V0JsUW8KMnd3OtJor/01Cldq9WKi3CuiKgzgKhUD
+            GftXfVlxeD392ivicPJOCp7rhyf7Bml7oQwo7DBTSv8aRI5UyAcaQA==
             -----END AGE ENCRYPTED FILE-----
           recipient: age1m27q9ve7grcseq47reuhmgyqsdndht5gjfjkvk33l0w05fdqeqjs6rzug2
     encrypted_regex: ^(data|stringData)$
-    lastmodified: "2026-11-17T12:19:26Z"
-    mac: ENC[AES256_GCM,data:OB+TK7pU4qDT5d7hDOMbPhi5p61dMhn5vuh7oPqeEilGH1t0kf4idaPiNJ7nX1nO3S89s2CIkF3EKz9Q/diqA/UvWUDYNdhFC6vo231tnT5fASSngPIM7Tz4kvT57QnSxtI9zL1bz1RA+QhSlonpXEoxgYYv+wJX5alFYxBMrG0=,iv:SOM3liO0ABIsoHgKKG1H4rAvqelfkOozA7Xce/gIup8=,tag:PG6+aGJH8OeHzbTFKlTOug==,type:str]
+    lastmodified: "2026-11-18T15:47:47Z"
+    mac: ENC[AES256_GCM,data:0cOLqcFAna0wgPMDIXTsgVu23nvmNMcTG0Y4IBNLJsGl0kc+Yts2Brbyv1eWqswjaIf2gfiYxcwL/J/KX9QqdH2iUDFlgABnGl2tsIEaqh750KV87U7fjPBCNeVClkx66iMk1wc3d2sNKkiYMZwa8vZ+FMnVoDMg8NXSKYBEUUo=,iv:p9TX/7nkW6ihSV4TwqUwKlExdgR1SHB2FxpOeOo6LoQ=,tag:NhRnPGWpIbGZeOxSAGevKg==,type:str]
     version: 3.13.3

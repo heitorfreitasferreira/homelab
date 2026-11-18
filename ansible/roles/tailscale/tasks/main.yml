@@ -12,7 +12,9 @@
 
 - name: Tailscale installed
   ansible.builtin.apt:
-    name: tailscale
+    name:
+      - tailscale
+      - jq
     state: present
     update_cache: true
 
@@ -35,4 +37,41 @@
 # ficaria sem DNS sempre que o pod do Pi-hole reiniciasse. Nomes *.ts.net: platform/coredns.
 - name: Tailscale without tailnet DNS
   ansible.builtin.command: tailscale set --accept-dns=false
+  changed_when: false
+
+# Metricas do Tailscale no formato Prometheus. O node-exporter le o arquivo pelo
+# textfile collector: no casa, o pacote Debian ja usa /var/lib/prometheus/node-exporter.
+- name: Tailscale metrics directory
+  ansible.builtin.file:
+    path: /var/lib/prometheus/node-exporter
+    state: directory
+    mode: "0755"
+
+- name: Tailscale metrics script
+  ansible.builtin.copy:
+    src: tailscale-prometheus
+    dest: /usr/local/sbin/tailscale-prometheus
+    mode: "0755"
+
+- name: Tailscale metrics service
+  ansible.builtin.copy:
+    src: tailscale-prometheus.service
+    dest: /etc/systemd/system/tailscale-prometheus.service
+    mode: "0644"
+
+- name: Tailscale metrics timer
+  ansible.builtin.copy:
+    src: tailscale-prometheus.timer
+    dest: /etc/systemd/system/tailscale-prometheus.timer
+    mode: "0644"
+
+- name: Tailscale metrics timer running
+  ansible.builtin.systemd_service:
+    name: tailscale-prometheus.timer
+    state: started
+    enabled: true
+    daemon_reload: true
+
+- name: Tailscale metrics now
+  ansible.builtin.command: /usr/local/sbin/tailscale-prometheus
   changed_when: false

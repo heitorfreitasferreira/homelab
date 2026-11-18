@@ -1,0 +1,10 @@
+[Unit]
+Description=Atualiza as metricas do Tailscale a cada 30 s
+
+[Timer]
+OnBootSec=30s
+OnUnitActiveSec=30s
+AccuracySec=5s
+
+[Install]
+WantedBy=timers.target
