@@ -1,0 +1,63 @@
+# Backup diario do Securo: dump do Postgres e anexos para o R2.
+# Dump com pg_dump (consistente) e copia dos anexos por data, retencao 31 dias.
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: securo-backup
+  namespace: securo
+spec:
+  schedule: "40 3 * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      template:
+        spec:
+          restartPolicy: OnFailure
+          initContainers:
+            - name: dump
+              image: pgvector/pgvector:pg16
+              env:
+                - {name: PGPASSWORD, value: postgres}
+              command:
+                - sh
+                - -c
+                - pg_dump -Fc -h securo-postgresql -U postgres -d securo -f "/backup/securo-$(date +%F).dump"
+              resources:
+                requests: {cpu: 50m, memory: 64Mi}
+                limits: {memory: 256Mi}
+              volumeMounts:
+                - {name: backup, mountPath: /backup}
+          containers:
+            - name: rclone
+              image: rclone/rclone:1.75.2
+              env:
+                - {name: RCLONE_CONFIG_DST_TYPE, value: s3}
+                - {name: RCLONE_CONFIG_DST_PROVIDER, value: Cloudflare}
+                - {name: RCLONE_CONFIG_DST_REGION, value: auto}
+                - {name: RCLONE_CONFIG_DST_ENDPOINT, value: "https://8ef031572e6694f614275029be68313a.r2.cloudflarestorage.com"}
+                - name: RCLONE_CONFIG_DST_ACCESS_KEY_ID
+                  valueFrom: {secretKeyRef: {name: r2-backups, key: ACCESS_KEY_ID}}
+                - name: RCLONE_CONFIG_DST_SECRET_ACCESS_KEY
+                  valueFrom: {secretKeyRef: {name: r2-backups, key: ACCESS_SECRET_KEY}}
+              command: ["/bin/sh", "-c"]
+              args:
+                - |
+                  set -eu
+                  rclone copy /backup dst:htr-backups/securo/postgres --checksum --stats 60s --stats-one-line --log-level INFO
+                  rclone delete dst:htr-backups/securo/postgres --min-age 31d
+                  rclone copy /attachments "dst:htr-backups/securo/attachments/$(date +%F)" --checksum --stats 60s --stats-one-line --log-level INFO
+                  rclone delete dst:htr-backups/securo/attachments --min-age 31d
+              resources:
+                requests: {cpu: 50m, memory: 64Mi}
+                limits: {memory: 256Mi}
+              volumeMounts:
+                - {name: backup, mountPath: /backup, readOnly: true}
+                - {name: attachments, mountPath: /attachments, readOnly: true}
+          volumes:
+            - name: backup
+              emptyDir: {}
+            - name: attachments
+              persistentVolumeClaim: {claimName: securo-attachments, readOnly: true}
