@@ -27,7 +27,7 @@ Fonte de verdade das escolhas do homelab pessoal. Cada decisao com o porque e o 
 10. Acesso remoto: Tailscale substitui o WireGuard manual.
 11. Runs do TCC geradas na VM: branch `backup/vm-runs-20261112` no repo `tcc` (commit `881af6e`).
 
-12. Postgres do Nextcloud (a implantar): CNPG `nextcloud-db` com backup barman em `r2:htr-backups/cnpg/nextcloud-db` (WAL continuo + base diaria 04:00, retencao 30 dias). Sem o banco, os arquivos no bucket perdem o nome. O backup antigo do Ente (`cnpg/ente-db`, 1367 objetos, 47 MB) ficou no bucket para apagar depois.
+12. Postgres do Nextcloud: CNPG `nextcloud-db` com backup barman em `r2:htr-backups/cnpg/nextcloud-db` (WAL continuo + base diaria 04:00, retencao 30 dias). Sem o banco, os arquivos no bucket perdem o nome. Os 53 GB do Immich foram importados por rclone (S3 para WebDAV) em 2026-11-18 e conferidos com `rclone check --size-only`: 0 diferencas nas duas pastas. O backup antigo do Ente (`cnpg/ente-db`, 1367 objetos, 47 MB) ficou no bucket para apagar depois.
 13. Financas: Actual Budget 26.11 com sync nativo de Pluggy, so na tailnet (`financas.tail76c1c6.ts.net`, Ingress Tailscale; o Ingress publico `financas.htrlab.duckdns.org` existe so para o certificado). Guarda tudo em SQLite no PVC `/data`, sem Postgres. As credenciais do Pluggy sao gravadas pela interface do Actual (Settings > Bank Sync), nao por env. Backup diario do `/data` as 03:30 para `r2:htr-backups/actualbudget/snapshots/<data>`, retencao de 31 dias. Firefly III removido em 2026-11-17, sem uso e sem dump.
 14. n8n: removido em 2026-11-17, sem uso. A instalacao nova tinha 0 workflows e 0 credenciais.
 15. Pi-hole: `hostNetwork` com DNS preso em `tailscale0` (100.104.129.86). Web em `:8053`, so pela tailnet. Heimdall descartado.
@@ -66,9 +66,9 @@ Fonte de verdade das escolhas do homelab pessoal. Cada decisao com o porque e o 
 - Ligar o notebook de longe: um segundo aparelho sempre ligado na LAN (Pi Zero 2 W) e um nobreak para o notebook e a ONT.
 
 - Copia off-site no AWS Glacier Deep Archive: depende da conta AWS pessoal.
-- Importar os originais do Immich (53 GB, `r2:htr-migracao`) na conta do dono no Nextcloud, por WebDAV, e conferir a contagem antes de revogar o token `htr-migracao-rw`. (job `import-immich` rodando)
+- Revogar o token `htr-migracao-rw` e apagar o bucket `htr-migracao` depois de o dono abrir as fotos no Nextcloud. A copia ja foi conferida (0 diferencas).
 - Revogar o token R2 `htr-ente-rw` (vazou em log) e apagar o bucket `htr-ente` (vazio). FEITO.
 - Apagar o backup barman do Ente em `r2:htr-backups/cnpg/ente-db` (1367 objetos, 47 MB).
-- Actual Budget com Pluggy: implantado em `financas.tail76c1c6.ts.net` (certificado via `financas.htrlab.duckdns.org`). Credenciais Pluggy pendentes em `pluggy-secrets.sops.yaml`.
+- Conectar o Itau no Actual: autorizar pelo Meu Pluggy, copiar o Item ID e gravar Client ID, Client Secret e Item ID em Settings > Bank Sync. As credenciais ficam no SQLite do servidor, nao no git.
 
 Estado da VM antes do reinstall: `docs/inventario-vm-atual.md`.
