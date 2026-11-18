@@ -56,6 +56,8 @@ Fonte de verdade das escolhas do homelab pessoal. Cada decisao com o porque e o 
 
 28. MCPs do homelab no OpenCode: Kubernetes (`kubernetes-mcp-server`, read-only, `Secret` negado), Argo CD (`argocd-mcp`, conta `mcp` com `apiKey` e `role:readonly`), Grafana (`mcp-grafana`, service account `opencode-mcp` Viewer e `--disable-write`), Tailscale (`tailscale-mcp`, somente o no local, read-only) e Home Assistant (MCP Server com device control e read-only). Os tokens ficam em `~/.config/opencode-secrets` (0600), fora do git. O template do Argo CD cria a conta `mcp` e o RBAC. O Tailscale admin e os apps Pi-hole, Nextcloud, Actual e Cloudflare ficam para depois, quando houver credencial.
 
+29. Jarvis no racknerd: OpenCode 2.3.2 em systemd (`opencode.service`) no repo `/home/htr/homelab`, exposto so na tailnet em `https://racknerd.tail76c1c6.ts.net` (tailscale serve 443 para 127.0.0.1:49374), com senha em `~/.config/opencode-secrets/opencode-vps-password` no notebook. As credenciais do `opencode-go` e dos MCPs foram para a VPS por `opencode auth export/import`. MCPs de IaC ficam read-only (Kubernetes, Argo CD, Grafana), com escrita para Home Assistant e Pi-hole. O Tailscale local fica read-only ate existir um OAuth client com escopo de escrita. O `chrome-devtools` fica so no notebook. Tokens em `~/.config/opencode-secrets` (0600), fora do git. Nextcloud, Actual e Cloudflare ficam para depois.
+
 ## Em aberto
 
 - Tomada do ar no local: trocar por Sonoff/Tasmota ou tomada Zigbee com coordenador, ou manter na nuvem Tuya (item 21).
