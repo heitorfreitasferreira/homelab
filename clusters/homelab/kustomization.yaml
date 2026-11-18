@@ -12,3 +12,4 @@ resources:
   - apps/monitoring.yaml
   - apps/nextcloud.yaml
   - apps/actualbudget.yaml
+  - apps/securo.yaml
