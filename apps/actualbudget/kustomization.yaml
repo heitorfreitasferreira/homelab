@@ -3,7 +3,7 @@ kind: Kustomization
 namespace: actualbudget
 resources:
   - namespace.yaml
-  - database.yaml
   - app.yaml
+  - backup.yaml
 generators:
   - secret-generator.yaml

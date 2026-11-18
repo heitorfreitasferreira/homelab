@@ -1,6 +1,7 @@
-# Actual Budget com Pluggy, apenas na tailnet (financas.tail76c1c6.ts.net).
-# Imagem: actualbudget/actual-server (Node.js + SQLite/Postgres).
-# Pluggy roda como sidecar ou servico separado para sincronizacao bancaria.
+# Actual Budget 26.11 (imagem edge-alpine pinada por digest).
+# Guarda tudo em SQLite no PVC /data. Nao usa Postgres.
+# Credenciais do Pluggy sao gravadas pelo proprio Actual, pela interface,
+# em Settings > Bank Sync. Nao vem de env.
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
@@ -28,49 +29,26 @@ spec:
         fsGroup: 1000
         runAsUser: 1000
         runAsGroup: 1000
-      initContainers:
-        - name: wait-for-db
-          image: busybox:1.37
-          command: ["sh", "-c", "until nc -z -w 2 actualbudget-db-rw 5432; do echo waiting for actualbudget-db; sleep 3; done"]
       containers:
         - name: actualbudget
           image: actualbudget/actual-server:edge-alpine@sha256:e7d429e8e6c95606e0b6c4c8e01d3fd5a08ea0f36964f0310210f6165510bbb1
           env:
             - {name: NODE_ENV, value: production}
             - {name: PORT, value: "5006"}
-            - {name: PGHOST, value: actualbudget-db-rw.actualbudget.svc.cluster.local}
-            - {name: PGPORT, value: "5432"}
-            - {name: PGDATABASE, value: app}
-            - name: PGUSER
-              valueFrom: {secretKeyRef: {name: actualbudget-db-app, key: username}}
-            - name: PGPASSWORD
-              valueFrom: {secretKeyRef: {name: actualbudget-db-app, key: password}}
-            - name: SESSION_SECRET
-              valueFrom: {secretKeyRef: {name: actualbudget-secrets, key: SESSION_SECRET}}
-            - name: ENCRYPTION_KEY
-              valueFrom: {secretKeyRef: {name: actualbudget-secrets, key: ENCRYPTION_KEY}}
-            - name: SYNC_SECRET
-              valueFrom: {secretKeyRef: {name: actualbudget-secrets, key: SYNC_SECRET}}
           ports: [{containerPort: 5006}]
           readinessProbe:
-            httpGet:
-              path: /health
-              port: 5006
-            initialDelaySeconds: 30
+            httpGet: {path: /health, port: 5006}
+            initialDelaySeconds: 15
             periodSeconds: 10
           livenessProbe:
-            httpGet:
-              path: /health
-              port: 5006
-            initialDelaySeconds: 60
+            httpGet: {path: /health, port: 5006}
+            initialDelaySeconds: 45
             periodSeconds: 30
           resources:
             requests: {cpu: 50m, memory: 128Mi}
             limits: {memory: 512Mi}
           volumeMounts:
             - {name: data, mountPath: /data}
-        # Pluggy sync worker (roda periodicamente via cron interno ou job separado).
-        # Aqui so expomos a API do Pluggy se necessario; a sincronizacao e via job.
       volumes:
         - name: data
           persistentVolumeClaim: {claimName: actualbudget-data}
@@ -84,6 +62,7 @@ spec:
   selector: {app: actualbudget}
   ports: [{port: 5006, targetPort: 5006}]
 ---
+# Ingress publico so para o certificado Let's Encrypt (HTTP-01).
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -110,8 +89,6 @@ kind: Ingress
 metadata:
   name: actualbudget-tailscale
   namespace: actualbudget
-  annotations:
-    argocd.argoproj.io/sync-wave: "20"
 spec:
   ingressClassName: tailscale
   defaultBackend:

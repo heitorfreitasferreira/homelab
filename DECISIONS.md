@@ -28,7 +28,7 @@ Fonte de verdade das escolhas do homelab pessoal. Cada decisao com o porque e o 
 11. Runs do TCC geradas na VM: branch `backup/vm-runs-20261112` no repo `tcc` (commit `881af6e`).
 
 12. Postgres do Nextcloud (a implantar): CNPG `nextcloud-db` com backup barman em `r2:htr-backups/cnpg/nextcloud-db` (WAL continuo + base diaria 04:00, retencao 30 dias). Sem o banco, os arquivos no bucket perdem o nome. O backup antigo do Ente (`cnpg/ente-db`, 1367 objetos, 47 MB) ficou no bucket para apagar depois.
-13. Firefly III: removido em 2026-11-17, sem uso e sem dump. Substituto aprovado: Actual Budget com Pluggy, so na tailnet (ainda nao criado).
+13. Financas: Actual Budget 26.11 com sync nativo de Pluggy, so na tailnet (`financas.tail76c1c6.ts.net`, Ingress Tailscale; o Ingress publico `financas.htrlab.duckdns.org` existe so para o certificado). Guarda tudo em SQLite no PVC `/data`, sem Postgres. As credenciais do Pluggy sao gravadas pela interface do Actual (Settings > Bank Sync), nao por env. Backup diario do `/data` as 03:30 para `r2:htr-backups/actualbudget/snapshots/<data>`, retencao de 31 dias. Firefly III removido em 2026-11-17, sem uso e sem dump.
 14. n8n: removido em 2026-11-17, sem uso. A instalacao nova tinha 0 workflows e 0 credenciais.
 15. Pi-hole: `hostNetwork` com DNS preso em `tailscale0` (100.104.129.86). Web em `:8053`, so pela tailnet. Heimdall descartado.
 16. Script do BBB: removido em 2026-11-13, sem uso. O script esta no historico do git (`apps/jobs/notificar_do_bbb.py`).

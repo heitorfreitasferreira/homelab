@@ -1,0 +1,42 @@
+# Backup diario do /data (SQLite do Actual) para o R2.
+# Copia inteira por dia, sem apagar nada antes de 31 dias.
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: actualbudget-backup
+  namespace: actualbudget
+spec:
+  schedule: "30 3 * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      template:
+        spec:
+          restartPolicy: OnFailure
+          containers:
+            - name: rclone
+              image: rclone/rclone:1.75.2
+              env:
+                - name: R2_ACCESS_KEY_ID
+                  valueFrom: {secretKeyRef: {name: r2-backups, key: ACCESS_KEY_ID}}
+                - name: R2_SECRET_ACCESS_KEY
+                  valueFrom: {secretKeyRef: {name: r2-backups, key: ACCESS_SECRET_KEY}}
+                - {name: R2_ENDPOINT, value: "https://8ef031572e6694f614275029be68313a.r2.cloudflarestorage.com"}
+              command: ["/bin/sh", "-c"]
+              args:
+                - |
+                  set -eu
+                  DST=":s3,provider=Cloudflare,access_key_id=$R2_ACCESS_KEY_ID,secret_access_key=$R2_SECRET_ACCESS_KEY,endpoint=$R2_ENDPOINT,region=auto:htr-backups/actualbudget/snapshots/$(date +%F)"
+                  rclone copy /data "$DST" --checksum --stats 60s --stats-one-line --log-level INFO
+                  rclone delete :s3,provider=Cloudflare,access_key_id=$R2_ACCESS_KEY_ID,secret_access_key=$R2_SECRET_ACCESS_KEY,endpoint=$R2_ENDPOINT,region=auto:htr-backups/actualbudget/snapshots --min-age 31d
+              resources:
+                requests: {cpu: 50m, memory: 64Mi}
+                limits: {memory: 256Mi}
+              volumeMounts:
+                - {name: data, mountPath: /data, readOnly: true}
+          volumes:
+            - name: data
+              persistentVolumeClaim: {claimName: actualbudget-data, readOnly: true}
