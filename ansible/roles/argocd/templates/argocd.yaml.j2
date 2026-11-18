@@ -26,6 +26,11 @@ spec:
       cm:
         # KSOPS runs as a kustomize exec plugin to decrypt *.sops.yaml with the age key.
         kustomize.buildOptions: --enable-alpha-plugins --enable-exec --enable-helm
+        # Conta somente para o MCP do Argo CD gerar o token de leitura.
+        accounts.mcp: apiKey
+      rbac:
+        policy.csv: |
+          g, mcp, role:readonly
     controller:
       resources:
         requests: {cpu: 100m, memory: 256Mi}
