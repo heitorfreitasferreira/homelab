@@ -52,6 +52,9 @@ spec:
             # Caches com 40% do limite do pod. Com allowedBytes=256MiB e limite de 384Mi,
             # sobrava pouco para o resto do processo e o pod morria por OOM na subida.
             memory.allowedPercent: "40"
+            # O scrape.yml vem de ConfigMap montado. Sem isso o vmsingle so le na subida
+            # e continua raspando alvos que ja sairam do repo ate o pod reiniciar.
+            promscrape.configCheckInterval: 1m
           scrape:
             enabled: true
             config:
@@ -404,6 +407,14 @@ spec:
     helm:
       valuesObject:
         fullnameOverride: grafana
+        # O init roda como root com apenas CAP_CHOWN. Como /var/lib/grafana/csv,
+        # pdf e png ficam 0700 do uid 472, root sem DAC_OVERRIDE nao consegue
+        # atravessar os diretorios e o chown -R falha (ExitCode 1, CrashLoopBackOff).
+        initChownData:
+          securityContext:
+            capabilities:
+              add: [CHOWN, DAC_OVERRIDE]
+              drop: [ALL]
         resources:
           requests: {cpu: 20m, memory: 96Mi}
           limits: {memory: 256Mi}
