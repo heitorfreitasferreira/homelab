@@ -10,6 +10,11 @@
         href: https://financas.tail76c1c6.ts.net
         description: orcamento + Pluggy (tailnet)
         siteMonitor: http://actualbudget.actualbudget.svc:5006/health
+    - Securo (teste):
+        icon: securo.png
+        href: https://securo.htrlab.duckdns.org
+        description: financas em teste
+        siteMonitor: https://securo.htrlab.duckdns.org/api/health
 - Nuvem:
     - Nextcloud:
         icon: nextcloud.png

@@ -70,5 +70,6 @@ Fonte de verdade das escolhas do homelab pessoal. Cada decisao com o porque e o 
 - Revogar o token R2 `htr-ente-rw` (vazou em log) e apagar o bucket `htr-ente` (vazio). FEITO.
 - Apagar o backup barman do Ente em `r2:htr-backups/cnpg/ente-db` (1367 objetos, 47 MB).
 - Conectar o Itau no Actual: autorizar pelo Meu Pluggy, copiar o Item ID e gravar Client ID, Client Secret e Item ID em Settings > Bank Sync. As credenciais ficam no SQLite do servidor, nao no git.
+- Securo em teste em `securo.htrlab.duckdns.org` (chart oficial v0.20.0, Postgres/Redis/anexos em local-path, sem S3). Se o teste passar, decide entre Securo e Actual.
 
 Estado da VM antes do reinstall: `docs/inventario-vm-atual.md`.
