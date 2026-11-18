@@ -10,11 +10,6 @@
         href: https://securo.htrlab.duckdns.org
         description: financas + Pluggy
         siteMonitor: https://securo.htrlab.duckdns.org/api/health
-    - Actual Budget:
-        icon: actual-budget.png
-        href: https://financas.tail76c1c6.ts.net
-        description: alternativa (tailnet)
-        siteMonitor: http://actualbudget.actualbudget.svc:5006/health
 - Nuvem:
     - Nextcloud:
         icon: nextcloud.png
@@ -48,3 +43,32 @@
         icon: tailscale.png
         href: https://login.tailscale.com/admin/machines
         description: maquinas e DNS da tailnet
+- Terceiros:
+    - Cloudflare:
+        icon: cloudflare.png
+        href: https://dash.cloudflare.com/
+        description: DNS e R2
+    - Pluggy:
+        icon: https://pluggy.ai/logo.png
+        href: https://dashboard.pluggy.ai/
+        description: Open Finance
+    - Meu Pluggy:
+        icon: mdi-bank-transfer
+        href: https://meu.pluggy.ai/
+        description: conexoes bancarias
+    - GitHub:
+        icon: github.png
+        href: https://github.com/heitorfreitasferreira/homelab
+        description: repositorio do homelab
+    - Healthchecks:
+        icon: healthchecks.png
+        href: https://healthchecks.io/
+        description: vigia externo
+    - DuckDNS:
+        icon: duckdns.png
+        href: https://www.duckdns.org/
+        description: dominio htrlab
+    - Telegram:
+        icon: telegram.png
+        href: https://web.telegram.org/
+        description: alertas

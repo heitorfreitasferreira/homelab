@@ -11,6 +11,5 @@ resources:
   - apps/homepage.yaml
   - apps/monitoring.yaml
   - apps/nextcloud.yaml
-  - apps/actualbudget.yaml
   - apps/securo.yaml
   - apps/securo-backup.yaml
