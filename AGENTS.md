@@ -30,8 +30,9 @@ Este repositorio declara o homelab pessoal. A fonte de verdade das escolhas e
   `*.sops.yaml` sao cifrados e nao devem ser descriptografados.
 - Nao execute `kubectl`, `helm`, `argocd`, `sops`, `age`, `ansible-playbook`,
   `systemctl`, `git push`, `curl`, `ssh` ou `tailscale` pelo shell. Use os MCPs
-  read-only para consultar. Mudanca de infraestrutura vai por commit no repo e
-  pelo Argo CD.
+  read-only para consultar. Rotina de deploy, sync, restart e logs passa pelo
+  `/usr/local/sbin/hermes-ops`, documentado em `docs/operacao.md`. Mudanca de
+  infraestrutura vai por commit no repo e pelo Argo CD.
 - Nao altere `DECISIONS.md` sem pedir. Mudanca de infraestrutura: mostre o
   diff, explique o efeito e espere aprovacao.
 - Nao exponha nada na internet. O acesso e pela tailnet. A VPS so tem SSH
@@ -135,10 +136,16 @@ Use o MCP `anytype`. Nao use os spaces `7bef7m` (Homelab do bot) nem `723ija`.
 
 ## Operacao
 
+- Rotina: `hermes-ops status`, `hermes-ops sync <app>`,
+  `hermes-ops logs <ns> <pod>`, `hermes-ops restart <ns> <deploy>`,
+  `hermes-ops publish "msg"` e `hermes-ops revert <sha>`. O runbook completo
+  esta em `docs/operacao.md`.
+- Mudanca pesada de infra, banco, storage ou DNS publico fica para o OpenCode no
+  notebook, com janela e rollback explicito.
 - Logs do OpenCode: `journalctl -u opencode -n 100 --no-pager`.
 - Logs do Hermes: `journalctl -u hermes-gateway -n 100 --no-pager` e
   `~/.hermes/logs/gateway.log`.
 - Estado do Hermes: `hermes gateway status`, `hermes doctor`.
 - Estado do Anytype: `systemctl --user status anytype`.
 - Antes de reiniciar algo, avise e espere aprovacao. O gateway do Hermes nao
-  reinicia a si mesmo.
+  reinicia a si mesmo. Para apps no cluster, prefira `hermes-ops restart`.
