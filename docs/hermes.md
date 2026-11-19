@@ -6,6 +6,8 @@ Assistente pessoal do homelab. Roda na VPS, so pela tailnet e pelo Telegram.
 
 - `hermes-gateway.service` (systemd de sistema, usuario `htr`): Hermes Agent
   v0.23.2, modelo `opencode-go/deepseek-v4.1-flash`, cwd `/home/htr/homelab`.
+- `hermes-dashboard.service` (systemd de sistema, usuario `htr`): dashboard web
+  em `127.0.0.1:9119`, publicado pelo Tailscale serve em `:8443`.
 - `anytype.service` (systemd de usuario de `htr`, linger ligado): anytype-cli
   v0.5.4, API JSON em `127.0.0.1:31012`.
 - MCPs do Hermes: Kubernetes, Argo CD, Grafana, Tailscale, Pi-hole, Home
@@ -32,6 +34,23 @@ Assistente pessoal do homelab. Roda na VPS, so pela tailnet e pelo Telegram.
 - Modo polling, sem webhook.
 - O Alertmanager e o HA so enviam mensagens, nao fazem polling, entao nao
   disputam o `getUpdates`.
+
+## Dashboard
+
+- URL: `https://racknerd.tail76c1c6.ts.net:8443`, so na tailnet.
+- Autenticacao por usuario e senha. Usuario `heitor`, senha em
+  `~/.config/opencode-secrets/hermes-dashboard.txt` no notebook.
+- O dashboard escuta em `127.0.0.1:9119` e o Tailscale serve publica em 8443.
+  443 continua com o OpenCode.
+- `dashboard.public_url` esta em `https://racknerd.tail76c1c6.ts.net:8443`. O
+  hostname publico liga o gate de autenticacao mesmo com bind local.
+- As variaveis `HERMES_DASHBOARD_BASIC_AUTH_USERNAME`,
+  `HERMES_DASHBOARD_BASIC_AUTH_PASSWORD` e
+  `HERMES_DASHBOARD_BASIC_AUTH_SECRET` ficam no `~/.hermes/.env`.
+- Paginas: Chat, Sessoes, Arquivos, Modelos, Logs, Cron, Skills, Plugins, MCP,
+  Canais, Webhooks, Pairing, Perfis, Config, Keys e System.
+- O dashboard custa cerca de 320 MB. Ele duplica parte do runtime do gateway,
+  entao a VPS fica com pouca memoria livre ate o upgrade.
 
 ## Contexto
 
@@ -94,6 +113,8 @@ hermes doctor
 ```
 
 - Atualizar Hermes: `hermes update` e `sudo systemctl restart hermes-gateway`.
+- Dashboard: `sudo systemctl status hermes-dashboard` e
+  `sudo journalctl -u hermes-dashboard -f`.
 - Atualizar Anytype: `anytype update` e `systemctl --user restart anytype`.
 - Logs do gateway em `~/.hermes/logs/gateway.log`.
 - Sessoes e memoria em `~/.hermes` (2,8 GB). Anytype em `~/.config/anytype`
@@ -102,9 +123,12 @@ hermes doctor
 ## Recursos
 
 - Gateway: cerca de 150 MB em regime, com pico de 600 MB ao carregar os MCPs.
+- Dashboard: cerca de 320 MB.
 - Anytype: cerca de 30 MB.
-- A VPS fica com cerca de 700 a 800 MB disponiveis e 8 GB de swap. Os MCPs
-  stdio usam `lazy` e `idle_timeout_seconds: 600`.
+- Sem o dashboard, a VPS ficava com cerca de 700 a 800 MB disponiveis. Com ele,
+  fica com cerca de 400 a 500 MB e 8 GB de swap. O dashboard mostra um aviso de
+  memoria elevada nesse estado. Os MCPs stdio usam `lazy` e
+  `idle_timeout_seconds: 600`.
 
 ## Pendencias
 
