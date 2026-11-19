@@ -38,7 +38,10 @@ spec:
           command:
             - sh
             - -c
-            - chown -R 1000:1000 /data
+            - |
+              chown -R 1000:1000 /data
+              mkdir -p /data/hf/hub
+              chown -R 1000:1000 /data/hf
           securityContext:
             runAsUser: 0
           volumeMounts:
@@ -50,6 +53,8 @@ spec:
           env:
             - name: HF_HOME
               value: /data/hf
+            - name: HF_HUB_CACHE
+              value: /data/hf/hub
             - name: ENABLE_UI
               value: "false"
             - name: LOG_LEVEL
