@@ -37,6 +37,8 @@ spec:
             - {name: FTLCONF_dns_listeningMode, value: BIND}
             - {name: FTLCONF_dns_interface, value: tailscale0}
             - {name: FTLCONF_dns_upstreams, value: "1.1.1.1;9.9.9.9"}
+            # Nomes da tailnet vao para o MagicDNS do Tailscale, o resto segue nos upstreams acima.
+            - {name: FTLCONF_misc_dnsmasq_lines, value: "server=/tail76c1c6.ts.net/100.100.100.100"}
             - {name: FTLCONF_webserver_port, value: "8053"}
             # Query history kept for 30 days (the legacy DB had grown to 1 GB).
             - {name: FTLCONF_database_maxDBdays, value: "30"}
