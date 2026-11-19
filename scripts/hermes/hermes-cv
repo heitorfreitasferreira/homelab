@@ -1,0 +1,76 @@
+#!/usr/bin/python3
+"""Renderiza um CV Markdown em PDF A4 na VPS, sem Chromium.
+
+Usa WeasyPrint com o cv.css do workspace. Remove emoji e faz o gate de ATS:
+o nome precisa aparecer no texto extraido e nao pode sobrar Markdown cru.
+"""
+from __future__ import annotations
+
+import argparse
+import os
+import re
+import subprocess
+import sys
+import tempfile
+from pathlib import Path
+
+import markdown
+import weasyprint
+
+EMOJI = re.compile("[\U0001F300-\U0001FAFF\u2600-\u27BF\uFE0F]")
+
+
+def first_name(text: str) -> str:
+    for line in text.splitlines():
+        if line.startswith("# "):
+            return line[2:].strip()
+    return "Curriculum"
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description="Renderiza CV Markdown em PDF A4.")
+    parser.add_argument("source")
+    parser.add_argument("--out")
+    parser.add_argument("--css", default=str(Path.home() / ".hermes/vagas/cv.css"))
+    parser.add_argument("--lang", choices=["en", "pt"], default="en")
+    parser.add_argument("--keep-emoji", action="store_true")
+    args = parser.parse_args()
+
+    source = Path(args.source)
+    if not source.is_file():
+        raise SystemExit(f"markdown ausente: {source}")
+    text = source.read_text(encoding="utf-8")
+    if not args.keep_emoji:
+        text = EMOJI.sub("", text)
+        text = re.sub(r"[ \t]{2,}", " ", text)
+    name = first_name(text)
+    out = Path(args.out) if args.out else source.with_name(f"{name} - {'CV' if args.lang == 'en' else 'Curriculo'}.pdf")
+
+    css_path = Path(args.css)
+    css = css_path.read_text(encoding="utf-8") if css_path.is_file() else ""
+    body = markdown.markdown(text, extensions=["extra", "sane_lists"])
+    html = (
+        '<!doctype html><html><head><meta charset="utf-8">'
+        f"<style>{css}</style></head><body>{body}</body></html>"
+    )
+    weasyprint.HTML(string=html, base_url=str(source.parent)).write_pdf(str(out))
+
+    with tempfile.NamedTemporaryFile(suffix=".txt", delete=False) as handle:
+        txt = handle.name
+    try:
+        subprocess.run(["pdftotext", str(out), txt], check=True, timeout=30)
+        extracted = Path(txt).read_text(encoding="utf-8", errors="replace")
+    finally:
+        os.unlink(txt)
+
+    if name.split()[0] not in extracted:
+        raise SystemExit("gate falhou: nome nao aparece no PDF")
+    if any(token in extracted for token in ("**", "](http", "\n# ")):
+        raise SystemExit("gate falhou: sobrou markdown cru no PDF")
+
+    print(f"{out} ({out.stat().st_size} bytes)")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

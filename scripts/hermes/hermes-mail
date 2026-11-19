@@ -1,0 +1,312 @@
+#!/usr/bin/env python3
+"""Cliente de e-mail unico do Hermes.
+
+Interface igual para Gmail (IMAP com senha de app), IMAP generico e Microsoft
+Graph. As senhas e tokens ficam em ~/.hermes, modo 600. Nada de segredo na
+saida.
+"""
+from __future__ import annotations
+
+import argparse
+import base64
+import binascii
+import email
+import email.header
+import email.utils
+import imaplib
+import json
+import mimetypes
+import os
+import re
+import smtplib
+import subprocess
+import sys
+from html import unescape
+from pathlib import Path
+
+HOME = Path.home() / ".hermes"
+CONFIG = HOME / "mail_accounts.json"
+
+
+def load_config() -> dict:
+    if not CONFIG.exists():
+        raise SystemExit(f"config ausente: {CONFIG}")
+    return json.loads(CONFIG.read_text())
+
+
+def account(name: str) -> dict:
+    config = load_config()
+    if name not in config:
+        raise SystemExit(f"conta desconhecida: {name}. Use: {', '.join(config)}")
+    cfg = dict(config[name])
+    cfg["alias"] = name
+    return cfg
+
+
+def clean_html(value: str) -> str:
+    value = re.sub(r"<(script|style).*?</\1>", " ", value, flags=re.S | re.I)
+    value = re.sub(r"<br\s*/?>", "\n", value, flags=re.I)
+    value = re.sub(r"</p\s*>", "\n\n", value, flags=re.I)
+    value = re.sub(r"<[^>]+>", " ", value)
+    value = unescape(value)
+    value = re.sub(r"[ \t]+", " ", value)
+    value = re.sub(r"\n\s*\n+", "\n\n", value)
+    return value.strip()
+
+
+def decode_mime_snippet(raw: bytes) -> str:
+    text = raw.decode("utf-8", "replace")
+    chunks = re.findall(
+        r"Content-Transfer-Encoding:\s*base64\s*(?:\r?\n)+([A-Za-z0-9+/=\r\n]+?)(?=\r?\n--|\Z)",
+        text,
+        flags=re.I | re.S,
+    )
+    decoded = []
+    for chunk in chunks:
+        clean = re.sub(r"\s+", "", chunk)
+        clean += "=" * (-len(clean) % 4)
+        try:
+            decoded.append(base64.b64decode(clean).decode("utf-8", "replace"))
+        except (binascii.Error, ValueError):
+            continue
+    if decoded:
+        text = "\n".join(decoded)
+    return clean_html(text)[:300]
+
+
+def header_text(msg, name: str) -> str:
+    raw = msg.get(name, "")
+    if not raw:
+        return ""
+    return str(email.header.make_header(email.header.decode_header(raw)))
+
+
+def imap_connect(cfg: dict):
+    password_path = HOME / cfg["password_file"]
+    if not password_path.exists():
+        raise SystemExit(f"senha ausente para {cfg['alias']}: {password_path}")
+    password = password_path.read_text().strip()
+    mailbox = imaplib.IMAP4_SSL(cfg.get("host", "imap.gmail.com"), int(cfg.get("port", 993)), timeout=30)
+    try:
+        mailbox.login(cfg["email"], password)
+    except imaplib.IMAP4.error as exc:
+        raise SystemExit(f"login recusado em {cfg['alias']}: {exc}")
+    mailbox.select(cfg.get("folder", "INBOX"), readonly=True)
+    return mailbox
+
+
+def imap_uids(mailbox, cfg: dict, query: str | None, limit: int) -> list[str]:
+    if query:
+        if cfg.get("provider") == "gmail":
+            typ, data = mailbox.uid("SEARCH", "X-GM-RAW", f'"{query}"')
+        else:
+            typ, data = mailbox.uid("SEARCH", None, "TEXT", f'"{query}"')
+    else:
+        typ, data = mailbox.uid("SEARCH", None, "ALL")
+    if typ != "OK":
+        raise SystemExit(f"busca falhou em {cfg['alias']}: {typ}")
+    uids = data[0].split() if data and data[0] else []
+    return [u.decode() for u in uids[-limit:]][::-1]
+
+
+def imap_summary(mailbox, uid: str) -> dict:
+    typ, data = mailbox.uid("FETCH", uid, "(BODY.PEEK[HEADER.FIELDS (FROM SUBJECT DATE)])")
+    header = b"".join(part[1] for part in data if isinstance(part, tuple))
+    msg = email.message_from_bytes(header)
+    typ, body_data = mailbox.uid("FETCH", uid, "(BODY.PEEK[TEXT]<0.4000>)")
+    raw_body = b"".join(part[1] for part in body_data if isinstance(part, tuple))
+    snippet = decode_mime_snippet(raw_body)
+    sender = email.utils.parseaddr(header_text(msg, "From"))[1]
+    return {
+        "id": uid,
+        "de": sender,
+        "assunto": header_text(msg, "Subject"),
+        "data": header_text(msg, "Date"),
+        "snippet": snippet,
+    }
+
+
+def imap_list(cfg: dict, query: str | None, limit: int) -> list[dict]:
+    mailbox = imap_connect(cfg)
+    try:
+        return [imap_summary(mailbox, uid) for uid in imap_uids(mailbox, cfg, query, limit)]
+    finally:
+        mailbox.logout()
+
+
+def imap_read(cfg: dict, uid: str, full: bool) -> dict:
+    mailbox = imap_connect(cfg)
+    try:
+        typ, data = mailbox.uid("FETCH", uid, "(RFC822)")
+        raw = next(part[1] for part in data if isinstance(part, tuple))
+        msg = email.message_from_bytes(raw)
+        texts = []
+        html = []
+        for part in msg.walk():
+            ctype = part.get_content_type()
+            if ctype == "text/plain":
+                payload = part.get_payload(decode=True)
+                if payload:
+                    texts.append(payload.decode(part.get_content_charset() or "utf-8", "replace"))
+            elif ctype == "text/html":
+                payload = part.get_payload(decode=True)
+                if payload:
+                    html.append(payload.decode(part.get_content_charset() or "utf-8", "replace"))
+        body = "\n".join(texts).strip() or clean_html("\n".join(html))
+        if not full and len(body) > 8000:
+            body = body[:8000] + "\n\n[truncado, use --full]"
+        return {
+            "id": uid,
+            "de": email.utils.parseaddr(header_text(msg, "From"))[1],
+            "assunto": header_text(msg, "Subject"),
+            "data": header_text(msg, "Date"),
+            "corpo": body,
+        }
+    finally:
+        mailbox.logout()
+
+
+def graph_call(cfg: dict, args: list[str]) -> None:
+    script = Path(cfg["script"])
+    result = subprocess.run([sys.executable, str(script), *args], text=True, capture_output=True)
+    if result.returncode != 0:
+        sys.stderr.write(result.stderr or result.stdout)
+        raise SystemExit(result.returncode)
+    sys.stdout.write(result.stdout)
+
+
+def cmd_send(args) -> None:
+    cfg = account(args.account)
+    if cfg.get("provider") == "graph":
+        raise SystemExit("envio nao suportado para Graph; use uma conta Gmail/IMAP")
+    to = args.to or ""
+    subject = args.subject or ""
+    body = None
+    if args.draft:
+        raw = Path(args.draft).read_text().replace("\r\n", "\n")
+        headers, _, draft_body = raw.partition("\n\n")
+        body = draft_body
+        for line in headers.splitlines():
+            key, _, value = line.partition(":")
+            key = key.strip().lower()
+            if key in ("para", "to") and not to:
+                to = value.strip()
+            elif key in ("assunto", "subject") and not subject:
+                subject = value.strip()
+    if args.body_file:
+        body = Path(args.body_file).read_text()
+    if body is None:
+        body = sys.stdin.read()
+    if not to or not subject or not body.strip():
+        raise SystemExit("faltou destinatario, assunto ou corpo")
+    if not args.yes:
+        raise SystemExit("envio bloqueado: confirme com o Heitor e use --yes")
+    password_path = HOME / cfg["password_file"]
+    if not password_path.exists():
+        raise SystemExit(f"senha ausente: {password_path}")
+    password = password_path.read_text().strip()
+    message = email.message.EmailMessage()
+    message["From"] = cfg.get("from", cfg["email"])
+    message["To"] = to
+    message["Subject"] = subject
+    message.set_content(body)
+    attachments = []
+    for raw_path in args.attach or []:
+        path = Path(raw_path)
+        if not path.is_file():
+            raise SystemExit(f"anexo ausente: {path}")
+        ctype, _ = mimetypes.guess_type(str(path))
+        maintype, subtype = (ctype or "application/octet-stream").split("/", 1)
+        message.add_attachment(
+            path.read_bytes(), maintype=maintype, subtype=subtype, filename=path.name
+        )
+        attachments.append(path.name)
+    host = cfg.get("smtp_host", "smtp.gmail.com")
+    port = int(cfg.get("smtp_port", 465))
+    try:
+        with smtplib.SMTP_SSL(host, port, timeout=30) as smtp:
+            smtp.login(cfg["email"], password)
+            smtp.send_message(message)
+    except (smtplib.SMTPException, OSError) as exc:
+        raise SystemExit(f"falha no envio: {exc}")
+    print(f"enviado para {to}, assunto {subject!r}, anexos {attachments}")
+
+
+def cmd_accounts(_args) -> None:
+    config = load_config()
+    print(f"{'alias':<14} {'email':<32} {'provider':<8} pronto")
+    for name, cfg in config.items():
+        if cfg.get("provider") == "graph":
+            ready = Path(cfg["script"]).exists() and (
+                not cfg.get("token") or (HOME / cfg["token"]).exists()
+            )
+        else:
+            ready = (HOME / cfg.get("password_file", "")).exists()
+        print(f"{name:<14} {cfg.get('email',''):<32} {cfg.get('provider',''):<8} {'sim' if ready else 'nao'}")
+
+
+def cmd_list(args) -> None:
+    cfg = account(args.account)
+    if cfg.get("provider") == "graph":
+        graph_call(cfg, ["list", "--max", str(args.max)])
+    else:
+        print(json.dumps(imap_list(cfg, None, args.max), ensure_ascii=False, indent=1))
+
+
+def cmd_search(args) -> None:
+    cfg = account(args.account)
+    if cfg.get("provider") == "graph":
+        graph_call(cfg, ["search", args.query, "--max", str(args.max)])
+    else:
+        print(json.dumps(imap_list(cfg, args.query, args.max), ensure_ascii=False, indent=1))
+
+
+def cmd_read(args) -> None:
+    cfg = account(args.account)
+    if cfg.get("provider") == "graph":
+        extra = ["--full"] if args.full else []
+        graph_call(cfg, ["read", args.id, *extra])
+    else:
+        print(json.dumps(imap_read(cfg, args.id, args.full), ensure_ascii=False, indent=1))
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description="E-mail unico do Hermes.")
+    sub = parser.add_subparsers(dest="command", required=True)
+
+    sub.add_parser("accounts").set_defaults(func=cmd_accounts)
+
+    listing = sub.add_parser("list")
+    listing.add_argument("--account", required=True)
+    listing.add_argument("--max", type=int, default=10)
+    listing.set_defaults(func=cmd_list)
+
+    search = sub.add_parser("search")
+    search.add_argument("--account", required=True)
+    search.add_argument("query")
+    search.add_argument("--max", type=int, default=10)
+    search.set_defaults(func=cmd_search)
+
+    read = sub.add_parser("read")
+    read.add_argument("--account", required=True)
+    read.add_argument("id")
+    read.add_argument("--full", action="store_true")
+    read.set_defaults(func=cmd_read)
+
+    send = sub.add_parser("send")
+    send.add_argument("--account", required=True)
+    send.add_argument("--draft")
+    send.add_argument("--to")
+    send.add_argument("--subject")
+    send.add_argument("--body-file")
+    send.add_argument("--attach", action="append")
+    send.add_argument("--yes", action="store_true")
+    send.set_defaults(func=cmd_send)
+
+    args = parser.parse_args()
+    args.func(args)
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

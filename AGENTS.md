@@ -79,9 +79,10 @@ use os spaces `7bef7m` nem `723ija`.
   e normal, nao e falha do cluster.
 - Vagas: `vagas-buscar` e skill `vagas`, runbook em `docs/vagas.md`. Preparar e
   abrir o formulario e o padrao. Nunca envie candidatura sem confirmacao.
-- Email: use `hermes-mail` para todas as contas (`accounts`, `list`, `search`,
-  `read`). Gmail por IMAP com senha de app, Hotmail por Graph. Somente leitura.
-  O runbook esta na skill `multi-mail`.
+- Email: use `hermes-mail` (`accounts`, `list`, `search`, `read`, `send`).
+  Gmail por IMAP com senha de app, Hotmail por Graph somente leitura. Envio so
+  com confirmacao explicita e `--yes`. Runbook na skill `multi-mail`.
+- CV: `hermes-cv <md> --out <pdf>` renderiza o PDF na VPS com WeasyPrint.
 
 ## Operacao
 

@@ -54,6 +54,16 @@ Crie `~/.hermes/vagas/aplicacoes/<slug>/` com:
 - `carta.md`: problema da vaga, evidencia e encaixe, sem clichê.
 - `respostas.md`: idioma, local, faixa salarial, disponibilidade e pendencias.
 - `checklist.md`: arquivos, perguntas do formulario e o que falta.
+- `email.md`: rascunho com `Para:` e `Assunto:` no topo, quando a vaga for por
+  e-mail.
+
+Gere o PDF na VPS, sem Chromium:
+
+```bash
+hermes-cv ~/.hermes/vagas/aplicacoes/<slug>/cv-derivado.md \
+  --out "$HOME/.hermes/vagas/aplicacoes/<slug>/Heitor Freitas Ferreira - CV.pdf" \
+  --lang en
+```
 
 Atualize `aplicacoes.md` com data, empresa, cargo, status, link, pasta e proximo
 passo. Status: `pesquisada`, `preparada`, `aplicada`, `entrevista`, `teste`,
@@ -65,6 +75,17 @@ O padrao e preparar e abrir o formulario para revisao. Se o Heitor pedir para
 aplicar, preencha os campos conhecidos no navegador, mostre o resumo e pare antes
 do botao de enviar. Nunca clique em enviar sem confirmacao explicita na mesma
 conversa. Nao crie conta, nao aceite termo e nao responda teste tecnico sozinho.
+
+Para vaga por e-mail, o envio usa o `profheitor` e o anexo do PDF:
+
+```bash
+hermes-mail send --account profheitor \
+  --draft ~/.hermes/vagas/aplicacoes/<slug>/email.md \
+  --attach "$HOME/.hermes/vagas/aplicacoes/<slug>/Heitor Freitas Ferreira - CV.pdf" \
+  --yes
+```
+
+O `--yes` so entra depois da confirmacao. Sem ele, o comando recusa o envio.
 
 ## LinkedIn
 

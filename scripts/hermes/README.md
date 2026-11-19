@@ -19,6 +19,20 @@ trabalho. A racknerd recebe `~/.hermes/linkedin/latest.md` e `~/.hermes/vagas/`.
 Ordem de sexta: 15:00 eventually, 18:20 digest, 18:40 rascunho de LinkedIn na
 racknerd, 18:50 pull dos rascunhos.
 
+## Ferramentas da VPS
+
+- `hermes-mail`: cliente unico de e-mail. Instalar em `/usr/local/bin` como root.
+  A config fica em `~/.hermes/mail_accounts.json` (`600`), as senhas de app em
+  `~/.hermes/mail_<alias>.pass` (`600`) e os tokens Graph em
+  `~/.hermes/msgraph_*.json` (`600`). Leitura e envio com `--yes` explicito. O
+  Hotmail e somente leitura.
+- `hermes-cv`: renderiza CV Markdown em PDF A4 na VPS com WeasyPrint. Depende de
+  `weasyprint`, `python3-markdown` e `poppler-utils` via apt, e do CSS em
+  `~/.hermes/vagas/cv.css`.
+- Skills de runtime: `multi-mail`, `hotmail-graph` e `vagas` em
+  `~/.hermes/skills`. O digest diario sincroniza `cv.css`, o curriculo base, as
+  derivadas e as descricoes de vaga.
+
 ## Instalar
 
 ```bash

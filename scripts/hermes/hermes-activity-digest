@@ -161,6 +161,7 @@ def career_files() -> dict[str, str]:
     add("vagas/regras-curriculo.md", base / "AGENTS.md", 10000)
     add("vagas/ESTADO.md", base / "ESTADO.md", 10000)
     add("vagas/triagem.md", base / "vagas/_triagem-grupo-whatsapp-2026-10-19.md", 20000)
+    add("vagas/cv.css", base / "cv.css", 10000)
 
     descriptions = sorted(
         (base / "vagas").glob("*/vaga.md"),
@@ -176,6 +177,14 @@ def career_files() -> dict[str, str]:
         link = next((line.split(":", 1)[1].strip() for line in text.splitlines() if line.lower().startswith("- link:")), "")
         listing.append(f"- {title} ({slug})" + (f": {link}" if link else ""))
     files["vagas/lista.md"] = "\n".join(listing)
+
+    derived = sorted(
+        (base / "vagas").glob("*/heitor_freitas_ferreira.*.md"),
+        key=lambda p: p.stat().st_mtime,
+        reverse=True,
+    )[:30]
+    for path in derived:
+        files[f"vagas/derivadas/{path.parent.name}/{path.name}"] = path.read_text(errors="replace")[:30000]
 
     search = job_search()
     if search:
