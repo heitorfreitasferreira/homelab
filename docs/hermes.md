@@ -52,6 +52,15 @@ Assistente pessoal do homelab. Roda na VPS, so pela tailnet e pelo Telegram.
 - O dashboard custa cerca de 320 MB. Ele duplica parte do runtime do gateway,
   entao a VPS fica com pouca memoria livre ate o upgrade.
 
+## Geoffrey
+
+- O bot se chama Geoffrey. O Telegram e a interface principal.
+- A organizacao pessoal fica no space Anytype `Geoffrey's mental mind palace`
+  (`mrtfui`), documentado em `docs/geoffrey.md`.
+- As rotinas rodam no cron do Hermes e entregam no Telegram: manha 07:30,
+  fechamento 23:00 e revisao semanal domingo 19:00.
+- O dashboard tem a pagina Cron para ver, editar e disparar os jobs.
+
 ## Contexto
 
 - `terminal.cwd` e `/home/htr/homelab`. O `AGENTS.md` do repo entra no system
