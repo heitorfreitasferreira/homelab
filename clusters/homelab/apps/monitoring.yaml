@@ -128,7 +128,9 @@ spec:
                 - job_name: casa
                   static_configs:
                     - targets: [100.112.62.47:9100]
-                      labels: {instance: casa}
+                      # instance=casa mantem as expressoes antigas, node=casa
+                      # deixa os paineis e legendas iguais aos nos do k3s.
+                      labels: {instance: casa, node: casa}
                 - job_name: vmalert
                   static_configs:
                     - targets: [vmalert:8880]
@@ -219,13 +221,13 @@ spec:
                 - name: hosts
                   rules:
                     - alert: AlvoFora
-                      expr: up == 0
+                      expr: up{instance!~"100\\.89\\.110\\.97:.*|pc-heito-wsl",node!="pc-heito-wsl",kubernetes_io_hostname!="pc-heito-wsl"} == 0
                       for: 3m
                       labels: {severity: critical}
                       annotations:
                         summary: "{{ $labels.job }} ({{ $labels.instance }}) sem resposta ha 3 min"
                     - alert: MemoriaBaixa
-                      expr: node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes < 0.10
+                      expr: node_memory_MemAvailable_bytes{node!="pc-heito-wsl"} / node_memory_MemTotal_bytes{node!="pc-heito-wsl"} < 0.10
                       for: 10m
                       labels: {severity: warning}
                       annotations:
@@ -233,13 +235,13 @@ spec:
                     - alert: DiscoQuaseCheio
                       # Piso de 1 GB e /usr/src fora: no WSL o /dev/sdb (0,1 GiB, read-only, headers do
                       # kernel) fica sempre cheio e disparava o alerta para sempre.
-                      expr: node_filesystem_avail_bytes{fstype=~"ext4|xfs|btrfs",mountpoint!~"/usr/src.*"} / node_filesystem_size_bytes{fstype=~"ext4|xfs|btrfs",mountpoint!~"/usr/src.*"} < 0.10 and on(instance, device, mountpoint) node_filesystem_size_bytes > 1e9
+                      expr: node_filesystem_avail_bytes{fstype=~"ext4|xfs|btrfs",mountpoint!~"/usr/src.*",node!="pc-heito-wsl"} / node_filesystem_size_bytes{fstype=~"ext4|xfs|btrfs",mountpoint!~"/usr/src.*",node!="pc-heito-wsl"} < 0.10 and on(instance, device, mountpoint) node_filesystem_size_bytes{node!="pc-heito-wsl"} > 1e9
                       for: 15m
                       labels: {severity: warning}
                       annotations:
                         summary: "{{ $labels.instance }} {{ $labels.mountpoint }}: {{ $value | humanizePercentage }} livre"
                     - alert: TemperaturaAlta
-                      expr: max by (instance) (node_hwmon_temp_celsius) > 85
+                      expr: max by (instance) (node_hwmon_temp_celsius{node!="pc-heito-wsl"}) > 85
                       for: 10m
                       labels: {severity: warning}
                       annotations:
@@ -253,7 +255,7 @@ spec:
                 - name: kubernetes
                   rules:
                     - alert: PodReiniciando
-                      expr: increase(kube_pod_container_status_restarts_total[30m]) > 3
+                      expr: increase(kube_pod_container_status_restarts_total[30m]) * on (namespace, pod) group_left(node) kube_pod_info{node!="pc-heito-wsl"} > 3
                       labels: {severity: warning}
                       annotations:
                         summary: "{{ $labels.namespace }}/{{ $labels.pod }} reiniciou {{ $value | printf \"%.0f\" }} vezes em 30 min"
@@ -264,25 +266,25 @@ spec:
                       annotations:
                         summary: "{{ $labels.namespace }}/{{ $labels.persistentvolumeclaim }}: {{ $value | humanizePercentage }} livre"
                     - alert: PodNaoPronto
-                      expr: sum by (namespace, pod) (kube_pod_status_ready{condition="false"} * on (namespace, pod) group_left kube_pod_status_phase{phase="Running"}) > 0
+                      expr: sum by (namespace, pod) (kube_pod_status_ready{condition="false"} * on (namespace, pod) group_left(node) kube_pod_info{node!="pc-heito-wsl"} * on (namespace, pod) group_left() kube_pod_status_phase{phase="Running"}) > 0
                       for: 10m
                       labels: {severity: warning}
                       annotations:
                         summary: "{{ $labels.namespace }}/{{ $labels.pod }} rodando sem ficar pronto ha 10 min"
                     - alert: NodeNaoPronto
-                      expr: kube_node_status_condition{condition="Ready",status="true"} == 0
+                      expr: kube_node_status_condition{condition="Ready",status="true",node!="pc-heito-wsl"} == 0
                       for: 5m
                       labels: {severity: critical}
                       annotations:
                         summary: "no {{ $labels.node }} nao esta Ready"
                     - alert: NodeSobPressao
-                      expr: kube_node_status_condition{condition=~"MemoryPressure|DiskPressure|PIDPressure",status="true"} == 1
+                      expr: kube_node_status_condition{condition=~"MemoryPressure|DiskPressure|PIDPressure",status="true",node!="pc-heito-wsl"} == 1
                       for: 5m
                       labels: {severity: warning}
                       annotations:
                         summary: "no {{ $labels.node }} com {{ $labels.condition }}"
                     - alert: PodOomKilled
-                      expr: increase(kube_pod_container_status_terminated_reason{reason="OOMKilled"}[15m]) > 0
+                      expr: increase(kube_pod_container_status_terminated_reason{reason="OOMKilled"}[15m]) * on (namespace, pod) group_left(node) kube_pod_info{node!="pc-heito-wsl"} > 0
                       labels: {severity: warning}
                       annotations:
                         summary: "{{ $labels.namespace }}/{{ $labels.pod }}: container {{ $labels.container }} morreu por OOM"

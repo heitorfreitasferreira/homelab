@@ -40,10 +40,10 @@
         "type": "prometheus",
         "uid": "victoriametrics"
       },
-      "description": null,
+      "description": "PC WSL é efêmero e não entra nesta contagem.",
       "targets": [
         {
-          "expr": "sum(up == 0)",
+          "expr": "sum(up{instance!~\"100\\\\.89\\\\.110\\\\.97:.*|pc-heito-wsl\",node!=\"pc-heito-wsl\",kubernetes_io_hostname!=\"pc-heito-wsl\"} == 0)",
           "refId": "A",
           "instant": true,
           "legendFormat": ""
@@ -557,7 +557,7 @@
         {
           "expr": "100 * (1 - avg by (instance) (rate(node_cpu_seconds_total{mode=\"idle\"}[5m])))",
           "refId": "A",
-          "legendFormat": "{{instance}}"
+          "legendFormat": "{{node}}"
         }
       ],
       "fieldConfig": {
@@ -631,7 +631,7 @@
         {
           "expr": "100 * (1 - node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)",
           "refId": "A",
-          "legendFormat": "{{instance}}"
+          "legendFormat": "{{node}}"
         }
       ],
       "fieldConfig": {
@@ -705,7 +705,7 @@
         {
           "expr": "100 * (1 - node_filesystem_avail_bytes{fstype=~\"ext4|xfs\",mountpoint=\"/\"} / node_filesystem_size_bytes{fstype=~\"ext4|xfs\",mountpoint=\"/\"})",
           "refId": "A",
-          "legendFormat": "{{instance}}"
+          "legendFormat": "{{node}}"
         }
       ],
       "fieldConfig": {
@@ -779,7 +779,7 @@
         {
           "expr": "max by (instance) (node_hwmon_temp_celsius)",
           "refId": "A",
-          "legendFormat": "{{instance}}"
+          "legendFormat": "{{node}}"
         }
       ],
       "fieldConfig": {
@@ -1088,10 +1088,10 @@
         "type": "prometheus",
         "uid": "victoriametrics"
       },
-      "description": null,
+      "description": "PC WSL é efêmero, os pods dele não entram.",
       "targets": [
         {
-          "expr": "sum by (namespace, pod) (kube_pod_status_ready{condition=\"false\"} * on (namespace, pod) group_left kube_pod_status_phase{phase=\"Running\"}) > 0",
+          "expr": "sum by (namespace, pod) (kube_pod_status_ready{condition=\"false\"} * on (namespace, pod) group_left(node) kube_pod_info{node!=\"pc-heito-wsl\"} * on (namespace, pod) group_left() kube_pod_status_phase{phase=\"Running\"}) > 0",
           "refId": "A",
           "format": "table",
           "instant": true,
@@ -1575,6 +1575,458 @@
         "x": 12,
         "y": 44
       }
+    },
+    {
+      "id": 27,
+      "type": "row",
+      "title": "PC WSL (efêmero)",
+      "collapsed": false,
+      "panels": [],
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 51
+      }
+    },
+    {
+      "type": "stat",
+      "title": "Status WSL",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "victoriametrics"
+      },
+      "description": "PC WSL é efêmero. Offline não é falha.",
+      "targets": [
+        {
+          "expr": "up{node=\"pc-heito-wsl\"}",
+          "refId": "A",
+          "instant": true,
+          "legendFormat": ""
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "noValue": "Desligado",
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "0": {
+                  "text": "Offline",
+                  "color": "red"
+                },
+                "1": {
+                  "text": "Online",
+                  "color": "green"
+                }
+              }
+            }
+          ],
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "green",
+                "value": 1
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "id": 28,
+      "gridPos": {
+        "h": 4,
+        "w": 3,
+        "x": 0,
+        "y": 52
+      }
+    },
+    {
+      "type": "stat",
+      "title": "CPU WSL",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "victoriametrics"
+      },
+      "description": "Métricas somem quando o PC WSL está desligado.",
+      "targets": [
+        {
+          "expr": "100 * (1 - avg(rate(node_cpu_seconds_total{node=\"pc-heito-wsl\",mode=\"idle\"}[5m])))",
+          "refId": "A",
+          "instant": true,
+          "legendFormat": ""
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 80
+              },
+              {
+                "color": "red",
+                "value": 90
+              }
+            ]
+          },
+          "decimals": 0,
+          "noValue": "—"
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "id": 29,
+      "gridPos": {
+        "h": 4,
+        "w": 3,
+        "x": 3,
+        "y": 52
+      }
+    },
+    {
+      "type": "stat",
+      "title": "RAM WSL",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "victoriametrics"
+      },
+      "description": "Métricas somem quando o PC WSL está desligado.",
+      "targets": [
+        {
+          "expr": "100 * (1 - node_memory_MemAvailable_bytes{node=\"pc-heito-wsl\"} / node_memory_MemTotal_bytes{node=\"pc-heito-wsl\"})",
+          "refId": "A",
+          "instant": true,
+          "legendFormat": ""
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 80
+              },
+              {
+                "color": "red",
+                "value": 90
+              }
+            ]
+          },
+          "decimals": 0,
+          "noValue": "—"
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "id": 30,
+      "gridPos": {
+        "h": 4,
+        "w": 3,
+        "x": 6,
+        "y": 52
+      }
+    },
+    {
+      "type": "stat",
+      "title": "Disco WSL",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "victoriametrics"
+      },
+      "description": "Métricas somem quando o PC WSL está desligado.",
+      "targets": [
+        {
+          "expr": "100 * (1 - node_filesystem_avail_bytes{node=\"pc-heito-wsl\",mountpoint=\"/\",fstype=~\"ext4|overlay\"} / node_filesystem_size_bytes{node=\"pc-heito-wsl\",mountpoint=\"/\",fstype=~\"ext4|overlay\"})",
+          "refId": "A",
+          "instant": true,
+          "legendFormat": ""
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 80
+              },
+              {
+                "color": "red",
+                "value": 90
+              }
+            ]
+          },
+          "decimals": 0,
+          "noValue": "—"
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "id": 31,
+      "gridPos": {
+        "h": 4,
+        "w": 3,
+        "x": 9,
+        "y": 52
+      }
+    },
+    {
+      "id": 32,
+      "type": "text",
+      "title": "PC WSL (efêmero)",
+      "gridPos": {
+        "h": 4,
+        "w": 12,
+        "x": 12,
+        "y": 52
+      },
+      "options": {
+        "mode": "markdown",
+        "content": "**PC WSL (`pc-heito-wsl`, 100.89.110.97)** é efêmero. Pode ficar offline a qualquer momento. Não conta como falha, não gera alerta de disponibilidade e não deve receber workloads críticos. O node-exporter e o `svclb-traefik` continuam nele."
+      },
+      "targets": []
+    },
+    {
+      "id": 33,
+      "type": "row",
+      "title": "Nós k3s",
+      "collapsed": false,
+      "panels": [],
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 56
+      }
+    },
+    {
+      "id": 34,
+      "type": "timeseries",
+      "title": "Nós prontos",
+      "description": "1 = Ready. O pc-heito-wsl pode ficar em 0 quando o PC está desligado, sem ser falha.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "victoriametrics"
+      },
+      "targets": [
+        {
+          "expr": "kube_node_status_condition{condition=\"Ready\",status=\"true\"}",
+          "refId": "A",
+          "instant": false,
+          "legendFormat": "{{node}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "min": 0,
+          "max": 1,
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 1,
+            "fillOpacity": 10,
+            "showPoints": "never"
+          },
+          "color": {
+            "mode": "palette-classic"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 8,
+        "x": 0,
+        "y": 57
+      }
+    },
+    {
+      "id": 35,
+      "type": "table",
+      "title": "Inventário dos nós",
+      "description": "Inclui o nó efêmero pc-heito-wsl.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "victoriametrics"
+      },
+      "targets": [
+        {
+          "expr": "kube_node_info",
+          "refId": "A",
+          "instant": true,
+          "format": "table",
+          "legendFormat": ""
+        }
+      ],
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true,
+              "Value": true,
+              "__name__": true,
+              "instance": true,
+              "job": true,
+              "namespace": true,
+              "service": true,
+              "kubeproxy_version": true,
+              "pod_cidr": true,
+              "provider_id": true,
+              "system_uuid": true,
+              "container_runtime_version": true
+            },
+            "renameByName": {
+              "node": "Nó",
+              "internal_ip": "IP interno",
+              "kernel_version": "Kernel",
+              "kubelet_version": "Kubelet",
+              "os_image": "Sistema"
+            }
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm",
+        "footer": {
+          "show": false
+        }
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 10,
+        "x": 8,
+        "y": 57
+      }
+    },
+    {
+      "id": 36,
+      "type": "text",
+      "title": "Confiança",
+      "gridPos": {
+        "h": 6,
+        "w": 6,
+        "x": 18,
+        "y": 57
+      },
+      "options": {
+        "mode": "markdown",
+        "content": "**racknerd** é o único nó que sempre existe.\n\n**pc-heito-wsl** é efêmero: pode desligar a qualquer momento. Não recebe workload crítico, não conta em alvos fora e não gera alerta de disponibilidade.\n\nAlertas de RAM, disco, pressão e restart ignoram o WSL."
+      },
+      "targets": []
     }
   ],
   "editable": true,

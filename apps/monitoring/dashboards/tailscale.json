@@ -1038,7 +1038,7 @@
       "description": null,
       "options": {
         "mode": "markdown",
-        "content": "O papel Ansible `tailscale` roda `tailscale status --json` a cada 30 s no `casa` e no `racknerd`, grava o resultado em `/var/lib/prometheus/node-exporter/tailscale.prom` e o node-exporter publica. `Direto` e a conexao ponto a ponto agora. `DERP` e o relay do Tailscale quando a conexao direta nao fecha. Chaves de dispositivos com expiracao aparecem em dias."
+        "content": "O papel Ansible `tailscale` roda `tailscale status --json` a cada 30 s no `casa` e no `racknerd`, grava o resultado em `/var/lib/prometheus/node-exporter/tailscale.prom` e o node-exporter publica. `Direto` e a conexao ponto a ponto agora. `DERP` e o relay do Tailscale quando a conexao direta nao fecha. Chaves de dispositivos com expiracao aparecem em dias.\n\nO PC WSL (`pc-heito-wsl`) é efêmero e pode aparecer offline. Isso é normal e não é falha."
       },
       "id": 19,
       "gridPos": {

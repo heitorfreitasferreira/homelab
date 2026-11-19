@@ -40,10 +40,10 @@
         "type": "prometheus",
         "uid": "victoriametrics"
       },
-      "description": null,
+      "description": "PC WSL é efêmero e não entra nesta contagem.",
       "targets": [
         {
-          "expr": "sum(up)",
+          "expr": "sum(up{instance!~\"100\\\\.89\\\\.110\\\\.97:.*|pc-heito-wsl\",node!=\"pc-heito-wsl\",kubernetes_io_hostname!=\"pc-heito-wsl\"})",
           "refId": "A",
           "instant": true,
           "legendFormat": ""
@@ -88,10 +88,10 @@
         "type": "prometheus",
         "uid": "victoriametrics"
       },
-      "description": null,
+      "description": "PC WSL é efêmero e não entra nesta contagem.",
       "targets": [
         {
-          "expr": "sum(up == 0)",
+          "expr": "sum(up{instance!~\"100\\\\.89\\\\.110\\\\.97:.*|pc-heito-wsl\",node!=\"pc-heito-wsl\",kubernetes_io_hostname!=\"pc-heito-wsl\"} == 0)",
           "refId": "A",
           "instant": true,
           "legendFormat": ""
@@ -1120,6 +1120,22 @@
         "x": 0,
         "y": 31
       }
+    },
+    {
+      "id": 20,
+      "type": "text",
+      "title": "PC WSL (efêmero)",
+      "gridPos": {
+        "h": 4,
+        "w": 24,
+        "x": 0,
+        "y": 39
+      },
+      "options": {
+        "mode": "markdown",
+        "content": "O PC WSL (`pc-heito-wsl`) é efêmero. Alvos dele não entram na contagem de alvos ok/fora e não geram alerta de disponibilidade. Métricas de CPU/RAM/disco só aparecem quando ele está ligado."
+      },
+      "targets": []
     }
   ],
   "editable": true,
