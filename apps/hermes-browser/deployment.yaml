@@ -22,6 +22,10 @@ spec:
       labels:
         app: chromium
     spec:
+      # O CNI do WSL nao encaminha DNS/egress dos pods (kube-proxy/iptables).
+      # Com hostNetwork o Chromium usa a rede e o resolv.conf do proprio WSL.
+      hostNetwork: true
+      dnsPolicy: Default
       nodeSelector:
         kubernetes.io/hostname: pc-heito-wsl
       tolerations:
