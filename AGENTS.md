@@ -55,6 +55,70 @@ Este repositorio declara o homelab pessoal. A fonte de verdade das escolhas e
   decisoes e runbooks. Se o bot tiver sido convidado para um space seu, use o
   space que o Heitor indicar.
 
+## Geoffrey e o space de organizacao
+
+O assistente se chama Geoffrey. O Telegram e o `@personal_geoffrey_bot`. O
+space de organizacao no Anytype e `Geoffrey's mental mind palace`, id `mrtfui`.
+Use o MCP `anytype`. Nao use os spaces `7bef7m` (Homelab do bot) nem `723ija`.
+
+### Tipos e propriedades
+
+- `task`: Tarefa. Use `done` (checkbox), `due_date` (data ISO), `status`
+  (select), `priority` (Baixa, Média, Alta), `energy` (Rápida, Média, Profunda),
+  `area` (objects), `triaged` (checkbox), `linked_projects` (objects) e `tag`
+  (multi_select).
+- `project`: Projeto. Use `area`, `status`, `next_action` e `tag`.
+- `area`: Área. Use `descri_o` (descricao) e `status`.
+- `diario`: Diário. Use `data` (data ISO).
+- `revisao`: Revisão semanal. Use `data` (data ISO).
+- `note`: Nota.
+- `page`: Página. A única página de topo é `Geoffrey`
+  (`bafyreiegrx7n6ljx4xk6a6apab2c5kmxp5tzosxykwmsxt4gientqiwtiy`).
+
+### Coleções
+
+- Inbox `bafyreigmkmhodzxz5a4soptw426ai2eouw3k3qqpnsdt5zsd2mrik6oi6m`
+- Hoje `bafyreiheldpyv3plqkc3dv3yikqhc7iws4naz6n2rb4jeit3ljosuhwr74`
+- Semana `bafyreigyievprkldfsvu7exi4nvu2xwtloembjmzhi4cruetipg57fceku`
+- Projetos `bafyreid7pwnpqnfvcpzzj3rvftv36iiu6uqyaxzqrstvmrkwli76oa6aqq`
+- Áreas `bafyreihr27iy2njjekyo5ea74juu6jwsnpvj2cwnjpm6rvpzepi2waq5yi`
+- Diário `bafyreicqpoah5vwou4eajxz4fvnnevjvfwjyloret72uivs55oa4sf7wr4`
+- Revisão `bafyreig5sgo7u4wxtymvlpv75rxbjwaerw3wwwr6cttol42b5am2bpvio4`
+
+### Áreas
+
+- Trabalho `bafyreifozlnogbnz4vmdbtdjpoyororegqls4d6owu7yhhp4uyhssvopjm`
+- Estudos/TCC `bafyreiej7armn7cpg6ztrychebxgftq3wgu2ut5wismuchpacdfjsz3cc4`
+- Casa `bafyreieoj4caflw6jckhogvhbpg3nlxsmarupxpx23nxeasvqxy3yhkghu`
+- Finanças `bafyreiexbkrg4lk7uynl5ypzy3mbprjbrpxrt7hke4yk4qbyzf2daoc2cq`
+- Saúde `bafyreicevmbrkkaj3eqqgonnhu3b2pi6mkt7wj4xd2rv2fhn4m2eyu3dau`
+- Homelab `bafyreiaaa4l57ax4jwerlrnzpkzh7dwq3nrk2tjfcbjzhsvu4yn5jhdgm4`
+- Pessoal `bafyreighqca3k7zdweus7s3zebgaxap6iz5ttx4dg2jhwd34psthldwn5y`
+
+### Fluxo
+
+1. Captura: crie `task` ou `note` com `triaged: false` e adicione ao Inbox.
+2. Triagem: defina area, projeto, `due_date`, `priority` e `energy`, marque
+   `triaged: true`, remova do Inbox e adicione a Hoje, Semana ou Projetos.
+3. Tarefa concluída: `done: true` e `status: "Feito"`.
+4. Área nova: crie `area` com `status: "Ativa"` e adicione a Áreas. Remova área
+   só se estiver vazia, remova da coleção e delete o objeto (vai para a
+   lixeira). Avise o que fez.
+5. Diário: no fechamento, crie `diario` com `data` do dia, nome
+   `Diário AAAA-MM-DD`, corpo com o resumo, e adicione a Diário.
+6. Revisão semanal: domingo, crie `revisao` com `data`, nome
+   `Revisão AAAA-Www`, corpo com o resumo, e adicione a Revisão.
+7. Hoje e Semana: no resumo da manhã, esvazie as coleções e adicione as tarefas
+   com `due_date` de hoje, atrasadas e dos próximos 7 dias.
+8. Nunca crie página solta no topo. Use as coleções.
+9. Nunca escreva segredo, token, senha ou chave no Anytype.
+
+### Rotinas
+
+- 07:30: resumo da manhã no Telegram.
+- 23:00: fechamento do dia no Telegram.
+- Domingo 19:00: revisão semanal no Telegram.
+
 ## Servicos
 
 - Nextcloud com Postgres CNPG e originais no R2 (`htr-nextcloud`).
