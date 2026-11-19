@@ -69,6 +69,19 @@ Assistente pessoal do homelab. Roda na VPS, so pela tailnet e pelo Telegram.
 - `--check` e `--check-live` passam. A conta `jogoshloko@gmail.com` esta em
   Test users do projeto `hermes-htr`.
 
+## LinkedIn
+
+- O notebook gera `~/.hermes/linkedin/latest.md` na racknerd todo dia as 18:20
+  pelo `hermes-activity.timer`, com git log dos repos, relatorios do
+  `eventually` e o ESTADO dos posts.
+- O job `LinkedIn: rascunho semanal` roda sexta as 18:40, usa a skill
+  `linkedin-posts`, salva o rascunho em `~/.hermes/linkedin/drafts` e entrega o
+  texto no Telegram para revisao.
+- O Hermes nao publica sozinho. O `hermes-linkedin-pull.timer` traz os rascunhos
+  para `~/agromercantil/linkedin-posts/hermes-drafts` no notebook.
+- Estilo e regras em `~/agromercantil/linkedin-posts/AGENTS.md`, resumidos na
+  skill `linkedin-posts`.
+
 ## Contexto
 
 - `terminal.cwd` e `/home/htr/homelab`. O `AGENTS.md` do repo entra no system
@@ -96,6 +109,9 @@ Assistente pessoal do homelab. Roda na VPS, so pela tailnet e pelo Telegram.
   TTS e nao depende do PC.
 - STT ligado com Whisper `small` no `pc-heito-wsl`. Mensagens de voz do Telegram
   sao transcritas quando o PC esta ligado.
+- Rotina de cluster pelo `/usr/local/sbin/hermes-ops`: `status`, `sync`, `logs`,
+  `restart`, `publish` e `revert`. O runbook esta em `docs/operacao.md`. Os
+  comandos crus (`kubectl`, `sudo`, `git push`, `ssh`) continuam negados.
 - Vision e nativa no modelo `opencode-go/deepseek-v4.1-flash` (input text+image).
   Imagens enviadas no Telegram vao direto para o modelo, sem OpenRouter.
 - Computer-use, geracao de imagem e video e X search continuam desligados.
