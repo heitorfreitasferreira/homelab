@@ -79,6 +79,9 @@ use os spaces `7bef7m` nem `723ija`.
   e normal, nao e falha do cluster.
 - Vagas: `vagas-buscar` e skill `vagas`, runbook em `docs/vagas.md`. Preparar e
   abrir o formulario e o padrao. Nunca envie candidatura sem confirmacao.
+- Email: Gmail padrao `jogoshloko@gmail.com`, Gmail `profheitorfreitas@gmail.com`
+  com `gmail_stdlib.py --account profheitor`, Hotmail `heitor.ff@hotmail.com`
+  pela skill `hotmail-graph`, somente leitura.
 
 ## Operacao
 
