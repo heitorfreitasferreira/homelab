@@ -34,6 +34,12 @@ notebook sincronizou.
 
 O script so coleta. Ele nao aplica, nao cria conta e nao envia formulario.
 
+LinkedIn nao tem chave pessoal de busca. O limite e por IP: a VPS e datacenter,
+o notebook e residencial. Use a busca sincronizada do notebook e, para rotina,
+alertas de vaga do LinkedIn lidos por `hermes-mail`. Nao use cookie de sessao
+para scraping. Adzuna, Jooble e SerpApi Google Jobs sao alternativas com chave,
+mas nao sao LinkedIn.
+
 ## Aderencia
 
 Use `triagem.md` como referencia. Alvo: DevOps, SRE e Platform Engineering,
