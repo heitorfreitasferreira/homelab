@@ -91,8 +91,14 @@ Assistente pessoal do homelab. Roda na VPS, so pela tailnet e pelo Telegram.
   Controle de dispositivos fica fora do Hermes.
 - O Anytype pode criar e editar objetos, mas `API-delete-*` e
   `API-batch-delete-*` estao bloqueados.
-- Browser, computer-use, TTS, geracao de imagem e video, vision e X search
-  desligados. Nao ha Chromium na VPS.
+- Browser e TTS ligados. O Chromium roda no `pc-heito-wsl` e o Hermes fala com
+  ele por CDP, entao o browser so existe quando o PC esta ligado. O TTS usa Edge
+  TTS e nao depende do PC.
+- STT ligado com Whisper `small` no `pc-heito-wsl`. Mensagens de voz do Telegram
+  sao transcritas quando o PC esta ligado.
+- Vision e nativa no modelo `opencode-go/deepseek-v4.1-flash` (input text+image).
+  Imagens enviadas no Telegram vao direto para o modelo, sem OpenRouter.
+- Computer-use, geracao de imagem e video e X search continuam desligados.
 
 ## Anytype
 
@@ -136,6 +142,29 @@ hermes doctor
 - Logs do gateway em `~/.hermes/logs/gateway.log`.
 - Sessoes e memoria em `~/.hermes` (2,8 GB). Anytype em `~/.config/anytype`
   (161 MB).
+
+## Capacidades no pc-heito-wsl
+
+- `apps/hermes-browser`: Chromium headless `chromedp/headless-shell` preso ao
+  `pc-heito-wsl`, com `hostNetwork` porque o CNI do WSL nao entrega DNS/egress
+  aos pods. O CDP fica em `http://100.89.110.97:30922` (NodePort 30922) e o
+  perfil persistente no PVC `hermes/chromium-profile`.
+- `apps/hermes-whisper`: Speaches `0.8.3-cpu` com
+  `Systran/faster-whisper-small`, `hostNetwork` e API OpenAI em
+  `http://100.89.110.97:8000/v1`. Modelo no PVC `hermes/whisper-models`.
+- Os dois pods tem `nodeSelector` do WSL e toleram o taint
+  `homelab.io/compute=true:NoSchedule`. Quando o PC desliga, ficam Pending.
+  Ferramenta de browser ou STT falhando com connection refused nesse estado e
+  normal, nao e incidente.
+- Config no `~/.hermes/config.yaml`: `browser.cdp_url`, `stt.provider: openai`,
+  `stt.openai.base_url`, `stt.openai.model`, `tts.provider: edge` e
+  `tts.edge.voice: pt-BR-FranciscaNeural`.
+- O `PRELOAD_MODELS` do Speaches 0.8.3 nao baixou o modelo. O download e manual
+  e fica no PVC:
+  `curl -X POST http://100.89.110.97:8000/v1/models/Systran/faster-whisper-small`.
+- Se o PVC do Whisper for recriado, repita o POST antes de usar voz.
+- Teste rapido do browser: `curl http://100.89.110.97:30922/json/version`.
+- Teste rapido do STT: `curl http://100.89.110.97:8000/v1/models`.
 
 ## Recursos
 

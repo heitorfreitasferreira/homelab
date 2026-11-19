@@ -128,6 +128,10 @@ Use o MCP `anytype`. Nao use os spaces `7bef7m` (Homelab do bot) nem `723ija`.
 - Homepage em `home.tail76c1c6.ts.net`.
 - Argo CD em `argocd.tail76c1c6.ts.net`.
 - Grafana em `grafana.tail76c1c6.ts.net`.
+- Browser e STT do Hermes no `pc-heito-wsl`: Chromium CDP em
+  `http://100.89.110.97:30922` e Whisper em `http://100.89.110.97:8000/v1`.
+  Quando o PC esta desligado os pods ficam Pending e as ferramentas falham. Isso
+  e normal, nao e falha do cluster.
 
 ## Operacao
 
