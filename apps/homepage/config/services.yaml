@@ -43,6 +43,12 @@
         icon: tailscale.png
         href: https://login.tailscale.com/admin/machines
         description: maquinas e DNS da tailnet
+- Maquinas:
+    - PC (pc-heito):
+        icon: mdi-laptop
+        href: "https://grafana.tail76c1c6.ts.net/d/rYdddlPWk/node-exporter-full?var-job=kubernetes-service-endpoints&var-nodename=pc&var-node=100.89.110.97:9100"
+        description: WSL, CPU/RAM/disco no Grafana
+        siteMonitor: http://100.89.110.97:9100/metrics
 - Terceiros:
     - Cloudflare:
         icon: cloudflare.png

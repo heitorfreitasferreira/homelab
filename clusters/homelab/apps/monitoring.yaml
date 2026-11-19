@@ -231,7 +231,9 @@ spec:
                       annotations:
                         summary: "{{ $labels.instance }}: {{ $value | humanizePercentage }} de RAM livre"
                     - alert: DiscoQuaseCheio
-                      expr: node_filesystem_avail_bytes{fstype=~"ext4|xfs|btrfs"} / node_filesystem_size_bytes < 0.10
+                      # Piso de 1 GB e /usr/src fora: no WSL o /dev/sdb (0,1 GiB, read-only, headers do
+                      # kernel) fica sempre cheio e disparava o alerta para sempre.
+                      expr: node_filesystem_avail_bytes{fstype=~"ext4|xfs|btrfs",mountpoint!~"/usr/src.*"} / node_filesystem_size_bytes{fstype=~"ext4|xfs|btrfs",mountpoint!~"/usr/src.*"} < 0.10 and on(instance, device, mountpoint) node_filesystem_size_bytes > 1e9
                       for: 15m
                       labels: {severity: warning}
                       annotations:
