@@ -201,3 +201,9 @@ hermes-ops logs <namespace> <pod> 200
 A racknerd tem a deploy key `hermes-racknerd` com escrita so neste repo. O
 `hermes-ops publish` usa essa chave via `core.sshCommand`. Nao copie a chave
 para outro repo nem para outro host.
+
+Para recriar em outro host, gere uma chave ed25519 sem passphrase, adicione a
+publica como deploy key com write no GitHub, troque o remote para
+`git@github.com:heitorfreitasferreira/homelab.git` e configure
+`core.sshCommand` para usar a chave. O `git push` do host passa a funcionar sem
+token.
