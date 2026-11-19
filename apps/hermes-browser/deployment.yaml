@@ -1,0 +1,70 @@
+# Chromium headless no pc-heito-wsl, controlado por CDP pelo Hermes na racknerd.
+# Quando o PC esta desligado o pod fica Pending: e o comportamento esperado.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: chromium
+  namespace: hermes
+  labels:
+    app: chromium
+spec:
+  replicas: 1
+  # O PC pode ficar desligado por dias. Sem isso o Deployment vira Degraded
+  # depois de 10 min e contamina a saude do app raiz.
+  progressDeadlineSeconds: 2147483647
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: chromium
+  template:
+    metadata:
+      labels:
+        app: chromium
+    spec:
+      nodeSelector:
+        kubernetes.io/hostname: pc-heito-wsl
+      tolerations:
+        - key: homelab.io/compute
+          operator: Equal
+          value: "true"
+          effect: NoSchedule
+      containers:
+        - name: chromium
+          image: chromedp/headless-shell:159.0.8154.13
+          args:
+            - --no-sandbox
+            - --disable-dev-shm-usage
+            - --disable-gpu
+            - --hide-scrollbars
+            - --mute-audio
+            - --no-first-run
+            - --no-default-browser-check
+            - --remote-debugging-address=0.0.0.0
+            - --remote-debugging-port=9222
+            - --user-data-dir=/data/profile
+            - --window-size=1280,800
+          ports:
+            - name: cdp
+              containerPort: 9222
+          readinessProbe:
+            httpGet:
+              path: /json/version
+              port: cdp
+            initialDelaySeconds: 3
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              memory: 2Gi
+          volumeMounts:
+            - name: profile
+              mountPath: /data
+          securityContext:
+            runAsUser: 0
+      volumes:
+        - name: profile
+          persistentVolumeClaim:
+            claimName: chromium-profile

@@ -10,6 +10,7 @@ resources:
   - apps/tailscale.yaml
   - apps/homepage.yaml
   - apps/monitoring.yaml
+  - apps/hermes-browser.yaml
   - apps/nextcloud.yaml
   - apps/securo.yaml
   - apps/securo-backup.yaml
