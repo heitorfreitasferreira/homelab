@@ -1,0 +1,12 @@
+# Modelos do Whisper ficam no pc-heito-wsl. Se o PC desliga, o pod fica Pending.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: whisper-models
+  namespace: hermes
+spec:
+  accessModes: [ReadWriteOnce]
+  storageClassName: local-path
+  resources:
+    requests:
+      storage: 5Gi

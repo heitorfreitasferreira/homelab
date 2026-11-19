@@ -1,0 +1,94 @@
+# Whisper (speaches) no pc-heito-wsl, API compativel com OpenAI.
+# O Hermes na racknerd usa http://100.89.110.97:8000/v1 para transcrever audio.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: whisper
+  namespace: hermes
+  labels:
+    app: whisper
+spec:
+  replicas: 1
+  # O PC pode ficar desligado por dias e o pod fica Pending de proposito.
+  progressDeadlineSeconds: 2147483647
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: whisper
+  template:
+    metadata:
+      labels:
+        app: whisper
+    spec:
+      # Mesmo motivo do Chromium: o CNI do WSL nao entrega DNS/egress aos pods,
+      # e o download do modelo no startup precisa da rede do host.
+      hostNetwork: true
+      dnsPolicy: Default
+      nodeSelector:
+        kubernetes.io/hostname: pc-heito-wsl
+      tolerations:
+        - key: homelab.io/compute
+          operator: Equal
+          value: "true"
+          effect: NoSchedule
+      initContainers:
+        - name: chown
+          image: rancher/mirrored-library-busybox:1.36.1
+          command:
+            - sh
+            - -c
+            - chown -R 1000:1000 /data
+          securityContext:
+            runAsUser: 0
+          volumeMounts:
+            - name: models
+              mountPath: /data
+      containers:
+        - name: whisper
+          image: ghcr.io/speaches-ai/speaches:0.8.3-cpu
+          env:
+            - name: HF_HOME
+              value: /data/hf
+            - name: ENABLE_UI
+              value: "false"
+            - name: LOG_LEVEL
+              value: info
+            - name: WHISPER__COMPUTE_TYPE
+              value: int8
+            - name: WHISPER__INFERENCE_DEVICE
+              value: cpu
+            - name: PRELOAD_MODELS
+              value: '["Systran/faster-whisper-small"]'
+            - name: STT_MODEL_TTL
+              value: "1800"
+          ports:
+            - name: http
+              containerPort: 8000
+          startupProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 10
+            failureThreshold: 90
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 200m
+              memory: 512Mi
+            limits:
+              memory: 2Gi
+          securityContext:
+            runAsUser: 1000
+            runAsGroup: 1000
+          volumeMounts:
+            - name: models
+              mountPath: /data
+      volumes:
+        - name: models
+          persistentVolumeClaim:
+            claimName: whisper-models
