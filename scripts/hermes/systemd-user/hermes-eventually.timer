@@ -2,7 +2,7 @@
 Description=Gera o eventually toda sexta antes do digest
 
 [Timer]
-OnCalendar=Fri 17:30
+OnCalendar=Fri 15:00
 Persistent=true
 
 [Install]

@@ -7,7 +7,7 @@ trabalho. A racknerd recebe `~/.hermes/linkedin/latest.md` e `~/.hermes/vagas/`.
 ## O que roda
 
 - `hermes-eventually`: roda `/eventually` headless no workspace agromercantil
-  com `opencode run --standalone`, toda sexta as 17:30.
+  com `opencode run --standalone`, toda sexta as 15:00.
 - `hermes-activity-digest`: le git log dos repos, o relatorio mais recente do
   `eventually`, o `ESTADO.md` dos posts, o curriculo base, a triagem de vagas e
   uma busca de vagas. Monta um pacote e envia para a racknerd. Timer diario as
@@ -16,7 +16,7 @@ trabalho. A racknerd recebe `~/.hermes/linkedin/latest.md` e `~/.hermes/vagas/`.
   `~/.hermes/linkedin/drafts` para
   `~/agromercantil/linkedin-posts/hermes-drafts`. Timer diario as 18:50.
 
-Ordem de sexta: 17:30 eventually, 18:20 digest, 18:40 rascunho de LinkedIn na
+Ordem de sexta: 15:00 eventually, 18:20 digest, 18:40 rascunho de LinkedIn na
 racknerd, 18:50 pull dos rascunhos.
 
 ## Instalar
