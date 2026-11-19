@@ -195,3 +195,9 @@ hermes-ops logs <namespace> <pod> 200
 - Nunca reinicie o gateway do Hermes de dentro dele.
 - Mudanca de banco, storage, DNS publico ou Tailscale admin e trabalho de
   OpenCode, com janela e rollback explicito.
+
+## Deploy key
+
+A racknerd tem a deploy key `hermes-racknerd` com escrita so neste repo. O
+`hermes-ops publish` usa essa chave via `core.sshCommand`. Nao copie a chave
+para outro repo nem para outro host.
