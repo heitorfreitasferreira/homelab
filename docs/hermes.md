@@ -155,7 +155,8 @@ hermes doctor
 - Os dois pods tem `nodeSelector` do WSL e toleram o taint
   `homelab.io/compute=true:NoSchedule`. Quando o PC desliga, ficam Pending.
   Ferramenta de browser ou STT falhando com connection refused nesse estado e
-  normal, nao e incidente.
+  normal, nao e incidente. O Argo mostra os dois apps como `Progressing`
+  enquanto o PC estiver desligado.
 - Config no `~/.hermes/config.yaml`: `browser.cdp_url`, `stt.provider: openai`,
   `stt.openai.base_url`, `stt.openai.model`, `tts.provider: edge` e
   `tts.edge.voice: pt-BR-FranciscaNeural`.
