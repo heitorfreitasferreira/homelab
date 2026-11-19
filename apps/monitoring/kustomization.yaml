@@ -10,7 +10,6 @@ configMapGenerator:
   # O sidecar do Grafana le ConfigMaps com grafana_dashboard=1 no namespace monitoring.
   - name: grafana-dashboards-homelab
     files:
-      - dashboards/visao-geral.json
       - dashboards/casa-hardware.json
       - dashboards/tailscale.json
       - dashboards/sondas-alertas.json

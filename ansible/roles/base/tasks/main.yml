@@ -9,8 +9,6 @@
       - zram-tools
       - unattended-upgrades
       - apt-listchanges
-      - open-iscsi
-      - nfs-common
       - jq
       - rsync
     state: present

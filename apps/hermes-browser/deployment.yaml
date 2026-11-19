@@ -41,8 +41,6 @@ spec:
             - --disable-gpu
             - --hide-scrollbars
             - --mute-audio
-            - --no-first-run
-            - --no-default-browser-check
             - --user-data-dir=/data/profile
             - --window-size=1280,800
           ports:

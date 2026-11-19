@@ -4,24 +4,6 @@ Resumo do que foi decidido e feito, destilado das sessoes do OpenCode. O
 detalhe de cada escolha esta no `DECISIONS.md`, este arquivo serve para o agente
 entender o contexto sem reler todas as conversas.
 
-## Sessoes de origem
-
-- `ses_e2f3e98b6ffekKmWcalohL38Ku`: VM homelab k8s no RackNerd, migracao para
-  R2 e rebuild da VPS.
-- `ses_e0eadd316ffeAKhJSvWuPx7tjs`: Hermes, Anytype, Telegram, Google, MCPs,
-  Grafana, dashboards e o trabalho de 19/11.
-- `ses_e0e603080ffep2GPkV5aGst1v7`: PC Windows como no k3s via WSL.
-- `ses_e10bf2516ffetjHEf6rr79m1Ag`: monitoramento de hardware e Tailscale.
-- `ses_e10d053a1ffeUicYysHo5PN3Rr`: bot do Telegram vendo itens antigos.
-- `ses_e0f65a52cffemC2fGgw9d34Cyh`: Solar Man e Home Assistant.
-- `ses_e1669f3ceffe1acR48N1HhZDBN`: Firefly, Ente, Nextcloud e Immich.
-- `ses_e14d80258ffe15CjarWWWJFpWK`: mapa Xiaomi no Home Assistant.
-- `ses_e13fb501bffe2wU653CssBHh3d`: tags NFC.
-- `ses_05626da51ffeAIls0BrwMf7gGG`: setup inicial do workspace agromercantil,
-  `AGENTS.md`, skills e agentes.
-- `ses_fc603cb79ffe1JmpSEBHZY7FQq`: comando `eventually`.
-- `ses_e34049431ffeQxMoKsULlPZDOi`: workspace multi-repo com worktrees.
-
 ## Linha do tempo
 
 ### 12/11, rebuild da VPS

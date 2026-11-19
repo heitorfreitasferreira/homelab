@@ -37,15 +37,6 @@ if ! printf '%s' "$status" | jq -r '
     "# HELP tailscale_exporter_success 1 se a coleta terminou sem erro.",
     "# TYPE tailscale_exporter_success gauge",
     "tailscale_exporter_success 1",
-    "# HELP tailscale_backend_up 1 se o backend esta Running.",
-    "# TYPE tailscale_backend_up gauge",
-    "tailscale_backend_up \(if .BackendState == "Running" then 1 else 0 end)",
-    "# HELP tailscale_self_online 1 se este no esta online.",
-    "# TYPE tailscale_self_online gauge",
-    "tailscale_self_online \(if .Self.Online then 1 else 0 end)",
-    "# HELP tailscale_peer_count Peers conhecidos.",
-    "# TYPE tailscale_peer_count gauge",
-    "tailscale_peer_count \(.Peer | length)",
     "# HELP tailscale_health_problems Avisos de saude do cliente.",
     "# TYPE tailscale_health_problems gauge",
     "tailscale_health_problems \(.Health // [] | length)",
@@ -62,15 +53,8 @@ if ! printf '%s' "$status" | jq -r '
     "# HELP tailscale_peer_relay_info Peer usando DERP.",
     "# TYPE tailscale_peer_relay_info gauge",
     "# HELP tailscale_peer_key_expiry_timestamp_seconds Validade da chave do peer.",
-    "# TYPE tailscale_peer_key_expiry_timestamp_seconds gauge",
-    "# HELP tailscale_self_key_expiry_timestamp_seconds Validade da chave deste no.",
-    "# TYPE tailscale_self_key_expiry_timestamp_seconds gauge"
+    "# TYPE tailscale_peer_key_expiry_timestamp_seconds gauge"
   ]
-  + (
-    if .Self.KeyExpiry != null then
-      ["tailscale_self_key_expiry_timestamp_seconds \(.Self.KeyExpiry | epoch)"]
-    else [] end
-  )
   + [
     .Peer[] |
     .HostName as $p |

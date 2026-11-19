@@ -78,20 +78,12 @@ cmd_status() {
     local alert_json
     if alert_json=$(curl -fsS --max-time 15 -G "$METRICS/api/v1/query" \
         --data-urlencode 'query=ALERTS{alertstate="firing",alertname!="Watchdog"}'); then
-        printf '%s' "$alert_json" | python3 -c '
-import json, sys
-try:
-    data = json.load(sys.stdin)
-except Exception:
-    print("resposta invalida do vmsingle")
-    raise SystemExit(0)
-rows = data.get("data", {}).get("result", [])
-if not rows:
-    print("nenhum")
-for row in rows:
-    m = row.get("metric", {})
-    print(m.get("alertname", "?"), m.get("severity", ""), m.get("instance", ""), m.get("node", ""))
-'
+        local rows
+        if rows=$(printf '%s' "$alert_json" | jq -r '.data.result[]? | [.metric.alertname // "?", .metric.severity // "", .metric.instance // "", .metric.node // ""] | @tsv'); then
+            printf '%s\n' "${rows:-nenhum}"
+        else
+            echo "resposta invalida do vmsingle"
+        fi
     else
         echo "consulta indisponivel"
     fi
@@ -124,21 +116,6 @@ cmd_sync() {
         fi
         sleep 5
     done
-
-    if [[ "$sync" != "Synced" ]]; then
-        echo "ainda OutOfSync, disparando sync explicito"
-        "${KUBECTL[@]}" -n "$ARGOCD_NS" patch application "$app" --type merge \
-            -p '{"operation":{"sync":{}}}' >/dev/null || true
-        for i in $(seq 1 24); do
-            sync=$("${KUBECTL[@]}" -n "$ARGOCD_NS" get application "$app" \
-                -o jsonpath='{.status.sync.status}' 2>/dev/null || true)
-            health=$("${KUBECTL[@]}" -n "$ARGOCD_NS" get application "$app" \
-                -o jsonpath='{.status.health.status}' 2>/dev/null || true)
-            echo "  tentativa $i sync=${sync:-?} health=${health:-?}"
-            [[ "$sync" == "Synced" && -n "$health" ]] && break
-            sleep 5
-        done
-    fi
 
     [[ "$sync" == "Synced" ]] || die "sync nao concluiu para $app"
     echo "ok: $app sync=Synced health=${health:-?}"

@@ -63,8 +63,6 @@ spec:
               value: int8
             - name: WHISPER__INFERENCE_DEVICE
               value: cpu
-            - name: PRELOAD_MODELS
-              value: '["Systran/faster-whisper-small"]'
             - name: STT_MODEL_TTL
               value: "1800"
           ports:

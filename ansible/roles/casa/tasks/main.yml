@@ -75,15 +75,6 @@
       iface {{ casa_lan_iface }} inet dhcp
     mode: "0644"
 
-# O 50-wol.link casava com a placa antes do 99-default.link e, sem NamePolicy, deixava o nome
-# eth0: o cabo ficou fora do ar de 15/11 04:30 ate 16/11. A BIOS nao tem Wake-on-LAN, entao
-# o arquivo sai. O initramfs guarda uma copia e precisa ser refeito.
-- name: No custom .link for the wired NIC
-  ansible.builtin.file:
-    path: /etc/systemd/network/50-wol.link
-    state: absent
-  notify: Update initramfs
-
 - name: Kernel settings (subnet router, ARP with two interfaces, reboot after panic, zram)
   ansible.posix.sysctl:
     name: "{{ item.key }}"
@@ -100,12 +91,6 @@
       # Console (tty1) so mostra erros graves do kernel, sem o ruido do driver Wi-Fi.
       kernel.printk: "3 4 1 3"
       vm.swappiness: "{{ casa_swappiness }}"
-
-- name: Remove ad hoc sysctl files from the first manual setup
-  ansible.builtin.file:
-    path: "/etc/sysctl.d/{{ item }}"
-    state: absent
-  loop: [99-tailscale.conf, 98-arp.conf]
 
 - name: nftables ruleset (table inet casa only, Tailscale and Podman keep their own tables)
   ansible.builtin.template:
@@ -257,24 +242,6 @@
     enabled: true
   loop: [apt, smartmon, nvme]
 
-# O DNS da tailnet ficou so no Pi-hole do racknerd (DECISIONS.md, item 18). O Pi-hole que
-# rodava aqui sai com o container, os dados e a publicacao :8443 do tailscale serve.
-- name: Pi-hole stopped
-  ansible.builtin.systemd_service:
-    name: pihole.service
-    state: stopped
-  failed_when: false
-
-- name: Pi-hole removed
-  ansible.builtin.file:
-    path: "{{ item }}"
-    state: absent
-  loop:
-    - /etc/containers/systemd/pihole.container
-    - /etc/pihole
-    - /var/lib/pihole
-  notify: Reload systemd
-
 # --- mDNS: o OAuth do Xiaomi Home volta para http://homeassistant.local:8123 -------------
 - name: Avahi
   ansible.builtin.apt:
@@ -334,12 +301,6 @@
 # O `tailscale serve` entrega o HA em https://casa.tail76c1c6.ts.net, com proxy vindo de 127.0.0.1.
 # O HA 2026.11 migra o bloco `http:` do YAML para .storage/http uma unica vez e depois ignora o
 # YAML, entao o proxy e configurado no armazenamento, com o servico parado.
-- name: Remove the migrated http block from configuration.yaml
-  ansible.builtin.blockinfile:
-    path: /var/lib/homeassistant/configuration.yaml
-    marker: "# {mark} casa: tailscale serve"
-    state: absent
-
 - name: Check the stored HTTP proxy settings
   ansible.builtin.command:
     argv:

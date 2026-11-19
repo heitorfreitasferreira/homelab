@@ -1142,8 +1142,8 @@
   "graphTooltip": 1,
   "links": [
     {
-      "title": "Visao geral",
-      "url": "/d/homelab-visao-geral",
+      "title": "Dashboards",
+      "url": "/dashboards",
       "type": "link",
       "icon": "external link",
       "targetBlank": false
