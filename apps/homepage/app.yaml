@@ -27,8 +27,6 @@ spec:
             - {name: config, mountPath: /app/config/services.yaml, subPath: services.yaml}
             - {name: config, mountPath: /app/config/widgets.yaml, subPath: widgets.yaml}
             - {name: config, mountPath: /app/config/kubernetes.yaml, subPath: kubernetes.yaml}
-            - {name: config, mountPath: /app/config/bookmarks.yaml, subPath: bookmarks.yaml}
-            - {name: config, mountPath: /app/config/docker.yaml, subPath: docker.yaml}
       volumes:
         - name: config
           configMap: {name: homepage-config}

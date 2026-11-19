@@ -96,4 +96,4 @@ Fonte de verdade das escolhas do homelab pessoal. Cada decisao com o porque e o 
 - Conectar Caixa e Santander no Securo via Meu Pluggy e importar os lancamentos. Revisar as 392 transacoes que pedem categoria.
 - Criar a conta da namorada pelo admin (email e senha temporaria) e decidir se ela entra no workspace Pessoal.
 
-Estado da VM antes do reinstall: `docs/inventario-vm-atual.md`.
+Estado da VM antes do reinstall: commit `220f242`.

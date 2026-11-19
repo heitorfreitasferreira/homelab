@@ -43,6 +43,10 @@
         icon: tailscale.png
         href: https://login.tailscale.com/admin/machines
         description: maquinas e DNS da tailnet
+    - RackNerd:
+        icon: mdi-server
+        href: https://ctrl.racknerd.com/control.php?vserverid=497219
+        description: VPS
 - Maquinas:
     - PC (pc-heito):
         icon: mdi-laptop
@@ -53,6 +57,10 @@
         icon: cloudflare.png
         href: https://dash.cloudflare.com/
         description: DNS e R2
+    - Cloudflare R2:
+        icon: cloudflare.png
+        href: https://dash.cloudflare.com/8ef031572e6694f614275029be68313a/r2/overview
+        description: bucket de fotos e backups
     - Pluggy:
         icon: https://pluggy.ai/logo.png
         href: https://dashboard.pluggy.ai/

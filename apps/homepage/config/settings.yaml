@@ -5,5 +5,4 @@ headerStyle: clean
 language: pt-BR
 layout:
   Admin: {style: row, columns: 3}
-  Apps: {style: row, columns: 4}
   Maquinas: {style: row, columns: 2}

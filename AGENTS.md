@@ -20,7 +20,7 @@ Este repositorio declara o homelab pessoal. A fonte de verdade das escolhas e
 - `apps/<nome>/`: manifests Kustomize dos apps.
 - `platform/`: base, CoreDNS e Tailscale operator.
 - `ansible/`: provisionamento da VPS e do `casa`.
-- `docs/`: inventario, handoff e operacao do OpenCode.
+- `docs/`: operacao, Hermes, Geoffrey, vagas e runbooks.
 - `DECISIONS.md`: decisoes numeradas com o porque e o que foi descartado.
 
 ## Regras
