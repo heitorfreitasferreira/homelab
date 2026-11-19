@@ -1,0 +1,12 @@
+# Um proxy compartilhado para os Ingress da tailnet, em vez de um StatefulSet por Ingress.
+# As politicas por namespace ficam em admin-ingresses.yaml, apps/homepage e apps/monitoring.
+apiVersion: tailscale.com/v1alpha1
+kind: ProxyGroup
+metadata:
+  name: ingress
+spec:
+  type: ingress
+  replicas: 1
+  hostnamePrefix: racknerd-ingress
+  tags:
+    - tag:k8s

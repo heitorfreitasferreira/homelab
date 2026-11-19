@@ -48,9 +48,19 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: homepage
+  annotations:
+    tailscale.com/proxy-group: ingress
 spec:
   ingressClassName: tailscale
   defaultBackend:
     service: {name: homepage, port: {number: 80}}
   tls:
     - hosts: [home]
+---
+apiVersion: tailscale.com/v1alpha1
+kind: ProxyGroupPolicy
+metadata:
+  name: tailscale-ingress
+spec:
+  ingress:
+    - ingress

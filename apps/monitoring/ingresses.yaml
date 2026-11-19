@@ -3,6 +3,8 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: grafana
+  annotations:
+    tailscale.com/proxy-group: ingress
 spec:
   ingressClassName: tailscale
   defaultBackend:
@@ -26,9 +28,19 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: vmui
+  annotations:
+    tailscale.com/proxy-group: ingress
 spec:
   ingressClassName: tailscale
   defaultBackend:
     service: {name: vmui, port: {number: 8428}}
   tls:
     - hosts: [metricas]
+---
+apiVersion: tailscale.com/v1alpha1
+kind: ProxyGroupPolicy
+metadata:
+  name: tailscale-ingress
+spec:
+  ingress:
+    - ingress

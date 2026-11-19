@@ -4,6 +4,8 @@ kind: Ingress
 metadata:
   name: argocd
   namespace: argocd
+  annotations:
+    tailscale.com/proxy-group: ingress
 spec:
   ingressClassName: tailscale
   defaultBackend:
@@ -25,9 +27,30 @@ kind: Ingress
 metadata:
   name: pihole
   namespace: pihole
+  annotations:
+    tailscale.com/proxy-group: ingress
 spec:
   ingressClassName: tailscale
   defaultBackend:
     service: {name: pihole-web, port: {number: 80}}
   tls:
     - hosts: [pihole]
+---
+# Permite que os Ingress destes namespaces usem o ProxyGroup compartilhado.
+apiVersion: tailscale.com/v1alpha1
+kind: ProxyGroupPolicy
+metadata:
+  name: tailscale-ingress
+  namespace: argocd
+spec:
+  ingress:
+    - ingress
+---
+apiVersion: tailscale.com/v1alpha1
+kind: ProxyGroupPolicy
+metadata:
+  name: tailscale-ingress
+  namespace: pihole
+spec:
+  ingress:
+    - ingress

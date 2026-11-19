@@ -5,6 +5,7 @@ kind: Kustomization
 resources:
   - namespace.yaml
   - admin-ingresses.yaml
+  - proxygroup.yaml
 generators:
   - secret-generator.yaml
 helmCharts:
