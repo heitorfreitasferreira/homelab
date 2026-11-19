@@ -1,0 +1,9 @@
+[Unit]
+Description=Gera o eventually toda sexta antes do digest
+
+[Timer]
+OnCalendar=Fri 17:30
+Persistent=true
+
+[Install]
+WantedBy=timers.target

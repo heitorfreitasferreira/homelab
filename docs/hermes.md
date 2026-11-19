@@ -82,6 +82,16 @@ Assistente pessoal do homelab. Roda na VPS, so pela tailnet e pelo Telegram.
 - Estilo e regras em `~/agromercantil/linkedin-posts/AGENTS.md`, resumidos na
   skill `linkedin-posts`.
 
+## Vagas
+
+- `vagas-buscar` busca em LinkedIn guest, Remotive, RemoteOK e We Work
+  Remotely. Da racknerd o LinkedIn pode falhar por rate limit, entao use a
+  ultima busca sincronizada do notebook.
+- A skill `vagas` mede aderencia, prepara curriculo derivado, carta, respostas e
+  checklist. O padrao e preparar e abrir o formulario, sem enviar sozinho.
+- O pacote de curriculo, triagem, descricoes e busca chega no digest diario do
+  notebook. Runbook em `docs/vagas.md`.
+
 ## Contexto
 
 - `terminal.cwd` e `/home/htr/homelab`. O `AGENTS.md` do repo entra no system
@@ -96,8 +106,8 @@ Assistente pessoal do homelab. Roda na VPS, so pela tailnet e pelo Telegram.
   Telegram.
 - `approvals.deny` bloqueia leitura de segredos, `sudo`, `kubectl`, `helm`,
   `argocd`, `k3s`, `tailscale`, `systemctl`, `ansible-playbook`, `sops`, `age`,
-  `git push`, `curl`, `wget`, `ssh`, `scp`, `rsync`, `crontab`, `docker` e
-  `podman` pelo shell.
+  `curl`, `wget`, `ssh`, `scp`, `rsync`, `crontab`, `docker` e `podman` pelo
+  shell. Commit e `git push` no repo sao permitidos.
 - Kubernetes, Argo CD, Grafana, Tailscale e Pi-hole ficam read-only. O Pi-hole
   tem allowlist de 29 ferramentas de leitura.
 - O Home Assistant expoe so `GetLiveContext`, `GetDateTime` e `todo__get_items`.
@@ -110,8 +120,9 @@ Assistente pessoal do homelab. Roda na VPS, so pela tailnet e pelo Telegram.
 - STT ligado com Whisper `small` no `pc-heito-wsl`. Mensagens de voz do Telegram
   sao transcritas quando o PC esta ligado.
 - Rotina de cluster pelo `/usr/local/sbin/hermes-ops`: `status`, `sync`, `logs`,
-  `restart`, `publish` e `revert`. O runbook esta em `docs/operacao.md`. Os
-  comandos crus (`kubectl`, `sudo`, `git push`, `ssh`) continuam negados.
+  `restart` e `revert`. O runbook esta em `docs/operacao.md`. Os comandos crus
+  (`kubectl`, `sudo`, `ssh`) continuam negados. `git add`, `git commit` e
+  `git push` sao o caminho padrao de mudanca.
 - Vision e nativa no modelo `opencode-go/deepseek-v4.1-flash` (input text+image).
   Imagens enviadas no Telegram vao direto para o modelo, sem OpenRouter.
 - Computer-use, geracao de imagem e video e X search continuam desligados.

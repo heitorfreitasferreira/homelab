@@ -28,11 +28,12 @@ Este repositorio declara o homelab pessoal. A fonte de verdade das escolhas e
 - Nunca leia, imprima ou copie segredos. Tokens ficam em
   `~/.config/opencode-secrets` e no `.env` do Hermes, fora do git. Arquivos
   `*.sops.yaml` sao cifrados e nao devem ser descriptografados.
+- O caminho padrao de mudanca e editar o repo, `git add`, `git commit` e
+  `git push`. O Argo reconcilia. Use o `/usr/local/sbin/hermes-ops` para status,
+  sync, logs, restart e revert.
 - Nao execute `kubectl`, `helm`, `argocd`, `sops`, `age`, `ansible-playbook`,
-  `systemctl`, `git push`, `curl`, `ssh` ou `tailscale` pelo shell. Use os MCPs
-  read-only para consultar. Rotina de deploy, sync, restart e logs passa pelo
-  `/usr/local/sbin/hermes-ops`, documentado em `docs/operacao.md`. Mudanca de
-  infraestrutura vai por commit no repo e pelo Argo CD.
+  `systemctl`, `curl`, `ssh` ou `tailscale` pelo shell. Consulta por MCP
+  read-only. Mudanca de infraestrutura vai por commit no repo e pelo Argo CD.
 - Nao altere `DECISIONS.md` sem pedir. Mudanca de infraestrutura: mostre o
   diff, explique o efeito e espere aprovacao.
 - Nao exponha nada na internet. O acesso e pela tailnet. A VPS so tem SSH
@@ -133,13 +134,16 @@ Use o MCP `anytype`. Nao use os spaces `7bef7m` (Homelab do bot) nem `723ija`.
   `http://100.89.110.97:30922` e Whisper em `http://100.89.110.97:8000/v1`.
   Quando o PC esta desligado os pods ficam Pending e as ferramentas falham. Isso
   e normal, nao e falha do cluster.
+- Vagas: `vagas-buscar` e skill `vagas`, runbook em `docs/vagas.md`. Preparar e
+  abrir o formulario e o padrao. Nunca envie candidatura sem confirmacao.
 
 ## Operacao
 
-- Rotina: `hermes-ops status`, `hermes-ops sync <app>`,
-  `hermes-ops logs <ns> <pod>`, `hermes-ops restart <ns> <deploy>`,
-  `hermes-ops publish "msg"` e `hermes-ops revert <sha>`. O runbook completo
-  esta em `docs/operacao.md`.
+- Mudanca: edite o repo, `git add`, `git commit` e `git push`. O Argo
+  sincroniza `main`. O `hermes-ops publish` faz os tres em um passo, se preferir.
+- `hermes-ops status`, `sync <app>`, `logs <ns> <pod>`, `restart <ns> <deploy>`
+  e `revert <sha>` cobrem a rotina. O runbook completo esta em
+  `docs/operacao.md`.
 - Mudanca pesada de infra, banco, storage ou DNS publico fica para o OpenCode no
   notebook, com janela e rollback explicito.
 - Logs do OpenCode: `journalctl -u opencode -n 100 --no-pager`.

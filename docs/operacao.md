@@ -37,9 +37,9 @@ excecao, reconcilie no repo e deixe o Argo voltar ao estado declarado.
 2. Leia o arquivo que vai mudar e o `DECISIONS.md` relacionado.
 3. Edite so o necessario. Mantenha o estilo do repo.
 4. Valide YAML com `python3 -c 'import yaml...'` ou o teste que o app ja usa.
-5. Rode `hermes-ops publish "mensagem do commit"`. O script faz `git pull
-   --ff-only`, recusa arquivo com cara de segredo, commita e faz push pela deploy
-   key da racknerd.
+5. `git add <arquivos>`, `git commit -m "mensagem"` e `git push origin HEAD`.
+   O `hermes-ops publish "mensagem"` faz os tres em um passo, se preferir. O
+   push usa a deploy key da racknerd.
 6. O Argo sincroniza `main` sozinho. Se a app nao pegar, rode
    `hermes-ops sync <app>`.
 7. Verifique o recurso de verdade: pod `Running`, log sem erro, endpoint
@@ -65,8 +65,9 @@ hermes-ops revert 1a2b3c4
 - `sync` so dispara refresh e sync do Argo, nao aplica manifesto na mao.
 - `restart` aceita apenas os namespaces `monitoring`, `homepage`, `hermes`,
   `nextcloud`, `securo` e `pihole`.
-- `publish` recusa `.env`, tokens, chaves e kubeconfig. Mesmo assim, revise o
-  `git status` antes.
+- `publish` e um atalho para `git add -A`, commit e push. O caminho padrao e
+  `git add`, `git commit`, `git push`. O atalho recusa `.env`, tokens, chaves e
+  kubeconfig. Mesmo assim, revise o `git status` antes.
 - `revert` so aceita commit que esta no historico do `main`.
 
 ## Argo CD

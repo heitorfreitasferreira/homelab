@@ -80,7 +80,8 @@ entender o contexto sem reler todas as conversas.
 ## O que o Hermes aprendeu a operar
 
 - Leitura por MCP: Kubernetes, Argo CD, Grafana, Tailscale, Pi-hole e HA.
-- Escrita por `hermes-ops`: status, sync, logs, restart, publish e revert.
+- Commit e `git push` diretos no repo, com `hermes-ops` para status, sync,
+  logs, restart e revert.
 - Mudanca de infraestrutura vai por commit, o Argo reconcilia.
 - Browser e STT dependem do PC ligado. Offline e estado normal, nao incidente.
 - O gateway nao reinicia a si mesmo. O dashboard e o Telegram sao a interface.

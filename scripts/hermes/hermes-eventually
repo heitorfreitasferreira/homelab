@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+# Roda o eventually headless no workspace agromercantil.
+# O notebook e a fonte de verdade. Se estiver desligado, o timer Persistent
+# roda quando ele voltar e o digest seguinte carrega o relatorio novo.
+set -euo pipefail
+
+OPENCODE="${OPENCODE_BIN:-$HOME/.local/share/mise/installs/opencode/latest/node_modules/.bin/opencode}"
+if [[ ! -x "$OPENCODE" ]]; then
+    OPENCODE="$(command -v opencode)"
+fi
+
+cd "$HOME/agromercantil"
+exec "$OPENCODE" run --standalone --archived --auto --title "eventually automatico" "/eventually"

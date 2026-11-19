@@ -1,0 +1,314 @@
+#!/usr/bin/env python3
+"""Busca vagas em fontes publicas e imprime um resumo em Markdown ou JSON.
+
+Fontes: LinkedIn guest, Remotive, RemoteOK e We Work Remotely.
+Nao aplica em vaga nenhuma. So coleta e ordena por aderencia simples.
+"""
+from __future__ import annotations
+
+import argparse
+import html
+import json
+import re
+import sys
+import time
+import urllib.parse
+import urllib.request
+import xml.etree.ElementTree as ET
+from datetime import datetime, timedelta, timezone
+
+UA = (
+    "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
+    "(KHTML, like Gecko) Chrome/159.0.0.0 Safari/537.36"
+)
+
+KEYWORDS = {
+    "kubernetes": 3,
+    "k8s": 3,
+    "terraform": 2,
+    "opentofu": 2,
+    "argocd": 2,
+    "argo cd": 2,
+    "gitops": 2,
+    "ci/cd": 2,
+    "cicd": 2,
+    "observability": 2,
+    "observabilidade": 2,
+    "platform engineer": 2,
+    "platform engineering": 2,
+    "sre": 2,
+    "site reliability": 2,
+    "devops": 2,
+    "prometheus": 1,
+    "grafana": 1,
+    "opentelemetry": 1,
+    "postgresql": 1,
+    "postgres": 1,
+    "python": 1,
+    "golang": 1,
+    "go ": 1,
+    "aws": 1,
+    "docker": 1,
+    "helm": 1,
+    "linux": 1,
+    "remote": 1,
+    "remoto": 1,
+}
+
+
+def fetch(url: str, timeout: int = 25) -> bytes:
+    req = urllib.request.Request(
+        url,
+        headers={
+            "User-Agent": UA,
+            "Accept": "application/json, text/html, application/xml, text/xml, */*",
+            "Accept-Language": "pt-BR,pt,en-US,en",
+        },
+    )
+    with urllib.request.urlopen(req, timeout=timeout) as response:
+        return response.read()
+
+
+def clean(value: str | None) -> str:
+    if not value:
+        return ""
+    value = re.sub(r"<[^>]+>", " ", value)
+    value = html.unescape(value)
+    return re.sub(r"\s+", " ", value).strip()
+
+
+def score(title: str, description: str = "", tags: list[str] | None = None) -> int:
+    text = " ".join([title, description, " ".join(tags or [])]).lower()
+    return sum(weight for word, weight in KEYWORDS.items() if word in text)
+
+
+def parse_date(value: str) -> str:
+    if not value:
+        return ""
+    value = value.strip()
+    for fmt in ("%Y-%m-%dT%H:%M:%S", "%Y-%m-%d", "%a, %d %b %Y %H:%M:%S %z"):
+        try:
+            return datetime.strptime(value[: len(fmt) + 8], fmt).strftime("%Y-%m-%d")
+        except ValueError:
+            continue
+    try:
+        return datetime.fromisoformat(value.replace("Z", "+00:00")).strftime("%Y-%m-%d")
+    except ValueError:
+        return value[:10]
+
+
+def recent(date_str: str, days: int) -> bool:
+    if not date_str:
+        return True
+    try:
+        date = datetime.strptime(date_str, "%Y-%m-%d").date()
+    except ValueError:
+        return True
+    return date >= (datetime.now(timezone.utc).date() - timedelta(days=days))
+
+
+def linkedin(query: str, location: str, limit: int, days: int) -> list[dict]:
+    jobs: list[dict] = []
+    seen: set[str] = set()
+    for start in range(0, min(limit, 50), 25):
+        params = urllib.parse.urlencode(
+            {
+                "keywords": query,
+                "location": location,
+                "start": start,
+                "f_TPR": f"r{days * 86400}",
+            }
+        )
+        raw = fetch(f"https://www.linkedin.com/jobs-guest/jobs/api/seeMoreJobPostings/search?{params}")
+        page = raw.decode("utf-8", "replace")
+        for block in re.findall(r"<li>(.*?)</li>", page, re.S):
+            link_match = re.search(r'base-card__full-link[^>]*href="([^"]+)"', block)
+            if not link_match:
+                continue
+            link = html.unescape(link_match.group(1)).split("?")[0]
+            if link in seen:
+                continue
+            title = clean(re.search(r"base-search-card__title[^>]*>(.*?)</h3>", block, re.S).group(1)
+                          if re.search(r"base-search-card__title[^>]*>(.*?)</h3>", block, re.S) else "")
+            company = clean(re.search(r"base-search-card__subtitle[^>]*>(.*?)</h4>", block, re.S).group(1)
+                            if re.search(r"base-search-card__subtitle[^>]*>(.*?)</h4>", block, re.S) else "")
+            loc = clean(re.search(r"job-search-card__location[^>]*>(.*?)</span>", block, re.S).group(1)
+                        if re.search(r"job-search-card__location[^>]*>(.*?)</span>", block, re.S) else "")
+            date_match = re.search(r'<time[^>]*datetime="([^"]+)"', block)
+            date = parse_date(date_match.group(1) if date_match else "")
+            if not title:
+                continue
+            seen.add(link)
+            jobs.append(
+                {
+                    "source": "linkedin",
+                    "title": title,
+                    "company": company,
+                    "location": loc,
+                    "date": date,
+                    "url": link,
+                    "score": score(title, "", [loc]),
+                }
+            )
+            if len(jobs) >= limit:
+                return jobs
+        time.sleep(1)
+    return jobs
+
+
+def remotive(query: str, limit: int, days: int) -> list[dict]:
+    data = json.loads(fetch("https://remotive.com/api/remote-jobs?search=" + urllib.parse.quote(query) + "&limit=50"))
+    jobs = []
+    for item in data.get("jobs", []):
+        title = item.get("title", "")
+        description = clean(item.get("description", ""))[:2000]
+        date = parse_date(item.get("publication_date", ""))
+        if not recent(date, days):
+            continue
+        jobs.append(
+            {
+                "source": "remotive",
+                "title": title,
+                "company": item.get("company_name", ""),
+                "location": item.get("candidate_required_location", "Remote"),
+                "date": date,
+                "url": item.get("url", ""),
+                "score": score(title, description, item.get("tags", [])),
+            }
+        )
+        if len(jobs) >= limit:
+            break
+    return jobs
+
+
+def remoteok(query: str, limit: int, days: int) -> list[dict]:
+    data = json.loads(fetch("https://remoteok.com/api?tags=" + urllib.parse.quote(query.replace(" ", "-"))))
+    jobs = []
+    for item in data:
+        if not isinstance(item, dict) or "position" not in item:
+            continue
+        title = item.get("position", "")
+        description = clean(item.get("description", ""))[:2000]
+        date = parse_date(str(item.get("date", "")))
+        if not recent(date, days):
+            continue
+        jobs.append(
+            {
+                "source": "remoteok",
+                "title": title,
+                "company": item.get("company", ""),
+                "location": item.get("location", "Remote"),
+                "date": date,
+                "url": item.get("url") or f"https://remoteok.com/remote-jobs/{item.get('id', '')}",
+                "score": score(title, description, item.get("tags", [])),
+            }
+        )
+        if len(jobs) >= limit:
+            break
+    return jobs
+
+
+def wwr(query: str, limit: int, days: int) -> list[dict]:
+    feeds = [
+        "https://weworkremotely.com/categories/remote-devops-sysadmin-jobs.rss",
+        "https://weworkremotely.com/categories/remote-programming-jobs.rss",
+    ]
+    jobs = []
+    for feed in feeds:
+        root = ET.fromstring(fetch(feed))
+        for item in root.findall("./channel/item"):
+            title = (item.findtext("title") or "").strip()
+            region = (item.findtext("region") or "Remote").strip()
+            description = clean(item.findtext("description") or "")[:2000]
+            date = parse_date((item.findtext("pubDate") or "").strip())
+            if not recent(date, days):
+                continue
+            jobs.append(
+                {
+                    "source": "weworkremotely",
+                    "title": title,
+                    "company": "",
+                    "location": region,
+                    "date": date,
+                    "url": (item.findtext("link") or "").strip(),
+                    "score": score(title, description, []),
+                }
+            )
+            if len(jobs) >= limit:
+                return jobs
+    return jobs
+
+
+def render_markdown(query: str, location: str, jobs: list[dict], errors: list[str]) -> str:
+    lines = [
+        f"# Vagas: {query}" + (f" em {location}" if location else ""),
+        "",
+        f"Gerado em {datetime.now().strftime('%Y-%m-%d %H:%M')}.",
+        "",
+    ]
+    if errors:
+        lines.append("Fontes indisponiveis: " + ", ".join(errors))
+        lines.append("")
+    if not jobs:
+        lines.append("Nenhuma vaga encontrada nas fontes consultadas.")
+        return "\n".join(lines) + "\n"
+    for job in jobs:
+        lines.append(f"## {job['title']}")
+        meta = [job.get("company") or "", job.get("location") or "", job.get("source") or "", job.get("date") or ""]
+        lines.append(" | ".join([m for m in meta if m]))
+        lines.append(f"- link: {job['url']}")
+        lines.append(f"- score: {job['score']}")
+        lines.append("")
+    return "\n".join(lines)
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description="Busca vagas em fontes publicas.")
+    parser.add_argument("query", help="cargo ou palavras-chave")
+    parser.add_argument("--location", default="Brazil", help="local para o LinkedIn")
+    parser.add_argument("--limit", type=int, default=10, help="maximo por fonte")
+    parser.add_argument("--days", type=int, default=21, help="janela em dias")
+    parser.add_argument("--sources", default="linkedin,remotive,remoteok,wwr")
+    parser.add_argument("--json", action="store_true", help="saida JSON")
+    parser.add_argument("--out", help="arquivo para salvar o Markdown")
+    args = parser.parse_args()
+
+    sources = {s.strip().lower() for s in args.sources.split(",") if s.strip()}
+    jobs: list[dict] = []
+    errors: list[str] = []
+    for name, func in (
+        ("linkedin", lambda: linkedin(args.query, args.location, args.limit, args.days)),
+        ("remotive", lambda: remotive(args.query, args.limit, args.days)),
+        ("remoteok", lambda: remoteok(args.query, args.limit, args.days)),
+        ("wwr", lambda: wwr(args.query, args.limit, args.days)),
+    ):
+        if name not in sources:
+            continue
+        try:
+            jobs.extend(func())
+        except Exception as exc:  # noqa: BLE001
+            errors.append(f"{name} ({type(exc).__name__})")
+
+    unique: dict[str, dict] = {}
+    for job in jobs:
+        key = job.get("url") or f"{job.get('title')}|{job.get('company')}"
+        if key and key not in unique:
+            unique[key] = job
+    jobs = sorted(unique.values(), key=lambda j: (j["score"], j.get("date") or ""), reverse=True)
+
+    if args.json:
+        output = json.dumps({"query": args.query, "errors": errors, "jobs": jobs}, ensure_ascii=False, indent=2)
+    else:
+        output = render_markdown(args.query, args.location, jobs, errors)
+
+    if args.out:
+        with open(args.out, "w", encoding="utf-8") as handle:
+            handle.write(output)
+        print(f"{len(jobs)} vagas salvas em {args.out}")
+    else:
+        print(output)
+    return 0 if jobs else 1
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

@@ -1,0 +1,8 @@
+[Unit]
+Description=Relatorio eventually semanal no workspace agromercantil
+After=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=%h/.local/bin/hermes-eventually
+TimeoutStartSec=1200
