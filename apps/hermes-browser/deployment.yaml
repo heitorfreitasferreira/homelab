@@ -33,15 +33,12 @@ spec:
         - name: chromium
           image: chromedp/headless-shell:159.0.8154.13
           args:
-            - --no-sandbox
             - --disable-dev-shm-usage
             - --disable-gpu
             - --hide-scrollbars
             - --mute-audio
             - --no-first-run
             - --no-default-browser-check
-            - --remote-debugging-address=0.0.0.0
-            - --remote-debugging-port=9222
             - --user-data-dir=/data/profile
             - --window-size=1280,800
           ports:
