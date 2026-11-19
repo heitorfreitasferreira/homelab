@@ -5,7 +5,6 @@ metadata:
   name: grafana
   annotations:
     tailscale.com/proxy-group: ingress
-    tailscale.com/http-endpoint: "enabled"
 spec:
   ingressClassName: tailscale
   defaultBackend:
@@ -31,7 +30,6 @@ metadata:
   name: vmui
   annotations:
     tailscale.com/proxy-group: ingress
-    tailscale.com/http-endpoint: "enabled"
 spec:
   ingressClassName: tailscale
   defaultBackend:
