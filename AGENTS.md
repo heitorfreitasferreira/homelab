@@ -50,8 +50,10 @@ Este repositorio declara o homelab pessoal. A fonte de verdade das escolhas e
 - Metricas e logs: MCP `grafana` (Viewer, sem escrita).
 - Tailnet: MCP `tailscale` (no local, risco read).
 - DNS: MCP `pihole` (ferramentas de leitura).
-- Home Assistant: MCP `home-assistant` (quando configurado).
-- Conhecimento: MCP `anytype` (space do homelab, quando configurado).
+- Home Assistant: MCP `home-assistant` (somente leitura de contexto).
+- Conhecimento: MCP `anytype`. Use o space `Homelab` (`7bef7m`) para notas,
+  decisoes e runbooks. Se o bot tiver sido convidado para um space seu, use o
+  space que o Heitor indicar.
 
 ## Servicos
 
