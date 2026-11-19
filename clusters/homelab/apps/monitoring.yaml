@@ -645,6 +645,8 @@ spec:
         persistence:
           enabled: true
           size: 1Gi
+        admin:
+          existingSecret: grafana-admin
         grafana.ini:
           server:
             root_url: https://grafana.tail76c1c6.ts.net
