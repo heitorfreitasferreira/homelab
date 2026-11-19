@@ -30,6 +30,17 @@ spec:
               hosts:
                 - securo.htrlab.duckdns.org
 
+        # MCP server embutido do Securo: expoe o app para clientes MCP (Hermes).
+        # publicRoute fica false, o acesso e por Ingress tailscale (platform/tailscale/admin-ingresses.yaml).
+        config:
+          agentsEnabled: "true"
+
+        mcpServer:
+          enabled: true
+          resources:
+            requests: {cpu: 50m, memory: 128Mi}
+            limits: {memory: 256Mi}
+
         backend:
           image:
             repository: ghcr.io/securo-finance/securo-backend

@@ -54,3 +54,28 @@ metadata:
 spec:
   ingress:
     - ingress
+---
+# MCP server embutido do Securo (ClusterIP 8765, criado pelo chart). So pela tailnet:
+# o /mcp do dominio publico fica desligado (mcpServer.publicRoute false).
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: securo-mcp
+  namespace: securo
+  annotations:
+    tailscale.com/proxy-group: ingress
+spec:
+  ingressClassName: tailscale
+  defaultBackend:
+    service: {name: securo-mcp-server, port: {number: 8765}}
+  tls:
+    - hosts: [securo-mcp]
+---
+apiVersion: tailscale.com/v1alpha1
+kind: ProxyGroupPolicy
+metadata:
+  name: tailscale-ingress
+  namespace: securo
+spec:
+  ingress:
+    - ingress

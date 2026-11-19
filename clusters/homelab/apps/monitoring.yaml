@@ -139,7 +139,6 @@ spec:
                     - targets:
                         - https://casa.tail76c1c6.ts.net
                         - https://home.tail76c1c6.ts.net
-                        - https://financas.tail76c1c6.ts.net
                         - https://argocd.tail76c1c6.ts.net
                         - https://grafana.tail76c1c6.ts.net
                         - https://pihole.tail76c1c6.ts.net/admin/
