@@ -15,8 +15,9 @@ Assistente pessoal do homelab. Roda na VPS, so pela tailnet e pelo Telegram.
 
 - Provider `opencode-go`, endpoint `https://opencode.ai/zen/go/v1`, modelo
   `deepseek-v4.1-flash`.
-- A chave fica em `~/.hermes/.env` como `OPENCODE_GO_API_KEY`. E uma chave de
-  service account do OpenCode Console, sem expiracao, criada em 18/11/2026.
+- A chave fica em `~/.hermes/.env` como `OPENCODE_GO_API_KEY`. E a service
+  account `hermes-racknerd-prod` do OpenCode Console, sem expiracao, criada em
+  18/11/2026. A service account anterior foi removida.
 - O Hermes detectou contexto de 1.000.000 tokens. A compressao comeca em 50%.
 - A conta Go estava em 9% do limite mensal em 18/11.
 
@@ -100,15 +101,14 @@ hermes doctor
 
 ## Recursos
 
-- Gateway: cerca de 520 MB com os MCPs carregados.
+- Gateway: cerca de 150 MB em regime, com pico de 600 MB ao carregar os MCPs.
 - Anytype: cerca de 30 MB.
-- A VPS fica com cerca de 600 a 700 MB disponiveis e 8 GB de swap. Os MCPs
-  stdio usam `lazy` e podem ser reciclados por idle.
+- A VPS fica com cerca de 700 a 800 MB disponiveis e 8 GB de swap. Os MCPs
+  stdio usam `lazy` e `idle_timeout_seconds: 600`.
 
 ## Pendencias
 
 - Convite do Anytype para o space do usuario.
-- Rotacionar a chave do OpenCode que apareceu no transcript da instalacao.
 - Criar um token proprio do HA para o Hermes, em vez de reutilizar o do Matter
   Hub.
 - Backup de `~/.hermes` e `~/.config/anytype`.
