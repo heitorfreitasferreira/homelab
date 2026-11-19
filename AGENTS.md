@@ -125,7 +125,7 @@ Use o MCP `anytype`. Nao use os spaces `7bef7m` (Homelab do bot) nem `723ija`.
 - Securo com Postgres, Redis e anexos em local-path, backup no R2.
 - Pi-hole com `hostNetwork` e DNS preso em `tailscale0`, web em `:8053`.
 - Monitoring: VictoriaMetrics, vmalert, Alertmanager no Telegram e Grafana.
-- Homepage em `homepage.tail76c1c6.ts.net`.
+- Homepage em `home.tail76c1c6.ts.net`.
 - Argo CD em `argocd.tail76c1c6.ts.net`.
 - Grafana em `grafana.tail76c1c6.ts.net`.
 
