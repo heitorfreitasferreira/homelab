@@ -9,6 +9,9 @@ Drive, Contatos, Sheets e Docs.
 - Client ID: `604658049002-vhko97cbut51pvegt8orno6v0ugp2bct.apps.googleusercontent.com`.
 - Conta autorizada: `jogoshloko@gmail.com`, adicionada em Test users do Google
   Auth Platform. O app esta em modo Testing, entao so os test users entram.
+- Em Testing, o refresh token expira em 7 dias. Para uso permanente, publique o
+  app (os escopos de Gmail passam por verificacao) ou refaca o consentimento a
+  cada semana.
 - Arquivos na VPS, fora do git, modo 600:
   - `~/.hermes/google_client_secret.json`
   - `~/.hermes/google_token.json`
