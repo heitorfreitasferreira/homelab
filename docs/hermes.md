@@ -61,6 +61,14 @@ Assistente pessoal do homelab. Roda na VPS, so pela tailnet e pelo Telegram.
   fechamento 23:00 e revisao semanal domingo 19:00.
 - O dashboard tem a pagina Cron para ver, editar e disparar os jobs.
 
+## Google Workspace
+
+- Skill `productivity/google-workspace`, detalhes em
+  `docs/google-workspace.md`.
+- Token e client secret em `~/.hermes`, modo 600, fora do git.
+- `--check` e `--check-live` passam. A conta `jogoshloko@gmail.com` esta em
+  Test users do projeto `hermes-htr`.
+
 ## Contexto
 
 - `terminal.cwd` e `/home/htr/homelab`. O `AGENTS.md` do repo entra no system
