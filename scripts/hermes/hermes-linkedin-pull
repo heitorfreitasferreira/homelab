@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+# Traz os rascunhos de LinkedIn gerados pelo Hermes para o workspace local.
+set -euo pipefail
+
+dest="$HOME/agromercantil/linkedin-posts/hermes-drafts"
+mkdir -p "$dest"
+
+scp -q -o BatchMode=yes htr@racknerd:'/home/htr/.hermes/linkedin/drafts/*.md' "$dest"/ 2>/dev/null || true
+scp -q -o BatchMode=yes htr@racknerd:'/home/htr/.hermes/linkedin/DRAFTS.md' "$dest/INDEX.md" 2>/dev/null || true

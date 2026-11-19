@@ -1,0 +1,9 @@
+[Unit]
+Description=Busca diaria dos rascunhos de LinkedIn
+
+[Timer]
+OnCalendar=*-*-* 18:50
+Persistent=true
+
+[Install]
+WantedBy=timers.target

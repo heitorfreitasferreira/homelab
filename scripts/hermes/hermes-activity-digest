@@ -1,0 +1,161 @@
+#!/usr/bin/env python3
+"""Gera um digest de atividade e envia para o Hermes na racknerd.
+
+Le git log dos repos do workspace, os relatorios do fluxo eventually e o
+ESTADO dos posts. O Hermes usa isso para rascunhar posts de LinkedIn.
+"""
+from __future__ import annotations
+
+import os
+import re
+import subprocess
+import sys
+from datetime import datetime
+from pathlib import Path
+
+HOME = Path.home()
+AGRO = HOME / "agromercantil"
+DAYS = int(os.environ.get("HERMES_ACTIVITY_DAYS", "21"))
+REMOTE = os.environ.get("HERMES_ACTIVITY_REMOTE", "htr@racknerd")
+REMOTE_DIR = "~/.hermes/linkedin"
+MAX_BYTES = 40_000
+
+
+def run(args: list[str], cwd: Path | None = None) -> str:
+    try:
+        out = subprocess.run(
+            args,
+            cwd=str(cwd) if cwd else None,
+            check=True,
+            text=True,
+            capture_output=True,
+            timeout=30,
+        )
+        return out.stdout.strip()
+    except (subprocess.CalledProcessError, subprocess.TimeoutExpired, FileNotFoundError):
+        return ""
+
+
+def find_repos() -> list[Path]:
+    roots = [HOME / "homelab", HOME / "tcc", HOME / "desafio-platform", HOME / "pyatiletka"]
+    found: list[Path] = []
+    seen: set[Path] = set()
+
+    def add(path: Path) -> None:
+        if path in seen:
+            return
+        if (path / ".git").exists():
+            seen.add(path)
+            found.append(path)
+
+    for root in roots:
+        add(root)
+    for base in (HOME / "gitops-platform", AGRO):
+        if not base.is_dir():
+            continue
+        for dirpath, dirnames, _ in os.walk(base):
+            depth = len(Path(dirpath).relative_to(base).parts)
+            if depth >= 3:
+                dirnames[:] = []
+                continue
+            dirnames[:] = [
+                d for d in dirnames
+                if d not in {".git", "node_modules", "worktrees", "archive", "bench-plugins", "curriculos", "linkedin-posts", ".eventually"}
+            ]
+            add(Path(dirpath))
+    return found
+
+
+def repo_section(repo: Path) -> str:
+    log = run([
+        "git", "-C", str(repo), "log", f"--since={DAYS} days ago",
+        "-i", "--author=heitor", "--date=short",
+        "--pretty=format:%h%x09%ad%x09%s", "-n", "12",
+    ])
+    status = run(["git", "-C", str(repo), "status", "--short"])
+    branch = run(["git", "-C", str(repo), "branch", "--show-current"]) or "?"
+    remote = run(["git", "-C", str(repo), "remote", "get-url", "origin"])
+    remote = re.sub(r"(https?://)[^@/]+@", r"\1", remote)
+    if not log and not status:
+        return ""
+    name = str(repo).replace(str(HOME) + "/", "")
+    lines = [f"### {name}", f"- branch: {branch}"]
+    if remote:
+        lines.append(f"- remote: {remote}")
+    if log:
+        lines.append("- commits recentes:")
+        for row in log.splitlines():
+            lines.append(f"  - {row}")
+    if status:
+        lines.append("- mudancas nao commitadas:")
+        for row in status.splitlines()[:12]:
+            lines.append(f"  - {row}")
+    return "\n".join(lines)
+
+
+def eventually_section() -> str:
+    base = AGRO / ".eventually"
+    if not base.is_dir():
+        return ""
+    files = sorted(base.glob("*.md"), key=lambda p: p.stat().st_mtime, reverse=True)[:2]
+    if not files:
+        return ""
+    blocks = ["## Relatorios eventually"]
+    for path in files:
+        text = path.read_text(errors="replace")[:6000]
+        blocks.append(f"### {path.name}\n\n{text}")
+    return "\n\n".join(blocks)
+
+
+def posts_state() -> str:
+    base = AGRO / "linkedin-posts"
+    if not base.is_dir():
+        return ""
+    estado = base / "ESTADO.md"
+    text = estado.read_text(errors="replace")[:5000] if estado.exists() else ""
+    names = sorted(p.name for p in base.glob("*.md") if p.name not in {"AGENTS.md", "ESTADO.md"})
+    blocks = ["## Posts existentes"]
+    if text:
+        blocks.append(text)
+    if names:
+        blocks.append("Arquivos: " + ", ".join(names))
+    return "\n\n".join(blocks)
+
+
+def main() -> int:
+    sections = [
+        "# Digest de atividade para LinkedIn",
+        f"Gerado em {datetime.now().strftime('%Y-%m-%d %H:%M')}.",
+        f"Janela: ultimos {DAYS} dias.",
+    ]
+    repo_blocks = [s for repo in find_repos() if (s := repo_section(repo))]
+    if repo_blocks:
+        sections.append("## Repositorios\n\n" + "\n\n".join(repo_blocks))
+    for extra in (eventually_section(), posts_state()):
+        if extra:
+            sections.append(extra)
+
+    digest = "\n\n".join(sections).strip() + "\n"
+    if len(digest.encode()) > MAX_BYTES:
+        digest = digest.encode()[:MAX_BYTES].decode(errors="replace") + "\n\n[truncado]\n"
+
+    remote_cmd = (
+        f"mkdir -p {REMOTE_DIR} && "
+        f"cat > {REMOTE_DIR}/latest.md.tmp && "
+        f"mv {REMOTE_DIR}/latest.md.tmp {REMOTE_DIR}/latest.md"
+    )
+    result = subprocess.run(
+        ["ssh", "-o", "BatchMode=yes", "-o", "ConnectTimeout=15", REMOTE, remote_cmd],
+        input=digest.encode(),
+        capture_output=True,
+    )
+    if result.returncode != 0:
+        sys.stderr.write(result.stderr.decode(errors="replace"))
+        return 1
+
+    print(f"digest enviado: {len(digest.encode())} bytes, {len(repo_blocks)} repos com atividade")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

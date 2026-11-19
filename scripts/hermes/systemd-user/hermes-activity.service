@@ -1,0 +1,7 @@
+[Unit]
+Description=Digest de atividade dos projetos para o Hermes
+After=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=%h/.local/bin/hermes-activity-digest

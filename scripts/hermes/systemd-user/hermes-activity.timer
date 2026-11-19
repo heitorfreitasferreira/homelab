@@ -1,0 +1,9 @@
+[Unit]
+Description=Gera o digest de atividade do Hermes todo dia
+
+[Timer]
+OnCalendar=*-*-* 18:20
+Persistent=true
+
+[Install]
+WantedBy=timers.target

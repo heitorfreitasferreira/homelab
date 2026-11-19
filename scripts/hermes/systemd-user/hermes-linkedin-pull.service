@@ -1,0 +1,7 @@
+[Unit]
+Description=Traz rascunhos de LinkedIn do Hermes
+After=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=%h/.local/bin/hermes-linkedin-pull
