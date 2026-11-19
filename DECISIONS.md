@@ -64,6 +64,8 @@ Fonte de verdade das escolhas do homelab pessoal. Cada decisao com o porque e o 
 
 32. Google Workspace no Hermes e MCP do Securo. O cliente OAuth Desktop `hermes` fica no projeto `hermes-htr`, com a conta `jogoshloko@gmail.com` em Test users e escopos de Gmail (read, send, modify), Calendar, Drive, Contacts read, Sheets e Docs. O token fica em `~/.hermes/google_token.json` e o client secret em `~/.hermes/google_client_secret.json`, ambos 0600 e fora do git. O `setup.py --check` imprime `AUTHENTICATED` e o `--check-live` faz uma chamada real com `LIVE_CHECK_OK`. O `setup.py` exige o Python do Hermes e `HERMES_HOME`, e nesta versao nao aceita `--services` nem `--format`. O app esta em Testing, entao o refresh token expira em 7 dias; publicar o app ou refazer o consentimento semanalmente. O secret antigo do cliente ainda esta ativo no console e deve ser desativado. O Securo ganhou o MCP embutido (`agentsEnabled: "true"`, `mcpServer.enabled: true`) e o Ingress `securo-mcp` pela tailnet, no ProxyGroup compartilhado; o pod `securo-mcp-server` esta Running e o Service expoe a porta 8765. O token do MCP do Securo e gerado no app e registrado no Hermes depois. O Pi-hole MCP passou a usar `http://100.104.129.86:8053`; o `pihole-mcp -check` passou com 43 de 82 ferramentas e FTL v6.9.
 
+33. Monitoring: gzip no Grafana e honor_labels no scrape. O `grafana.ini` ganhou `server.enable_gzip: true`; o login caiu de 58 KB para 12 KB e os assets vao comprimidos. O job `kubernetes-service-endpoints` ganhou `honor_labels: true`, porque o relabel `node` do pod sobrescrevia o `node` do kube-state-metrics e o WSL (`pc-heito-wsl`) aparecia como uma segunda serie `node=racknerd` com `exported_node=pc-heito-wsl`. Agora o KSM mostra `node=racknerd` e `node=pc-heito-wsl`. O WSL entrou no cluster como `pc-heito-wsl`, Ready e sem taint. O commit `d0b9734` ja corrigiu o falso positivo de disco do WSL e adicionou o PC no Homepage.
+
 ## Em aberto
 
 - Geoffrey: usar por uma semana e ajustar tipos, colecoes e rotinas conforme o uso real.
@@ -72,6 +74,7 @@ Fonte de verdade das escolhas do homelab pessoal. Cada decisao com o porque e o 
 - Decidir se publica o app Google ou refaz o consentimento a cada 7 dias.
 - Registrar o token do Securo MCP no Hermes e testar o Calendar de verdade.
 - Aprovar o servico `securo-mcp` no admin do Tailscale se o Ingress continuar sem ADDRESS.
+- WSL: se nao quiser workloads no `pc-heito-wsl`, adicionar `node-taint: [homelab.io/compute=true:NoSchedule]` no `/etc/rancher/k3s/config.yaml` do WSL e reiniciar o agent.
 - Criar um token de longa duracao proprio do HA para o Hermes, em vez de reutilizar o do Matter Hub.
 - Backup de `~/.hermes` (sessoes, memoria) e `~/.config/anytype` (dados do bot) para o R2.
 
