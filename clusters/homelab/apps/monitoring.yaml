@@ -94,6 +94,10 @@ spec:
                       regex: __meta_kubernetes_node_label_(.+)
                 # node-exporter, kube-state-metrics e afins: Service com prometheus.io/scrape.
                 - job_name: kubernetes-service-endpoints
+                  # Preserva o label node que o proprio exporter publica (KSM).
+                  # Sem isso, o node do pod sobrescreve o node real e o WSL vira
+                  # uma segunda serie com node=racknerd.
+                  honor_labels: true
                   kubernetes_sd_configs: [{role: endpoints}]
                   relabel_configs:
                     - action: drop
@@ -642,6 +646,7 @@ spec:
         grafana.ini:
           server:
             root_url: https://grafana.tail76c1c6.ts.net
+            enable_gzip: true
           analytics:
             reporting_enabled: false
             check_for_updates: false
