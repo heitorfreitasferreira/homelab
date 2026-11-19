@@ -50,6 +50,7 @@ metadata:
   name: homepage
   annotations:
     tailscale.com/proxy-group: ingress
+    tailscale.com/http-endpoint: "enabled"
 spec:
   ingressClassName: tailscale
   defaultBackend:
