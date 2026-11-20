@@ -66,6 +66,8 @@ Fonte de verdade das escolhas do homelab pessoal. Cada decisao com o porque e o 
 
 33. Monitoring: gzip no Grafana e honor_labels no scrape. O `grafana.ini` ganhou `server.enable_gzip: true`; o login caiu de 58 KB para 12 KB e os assets vao comprimidos. O job `kubernetes-service-endpoints` ganhou `honor_labels: true`, porque o relabel `node` do pod sobrescrevia o `node` do kube-state-metrics e o WSL (`pc-heito-wsl`) aparecia como uma segunda serie `node=racknerd` com `exported_node=pc-heito-wsl`. Agora o KSM mostra `node=racknerd` e `node=pc-heito-wsl`. O WSL entrou no cluster como `pc-heito-wsl`, Ready e sem taint. O commit `d0b9734` ja corrigiu o falso positivo de disco do WSL e adicionou o PC no Homepage.
 
+34. Home Assistant publicado em `casa.htrlab.duckdns.org`. O DuckDNS ja resolvia o subdominio para `23.254.208.229`. O Traefik da VPS encaminha para o pod `casa-ha-proxy` (socat, 5 MB) no namespace `platform`, que sai pela tailnet ate `100.112.62.47:8123`. Sem porta aberta em casa. TLS pelo cert-manager e HTTP na 80 redireciona para HTTPS. O Argo exclui `Endpoints` e `EndpointSlice` do GitOps, por isso o encaminhamento e um pod e nao um Service sem seletor. No HA, `trusted_proxies` inclui `10.42.0.0/16` e `100.104.129.86/32`, e o HA rejeita `X-Forwarded-For` de proxy nao confiavel com 400. `ip_ban_enabled` com 5 tentativas. URLs: externa `https://casa.htrlab.duckdns.org`, interna `http://192.168.100.207:8123`, e o `tailscale serve` em `https://casa.tail76c1c6.ts.net` continua. Acesso publico usa o login do HA, com MFA a ativar e usuarios sem admin para a familia.
+
 ## Em aberto
 
 - Geoffrey: usar por uma semana e ajustar tipos, colecoes e rotinas conforme o uso real.

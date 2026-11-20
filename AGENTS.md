@@ -36,8 +36,9 @@ Este repositorio declara o homelab pessoal. A fonte de verdade das escolhas e
   read-only. Mudanca de infraestrutura vai por commit no repo e pelo Argo CD.
 - Nao altere `DECISIONS.md` sem pedir. Mudanca de infraestrutura: mostre o
   diff, explique o efeito e espere aprovacao.
-- Nao exponha nada na internet. O acesso e pela tailnet. A VPS so tem SSH
-  publico e a VPN.
+- Excecao publica: Home Assistant em `casa.htrlab.duckdns.org` e Securo em
+  `securo.htrlab.duckdns.org`, atras do Traefik da VPS. Todo o resto e pela
+  tailnet. A VPS tem SSH publico, a VPN e as duas entradas HTTPS.
 - Escrita de arquivos permitida em `/home/htr/homelab` e `/home/htr/.hermes`.
   Fora disso, peca.
 - Responda em pt-BR, curto, direto. Sem travessao, sem ponto e virgula em prosa,
@@ -76,6 +77,9 @@ use os spaces `7bef7m` nem `723ija`.
 
 - Nextcloud com Postgres CNPG e originais no R2 (`htr-nextcloud`).
 - Securo com Postgres, Redis e anexos em local-path, backup no R2.
+- Home Assistant em `https://casa.htrlab.duckdns.org` (publico, login) e
+  `https://casa.tail76c1c6.ts.net` (tailnet). O interno e
+  `http://192.168.100.207:8123`.
 - Pi-hole com `hostNetwork` e DNS preso em `tailscale0`, web em `:8053`.
 - Monitoring: VictoriaMetrics, vmalert, Alertmanager no Telegram e Grafana.
 - Homepage em `home.tail76c1c6.ts.net`.
