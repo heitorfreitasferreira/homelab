@@ -52,7 +52,15 @@ Este repositorio declara o homelab pessoal. A fonte de verdade das escolhas e
 - Metricas e logs: MCP `grafana` (Viewer, sem escrita).
 - Tailnet: MCP `tailscale` (no local, risco read).
 - DNS: MCP `pihole` (ferramentas de leitura).
-- Home Assistant: MCP `home-assistant` (somente leitura de contexto).
+- Home Assistant: MCP `home-assistant` com escrita. O servidor nativo do HA
+  (`/api/mcp`) expoe `intent__HassTurnOn/Off`, `light__HassLightSet`,
+  `vacuum__HassVacuumStart/ReturnToBase/CleanArea`, `homeassistant__call_action`,
+  `render_template`, `history__get_history`, `system_log__*`, `config__*` e as
+  ferramentas do Spook. Agir na casa e permitido, mas avise antes de acao que
+  muda estado fisico por tempo prolongado (limpeza, irrigacao, alarme).
+  Fallback em `~/.hermes/scripts/ha.py` (REST com `~/.hermes/ha.env`) quando o
+  MCP estiver fora. A loja da comunidade e o Marketplace nativo do HA 2026.11,
+  nao existe mais instalacao separada do HACS.
 - Conhecimento: MCP `anytype`. Use o space `Homelab` (`7bef7m`) para notas,
   decisoes e runbooks. Se o bot tiver sido convidado para um space seu, use o
   space que o Heitor indicar.
