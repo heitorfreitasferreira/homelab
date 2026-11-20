@@ -16,9 +16,6 @@ casa_reboot_time: "04:30"
 casa_ha_image: ghcr.io/home-assistant/home-assistant@sha256:1e25a28cb9ee48dbcd33b65cbdcf2919d01991fe11f71cdae0a09c9fc3017ebb
 casa_ha_memory: 700m
 
-# HACS, loja da comunidade, versao fixada. O release 2.0.5 pede HA 2026.10.2 ou mais novo.
-casa_hacs_version: "2.0.5"
-
 # Home Assistant Matter Hub, fork RiDDiX (o original t0bst4r parou em jan/2026), tag 2.0.60.
 casa_matterhub_image: ghcr.io/riddix/home-assistant-matter-hub@sha256:6f869bb3ec0b53fef50a29a330a681b19d1590bb56db09d74c3bc2d8bc74a0c3
 casa_matterhub_memory: 300m
