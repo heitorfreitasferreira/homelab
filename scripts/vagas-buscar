@@ -1,14 +1,16 @@
 #!/usr/bin/env python3
 """Busca vagas em fontes publicas e imprime um resumo em Markdown ou JSON.
 
-Fontes: LinkedIn guest, Remotive, RemoteOK e We Work Remotely.
-Nao aplica em vaga nenhuma. So coleta e ordena por aderencia simples.
+Fontes: LinkedIn guest, LinkedIn pelo navegador do WSL, Remotive, RemoteOK,
+We Work Remotely, Adzuna, Jooble e SerpApi Google Jobs. As fontes com chave leem
+~/.hermes/vagas/api.env. Nao aplica em vaga nenhuma. So coleta e ordena.
 """
 from __future__ import annotations
 
 import argparse
 import html
 import json
+import os
 import re
 import sys
 import time
@@ -16,6 +18,7 @@ import urllib.parse
 import urllib.request
 import xml.etree.ElementTree as ET
 from datetime import datetime, timedelta, timezone
+from pathlib import Path
 
 UA = (
     "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
@@ -239,6 +242,206 @@ def wwr(query: str, limit: int, days: int) -> list[dict]:
     return jobs
 
 
+class SourceUnavailable(RuntimeError):
+    pass
+
+
+def api_keys() -> dict[str, str]:
+    keys = dict(os.environ)
+    path = Path.home() / ".hermes/vagas/api.env"
+    if path.is_file():
+        for line in path.read_text().splitlines():
+            line = line.strip()
+            if not line or line.startswith("#") or "=" not in line:
+                continue
+            key, value = line.split("=", 1)
+            keys[key.strip()] = value.strip().strip('"').strip("'")
+    return keys
+
+
+def linkedin_browser(query: str, location: str, limit: int, days: int) -> list[dict]:
+    try:
+        from websockets.sync.client import connect
+    except ImportError as exc:
+        raise SourceUnavailable("sem python3-websockets") from exc
+
+    cdp = os.environ.get("HERMES_BROWSER_CDP", "http://100.89.110.97:30922").rstrip("/")
+    target = "https://www.linkedin.com/jobs/search?" + urllib.parse.urlencode(
+        {"keywords": query, "location": location, "f_TPR": f"r{days * 86400}"}
+    )
+    request = urllib.request.Request(
+        cdp + "/json/new?" + urllib.parse.quote(target, safe=""), method="PUT"
+    )
+    with urllib.request.urlopen(request, timeout=15) as response:
+        info = json.load(response)
+
+    def call(ws, ident: int, method: str, params: dict | None = None) -> dict:
+        ws.send(json.dumps({"id": ident, "method": method, "params": params or {}}))
+        while True:
+            message = json.loads(ws.recv(timeout=45))
+            if message.get("id") == ident:
+                return message
+
+    expression = r"""(() => {
+      const seen = new Set();
+      const out = [];
+      for (const a of document.querySelectorAll('a[href*="/jobs/view/"]')) {
+        const url = a.href.split('?')[0];
+        if (seen.has(url)) continue;
+        seen.add(url);
+        const card = a.closest('li') || a.parentElement;
+        const pick = (sel) => {
+          const el = card && card.querySelector(sel);
+          return el ? el.innerText.trim() : "";
+        };
+        const title = pick('.base-search-card__title, .job-card-list__title, .job-card-container__link')
+          || (a.innerText || '').trim();
+        const company = pick('.base-search-card__subtitle, .job-card-container__company-name, .job-card-container__primary-description');
+        const location = pick('.job-search-card__location, .job-card-container__metadata-item');
+        out.push({url, title, company, location});
+      }
+      return JSON.stringify(out);
+    })()"""
+
+    try:
+        with connect(info["webSocketDebuggerUrl"], open_timeout=15, close_timeout=5) as ws:
+            call(ws, 1, "Page.enable")
+            call(ws, 2, "Page.navigate", {"url": target})
+            time.sleep(8)
+            result = call(
+                ws,
+                3,
+                "Runtime.evaluate",
+                {"expression": expression, "returnByValue": True},
+            )
+            raw = result.get("result", {}).get("result", {}).get("value") or "[]"
+            items = json.loads(raw)
+    finally:
+        try:
+            urllib.request.urlopen(cdp + "/json/close/" + info["id"], timeout=10).read()
+        except Exception:
+            pass
+
+    jobs = []
+    for item in items[:limit]:
+        title = item.get("title", "")
+        url = item.get("url", "")
+        if not title or not url:
+            continue
+        jobs.append(
+            {
+                "source": "linkedin-browser",
+                "title": title,
+                "company": item.get("company", ""),
+                "location": item.get("location", ""),
+                "date": "",
+                "url": url,
+                "score": score(title, "", [item.get("location", "")]),
+            }
+        )
+    return jobs
+
+
+def adzuna(query: str, location: str, limit: int, days: int) -> list[dict]:
+    keys = api_keys()
+    app_id = keys.get("ADZUNA_APP_ID")
+    app_key = keys.get("ADZUNA_APP_KEY")
+    if not app_id or not app_key:
+        raise SourceUnavailable("sem ADZUNA_APP_ID/ADZUNA_APP_KEY")
+    country = keys.get("ADZUNA_COUNTRY", "br")
+    params = {
+        "app_id": app_id,
+        "app_key": app_key,
+        "results_per_page": limit,
+        "what": query,
+        "max_days_old": days,
+    }
+    if location and location.lower() not in ("brazil", "brasil", "remote", "remoto"):
+        params["where"] = location
+    data = json.loads(fetch(f"https://api.adzuna.com/v1/api/jobs/{country}/search/1?{urllib.parse.urlencode(params)}"))
+    jobs = []
+    for item in data.get("results", []):
+        title = item.get("title", "")
+        company = (item.get("company") or {}).get("display_name", "")
+        loc = (item.get("location") or {}).get("display_name", "")
+        jobs.append(
+            {
+                "source": "adzuna",
+                "title": title,
+                "company": company,
+                "location": loc,
+                "date": parse_date(item.get("created", "")),
+                "url": item.get("redirect_url", ""),
+                "score": score(title, item.get("description", ""), [loc]),
+            }
+        )
+    return jobs
+
+
+def jooble(query: str, location: str, limit: int, days: int) -> list[dict]:
+    key = api_keys().get("JOOBLE_KEY")
+    if not key:
+        raise SourceUnavailable("sem JOOBLE_KEY")
+    payload = json.dumps({"keywords": query, "location": location}).encode()
+    request = urllib.request.Request(
+        "https://jooble.org/api/" + key,
+        data=payload,
+        headers={"Content-Type": "application/json", "User-Agent": UA},
+    )
+    with urllib.request.urlopen(request, timeout=25) as response:
+        data = json.load(response)
+    jobs = []
+    for item in data.get("jobs", [])[:limit]:
+        title = item.get("title", "")
+        loc = item.get("location", "")
+        jobs.append(
+            {
+                "source": "jooble",
+                "title": title,
+                "company": item.get("company", ""),
+                "location": loc,
+                "date": parse_date(item.get("updated", "")),
+                "url": item.get("link", ""),
+                "score": score(title, item.get("snippet", ""), [loc]),
+            }
+        )
+    return jobs
+
+
+def serpapi(query: str, location: str, limit: int, days: int) -> list[dict]:
+    key = api_keys().get("SERPAPI_KEY")
+    if not key:
+        raise SourceUnavailable("sem SERPAPI_KEY")
+    params = {
+        "engine": "google_jobs",
+        "q": query,
+        "location": location,
+        "api_key": key,
+        "hl": "pt",
+        "gl": "br",
+    }
+    data = json.loads(fetch("https://serpapi.com/search.json?" + urllib.parse.urlencode(params)))
+    jobs = []
+    for item in data.get("jobs_results", [])[:limit]:
+        title = item.get("title", "")
+        loc = item.get("location", "")
+        via = item.get("via", "")
+        options = item.get("apply_options") or []
+        url = item.get("share_link") or (options[0].get("link") if options else "")
+        jobs.append(
+            {
+                "source": "serpapi",
+                "title": title,
+                "company": item.get("company_name", "") + (f" ({via})" if via else ""),
+                "location": loc,
+                "date": "",
+                "url": url,
+                "score": score(title, item.get("description", ""), [loc, via]),
+            }
+        )
+    return jobs
+
+
 def render_markdown(query: str, location: str, jobs: list[dict], errors: list[str]) -> str:
     lines = [
         f"# Vagas: {query}" + (f" em {location}" if location else ""),
@@ -268,7 +471,11 @@ def main() -> int:
     parser.add_argument("--location", default="Brazil", help="local para o LinkedIn")
     parser.add_argument("--limit", type=int, default=10, help="maximo por fonte")
     parser.add_argument("--days", type=int, default=21, help="janela em dias")
-    parser.add_argument("--sources", default="linkedin,remotive,remoteok,wwr")
+    parser.add_argument(
+        "--sources",
+        default="linkedin,remotive,remoteok,wwr",
+        help="linkedin, linkedin-browser, remotive, remoteok, wwr, adzuna, jooble, serpapi",
+    )
     parser.add_argument("--json", action="store_true", help="saida JSON")
     parser.add_argument("--out", help="arquivo para salvar o Markdown")
     args = parser.parse_args()
@@ -278,14 +485,20 @@ def main() -> int:
     errors: list[str] = []
     for name, func in (
         ("linkedin", lambda: linkedin(args.query, args.location, args.limit, args.days)),
+        ("linkedin-browser", lambda: linkedin_browser(args.query, args.location, args.limit, args.days)),
         ("remotive", lambda: remotive(args.query, args.limit, args.days)),
         ("remoteok", lambda: remoteok(args.query, args.limit, args.days)),
         ("wwr", lambda: wwr(args.query, args.limit, args.days)),
+        ("adzuna", lambda: adzuna(args.query, args.location, args.limit, args.days)),
+        ("jooble", lambda: jooble(args.query, args.location, args.limit, args.days)),
+        ("serpapi", lambda: serpapi(args.query, args.location, args.limit, args.days)),
     ):
         if name not in sources:
             continue
         try:
             jobs.extend(func())
+        except SourceUnavailable as exc:
+            errors.append(f"{name} ({exc})")
         except Exception as exc:  # noqa: BLE001
             errors.append(f"{name} ({type(exc).__name__})")
 

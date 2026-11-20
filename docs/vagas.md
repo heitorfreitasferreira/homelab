@@ -32,13 +32,34 @@ Fontes: LinkedIn guest, Remotive, RemoteOK e We Work Remotely. Da racknerd o
 LinkedIn pode falhar por rate limit. Use as outras fontes e a ultima busca que o
 notebook sincronizou.
 
+Com o PC ligado, o LinkedIn sai pelo navegador do WSL:
+
+```bash
+vagas-buscar "platform engineer" --location Brazil --limit 10 \
+  --sources linkedin-browser,remotive,remoteok,wwr
+```
+
+## Fontes com chave
+
+Adzuna, Jooble e SerpApi Google Jobs leem `~/.hermes/vagas/api.env`, modo `600`:
+
+```bash
+ADZUNA_APP_ID=...
+ADZUNA_APP_KEY=...
+JOOBLE_KEY=...
+SERPAPI_KEY=...
+```
+
+Use `--sources adzuna,jooble,serpapi`. O SerpApi Google Jobs e o que mais se
+aproxima dos resultados do LinkedIn. Nenhuma dessas chaves e do LinkedIn.
+
 O script so coleta. Ele nao aplica, nao cria conta e nao envia formulario.
 
 LinkedIn nao tem chave pessoal de busca. O limite e por IP: a VPS e datacenter,
-o notebook e residencial. Use a busca sincronizada do notebook e, para rotina,
-alertas de vaga do LinkedIn lidos por `hermes-mail`. Nao use cookie de sessao
-para scraping. Adzuna, Jooble e SerpApi Google Jobs sao alternativas com chave,
-mas nao sao LinkedIn.
+o notebook e residencial. Com o PC ligado, `--sources linkedin-browser` passa
+pelo Chromium do WSL. Sem PC, use a busca sincronizada do notebook e, para
+rotina, alertas de vaga do LinkedIn lidos por `hermes-mail`. Nao use cookie de
+sessao para scraping.
 
 ## Aderencia
 
