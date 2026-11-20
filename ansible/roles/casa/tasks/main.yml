@@ -291,6 +291,52 @@
     enabled: true
     daemon_reload: true
 
+# --- HACS: loja da comunidade, extraida do zip oficial em custom_components/hacs -------------
+# O zip do release ja vem com os arquivos na raiz da pasta hacs, entao o destino e a propria
+# custom_components/hacs. A versao fica no group_vars, subir ela troca o conteudo no proximo run.
+- name: unzip for the HACS release
+  ansible.builtin.apt:
+    name: unzip
+    state: present
+
+- name: HACS, custom_components directory
+  ansible.builtin.file:
+    path: /var/lib/homeassistant/custom_components
+    state: directory
+    mode: "0755"
+
+- name: Installed HACS manifest
+  ansible.builtin.slurp:
+    src: /var/lib/homeassistant/custom_components/hacs/manifest.json
+  register: casa_hacs_manifest
+  failed_when: false
+
+- name: HACS installed version
+  ansible.builtin.set_fact:
+    casa_hacs_instalado: >-
+      {{ (casa_hacs_manifest.content | b64decode | from_json).version | default('')
+         if casa_hacs_manifest.content is defined else '' }}
+
+- name: HACS release zip
+  ansible.builtin.get_url:
+    url: "https://github.com/hacs/integration/releases/download/{{ casa_hacs_version }}/hacs.zip"
+    dest: "/var/lib/homeassistant/hacs-{{ casa_hacs_version }}.zip"
+    mode: "0600"
+  when: casa_hacs_instalado != casa_hacs_version
+
+- name: HACS extracted into custom_components/hacs
+  ansible.builtin.unarchive:
+    src: "/var/lib/homeassistant/hacs-{{ casa_hacs_version }}.zip"
+    dest: /var/lib/homeassistant/custom_components/hacs
+    remote_src: true
+  when: casa_hacs_instalado != casa_hacs_version
+  notify: Restart homeassistant
+
+- name: HACS release zip removed
+  ansible.builtin.file:
+    path: "/var/lib/homeassistant/hacs-{{ casa_hacs_version }}.zip"
+    state: absent
+
 - name: Home Assistant quadlet
   ansible.builtin.template:
     src: homeassistant.container.j2
