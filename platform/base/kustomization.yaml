@@ -3,3 +3,4 @@ kind: Kustomization
 namespace: platform
 resources:
   - cluster-issuer.yaml
+  - casa-public.yaml

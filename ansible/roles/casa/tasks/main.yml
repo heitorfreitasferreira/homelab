@@ -298,7 +298,8 @@
     mode: "0644"
   notify: Restart homeassistant
 
-# O `tailscale serve` entrega o HA em https://casa.tail76c1c6.ts.net, com proxy vindo de 127.0.0.1.
+# Dois proxies entregam o HA: o `tailscale serve` em https://casa.tail76c1c6.ts.net (127.0.0.1) e o
+# Traefik da VPS em https://casa.htrlab.duckdns.org (pods 10.42.0.0/16, via IP tailnet do `casa`).
 # O HA 2026.11 migra o bloco `http:` do YAML para .storage/http uma unica vez e depois ignora o
 # YAML, entao o proxy e configurado no armazenamento, com o servico parado.
 - name: Check the stored HTTP proxy settings
@@ -314,7 +315,9 @@
             print("ausente")
             sys.exit(0)
         want = {"use_x_forwarded_for": True,
-                "trusted_proxies": ["127.0.0.1/32", "::1/128"]}
+                "trusted_proxies": ["127.0.0.1/32", "::1/128", "10.42.0.0/16"],
+                "ip_ban_enabled": True,
+                "login_attempts_threshold": 5}
         print("ok" if all(stable.get(key) == value for key, value in want.items()) else "ajustar")
   register: ha_http_check
   changed_when: false
@@ -325,7 +328,7 @@
     state: stopped
   when: ha_http_check.stdout != 'ok'
 
-- name: Home Assistant trusts the Tailscale Serve proxy
+- name: Home Assistant trusts the Tailscale Serve and Traefik proxies
   ansible.builtin.command:
     argv:
       - python3
@@ -336,7 +339,9 @@
         doc = json.load(open(path))
         doc["data"]["stable"].update(
             use_x_forwarded_for=True,
-            trusted_proxies=["127.0.0.1/32", "::1/128"],
+            trusted_proxies=["127.0.0.1/32", "::1/128", "10.42.0.0/16"],
+            ip_ban_enabled=True,
+            login_attempts_threshold=5,
         )
         with open(path, "w") as handle:
             json.dump(doc, handle, indent=2)
