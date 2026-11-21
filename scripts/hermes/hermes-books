@@ -11,6 +11,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 import sys
 import urllib.error
 import urllib.parse
@@ -232,6 +233,9 @@ def cmd_library(args) -> int:
         title = meta.get("title") or "?"
         authors = meta.get("authors") or []
         author = meta.get("authorName") or ", ".join(a.get("name", "") for a in authors if a.get("name"))
+        if author:
+            # O AudioBookshelf monta "Written By X, Read By Y" quando nao ha lista de autores.
+            author = re.sub(r"^Written By\s+", "", author).split(", Read By")[0].strip()
         series = meta.get("seriesName")
         rows.append({"title": title, "author": author, "series": series})
     if args.json:
