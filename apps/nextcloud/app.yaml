@@ -23,17 +23,28 @@ data:
     occ app:install memories || occ app:enable memories
     occ app:install previewgenerator || occ app:enable previewgenerator
     occ app:install photos || occ app:enable photos
-    occ app:install user_oidc || occ app:enable user_oidc
-    # O login unico do Pocket ID (docs/sso.md). O login por senha continua valendo.
-    occ user_oidc:provider PocketID \
-      --clientid="$NEXTCLOUD_OIDC_CLIENT_ID" \
-      --clientsecret="$NEXTCLOUD_OIDC_CLIENT_SECRET" \
-      --discoveryuri=https://auth.htrlab.duckdns.org/.well-known/openid-configuration \
-      --scope="openid email profile groups" || true
     occ background:cron
     occ config:system:set preview_max_x --value=2048 --type=integer
     occ config:system:set preview_max_y --value=2048 --type=integer
     occ config:system:set default_phone_region --value=BR
+---
+# Hook de toda subida (o post-installation so roda na instalacao). Idempotente:
+# o login unico do Pocket ID aparece na pagina de login e a senha do admin continua.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nextcloud-oidc
+data:
+  20-oidc.sh: |
+    #!/bin/sh
+    set -e
+    occ() { php /var/www/html/occ "$@"; }
+    occ app:install user_oidc >/dev/null 2>&1 || occ app:enable user_oidc >/dev/null 2>&1 || true
+    occ user_oidc:provider PocketID \
+      --clientid="$NEXTCLOUD_OIDC_CLIENT_ID" \
+      --clientsecret="$NEXTCLOUD_OIDC_CLIENT_SECRET" \
+      --discoveryuri=https://auth.htrlab.duckdns.org/.well-known/openid-configuration \
+      --scope="openid email profile groups" >/dev/null 2>&1 || true
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -111,6 +122,7 @@ spec:
           volumeMounts:
             - {name: html, mountPath: /var/www/html}
             - {name: hooks, mountPath: /docker-entrypoint-hooks.d/post-installation}
+            - {name: oidc-hook, mountPath: /docker-entrypoint-hooks.d/before-starting}
         # Cron do Nextcloud (a cada 5 min) e os jobs do Memories e do Preview Generator.
         - name: cron
           image: nextcloud:35.0.3-apache@sha256:8a7a65b8bae82a79568fec2ed9cf3e374a1944eda2a22ebe130d79463336fee3
@@ -131,6 +143,8 @@ spec:
           persistentVolumeClaim: {claimName: nextcloud-html}
         - name: hooks
           configMap: {name: nextcloud-hooks, defaultMode: 0755}
+        - name: oidc-hook
+          configMap: {name: nextcloud-oidc, defaultMode: 0755}
 ---
 apiVersion: v1
 kind: Service
