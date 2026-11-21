@@ -58,6 +58,43 @@ O wizard do primeiro acesso nao tem senha: entre nele logo depois do sync.
 
 Os 5 livros ja estao na biblioteca. O RMAB marca "In Your Library" e nao vai pedir de novo.
 
+## Skill do Hermes
+
+O Hermes pede e baixa livros com a skill `livros` e o cliente `hermes-books`, que fala
+com os ClusterIP do namespace `audiobookshelf`. Roda na racknerd, usuario `htr`.
+
+Instalar na VPS:
+
+```sh
+install -m 755 scripts/hermes/hermes-books /usr/local/bin/hermes-books
+install -d ~/.hermes/skills/livros
+install -m 644 scripts/hermes/skills/livros/SKILL.md ~/.hermes/skills/livros/SKILL.md
+install -m 600 /dev/null ~/.hermes/books.env
+```
+
+Em `~/.hermes/books.env`:
+
+```sh
+ABS_TOKEN=...            # AudioBookshelf > Settings > API Keys, para a biblioteca
+# ABS_LIBRARY_ID=3e1d2334-575b-4564-9e4d-36cec204ed74  # opcional, este e o default
+# PROWLARR_API_KEY=...   # so depois que o Prowlarr tiver login
+```
+
+Sem `PROWLARR_API_KEY` o cliente usa a chave de `/initialize.json`, que existe enquanto
+o Prowlarr nao tem login. Sem `ABS_TOKEN`, buscar e baixar funcionam e `library` falha
+com a instrucao.
+
+Teste:
+
+```sh
+hermes-books search "percy jackson"
+hermes-books status
+hermes-books library --limit 5
+```
+
+Para a sugestao semanal, criar um job no dashboard do Hermes (Cron), domingo 19:30,
+entrega no Telegram, com o texto que esta na skill (`scripts/hermes/skills/livros/SKILL.md`).
+
 ## Backup
 
 Dois volumes andam juntos: `readmeabook-pgdata` (Postgres do RMAB) e

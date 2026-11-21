@@ -29,7 +29,10 @@ racknerd, 18:50 pull dos rascunhos.
 - `hermes-cv`: renderiza CV Markdown em PDF A4 na VPS com WeasyPrint. Depende de
   `weasyprint`, `python3-markdown` e `poppler-utils` via apt, e do CSS em
   `~/.hermes/vagas/cv.css`.
-- Skills de runtime: `multi-mail`, `hotmail-graph` e `vagas` em
+- `hermes-books`: busca no Prowlarr, manda para o Transmission e lista a
+  biblioteca do AudioBookshelf. Instalar em `/usr/local/bin`. Config em
+  `~/.hermes/books.env` (`600`). Skill `livros` em `~/.hermes/skills/livros`.
+- Skills de runtime: `multi-mail`, `hotmail-graph`, `vagas` e `livros` em
   `~/.hermes/skills`. O digest diario sincroniza `cv.css`, o curriculo base, as
   derivadas e as descricoes de vaga.
 

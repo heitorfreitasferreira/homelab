@@ -1,0 +1,275 @@
+#!/usr/bin/env python3
+"""Audiobooks para o Hermes: Prowlarr, Transmission e AudioBookshelf.
+
+Fala com os ClusterIP do namespace audiobookshelf, entao roda na racknerd.
+Config em ~/.hermes/books.env (600): PROWLARR_API_KEY, ABS_TOKEN e,
+opcional, ABS_LIBRARY_ID. Sem PROWLARR_API_KEY o script tenta a chave de
+/initialize.json, que existe enquanto o Prowlarr nao tem login.
+"""
+from __future__ import annotations
+
+import argparse
+import json
+import os
+import sys
+import urllib.error
+import urllib.parse
+import urllib.request
+from pathlib import Path
+
+HOME = Path.home() / ".hermes"
+ENV_FILE = HOME / "books.env"
+STATE_DIR = HOME / "books"
+LAST_SEARCH = STATE_DIR / "last-search.json"
+
+PROWLARR = os.environ.get("PROWLARR_URL", "http://10.43.116.77:9696")
+TRANSMISSION = os.environ.get("TRANSMISSION_URL", "http://10.43.54.175:9091")
+ABS = os.environ.get("ABS_URL", "http://10.43.40.87/audiobookshelf")
+DEFAULT_LIBRARY = "3e1d2334-575b-4564-9e4d-36cec204ed74"
+
+TIMEOUT = 60
+
+
+def config() -> dict:
+    values: dict[str, str] = {}
+    if ENV_FILE.exists():
+        for line in ENV_FILE.read_text().splitlines():
+            line = line.strip()
+            if not line or line.startswith("#") or "=" not in line:
+                continue
+            key, value = line.split("=", 1)
+            values[key.strip()] = value.strip().strip('"').strip("'")
+    for key in ("PROWLARR_API_KEY", "ABS_TOKEN", "ABS_LIBRARY_ID"):
+        if os.environ.get(key):
+            values[key] = os.environ[key]
+    return values
+
+
+def request(url: str, data: dict | None = None, headers: dict | None = None):
+    body = None
+    headers = dict(headers or {})
+    if data is not None:
+        body = json.dumps(data).encode()
+        headers.setdefault("Content-Type", "application/json")
+    req = urllib.request.Request(url, data=body, headers=headers, method="POST" if body else "GET")
+    try:
+        with urllib.request.urlopen(req, timeout=TIMEOUT) as resp:
+            raw = resp.read()
+            return resp.status, dict(resp.headers), raw
+    except urllib.error.HTTPError as exc:
+        return exc.code, dict(exc.headers or {}), exc.read()
+    except urllib.error.URLError as exc:
+        raise SystemExit(f"sem conexao com {url}: {exc.reason}")
+
+
+def as_json(raw: bytes):
+    try:
+        return json.loads(raw)
+    except ValueError:
+        return None
+
+
+class Prowlarr:
+    def __init__(self, cfg: dict):
+        self.url = PROWLARR.rstrip("/")
+        self.key = cfg.get("PROWLARR_API_KEY") or self._bootstrap_key()
+
+    def _bootstrap_key(self) -> str:
+        status, _, raw = request(f"{self.url}/initialize.json")
+        data = as_json(raw) or {}
+        key = data.get("apiKey")
+        if status != 200 or not key:
+            raise SystemExit(
+                "Prowlarr sem chave de API. Ponha PROWLARR_API_KEY em ~/.hermes/books.env."
+            )
+        return key
+
+    def _headers(self) -> dict:
+        return {"X-Api-Key": self.key}
+
+    def search(self, query: str) -> list[dict]:
+        params = urllib.parse.urlencode({"query": query, "categories": 3030, "limit": 50})
+        status, _, raw = request(f"{self.url}/api/v1/search?{params}", headers=self._headers())
+        results = as_json(raw) or []
+        if status != 200:
+            raise SystemExit(f"Prowlarr respondeu {status} na busca")
+        if not results:
+            params = urllib.parse.urlencode({"query": query, "limit": 50})
+            _, _, raw = request(f"{self.url}/api/v1/search?{params}", headers=self._headers())
+            results = as_json(raw) or []
+        return sorted(results, key=lambda r: (r.get("seeders") or 0, r.get("size") or 0), reverse=True)
+
+    def grab(self, guid: str, indexer_id: int) -> bool:
+        status, _, _ = request(
+            f"{self.url}/api/v1/search",
+            data={"guid": guid, "indexerId": indexer_id},
+            headers=self._headers(),
+        )
+        return status in (200, 201)
+
+
+class Transmission:
+    def __init__(self):
+        self.url = TRANSMISSION.rstrip("/")
+        self.sid = ""
+
+    def call(self, method: str, arguments: dict) -> dict:
+        for _ in range(2):
+            headers = {"X-Transmission-Session-Id": self.sid} if self.sid else {}
+            status, resp_headers, raw = request(
+                f"{self.url}/transmission/rpc",
+                data={"method": method, "arguments": arguments},
+                headers=headers,
+            )
+            if status == 409:
+                self.sid = resp_headers.get("X-Transmission-Session-Id", "")
+                continue
+            data = as_json(raw) or {}
+            if status != 200 or data.get("result") != "success":
+                raise SystemExit(f"Transmission recusou {method}: {data.get('result') or status}")
+            return data.get("arguments", {})
+        raise SystemExit("Transmission nao devolveu a sessao")
+
+    def torrents(self) -> list[dict]:
+        return self.call(
+            "torrent-get",
+            {"fields": ["id", "name", "status", "percentDone", "rateDownload", "totalSize", "errorString"]},
+        ).get("torrents", [])
+
+
+def human_size(size: int) -> str:
+    if not size:
+        return "?"
+    return f"{size / 1e9:.2f} GB"
+
+
+STATUS = {0: "parado", 1: "checando fila", 2: "checando", 3: "fila", 4: "baixando", 5: "semeando fila", 6: "semeando"}
+
+
+def cmd_search(args) -> int:
+    prowlarr = Prowlarr(config())
+    results = prowlarr.search(args.query)
+    if not results:
+        print(f"nada encontrado para {args.query!r}")
+        return 1
+    STATE_DIR.mkdir(parents=True, exist_ok=True)
+    LAST_SEARCH.write_text(json.dumps(results, ensure_ascii=False))
+    print(f"{len(results)} resultados para {args.query!r} (categoria audiobook):")
+    for index, item in enumerate(results[: args.limit], start=1):
+        print(
+            f"{index:2d}. {item.get('title', '?')[:90]}\n"
+            f"    {human_size(item.get('size') or 0)}, {item.get('seeders') or 0} seeders, "
+            f"{item.get('indexer', '?')}"
+        )
+    print("\nPara baixar: hermes-books get <numero>")
+    return 0
+
+
+def load_search() -> list[dict]:
+    if not LAST_SEARCH.exists():
+        raise SystemExit("nenhuma busca salva. Rode: hermes-books search <titulo>")
+    return json.loads(LAST_SEARCH.read_text())
+
+
+def cmd_get(args) -> int:
+    if args.query:
+        results = Prowlarr(config()).search(args.query)
+        if not results:
+            print(f"nada encontrado para {args.query!r}")
+            return 1
+    else:
+        results = load_search()
+    if args.best:
+        chosen = results[0]
+    else:
+        if not args.index:
+            raise SystemExit("informe o numero do resultado ou use --best")
+        if args.index < 1 or args.index > len(results):
+            raise SystemExit(f"numero fora da lista (1 a {len(results)})")
+        chosen = results[args.index - 1]
+    if not chosen.get("guid") or not chosen.get("indexerId"):
+        raise SystemExit("resultado sem guid/indexerId, nao da para pegar")
+    ok = Prowlarr(config()).grab(chosen["guid"], int(chosen["indexerId"]))
+    if not ok:
+        raise SystemExit("Prowlarr recusou o grab")
+    print(f"enviado para o Transmission: {chosen.get('title', '?')} ({human_size(chosen.get('size') or 0)})")
+    print("Acompanhe com: hermes-books status")
+    return 0
+
+
+def cmd_status(args) -> int:
+    torrents = Transmission().torrents()
+    if not torrents:
+        print("nenhum torrent no Transmission")
+        return 0
+    for item in torrents:
+        state = STATUS.get(item.get("status", -1), "?")
+        pct = int((item.get("percentDone") or 0) * 100)
+        speed = (item.get("rateDownload") or 0) / 1024
+        extra = f", {speed:.0f} KB/s" if speed > 1 else ""
+        error = f", erro: {item['errorString']}" if item.get("errorString") else ""
+        print(f"- {item.get('name', '?')[:80]}: {pct}% ({state}{extra}{error})")
+    return 0
+
+
+def cmd_library(args) -> int:
+    cfg = config()
+    token = cfg.get("ABS_TOKEN")
+    if not token:
+        raise SystemExit(
+            "falta ABS_TOKEN em ~/.hermes/books.env. Crie em AudioBookshelf > Settings > API Keys."
+        )
+    library = cfg.get("ABS_LIBRARY_ID", DEFAULT_LIBRARY)
+    url = f"{ABS.rstrip('/')}/api/libraries/{library}/items?limit={args.limit}&sort=media.metadata.title"
+    status, _, raw = request(url, headers={"Authorization": f"Bearer {token}"})
+    if status != 200:
+        raise SystemExit(f"AudioBookshelf respondeu {status}. Token vencido?")
+    data = as_json(raw) or {}
+    items = data.get("results", [])
+    rows = []
+    for item in items:
+        meta = (item.get("media") or {}).get("metadata") or {}
+        title = meta.get("title") or "?"
+        authors = meta.get("authors") or []
+        author = meta.get("authorName") or ", ".join(a.get("name", "") for a in authors if a.get("name"))
+        series = meta.get("seriesName")
+        rows.append({"title": title, "author": author, "series": series})
+    if args.json:
+        print(json.dumps(rows, ensure_ascii=False, indent=2))
+        return 0
+    print(f"{len(rows)} livros na biblioteca:")
+    for row in rows:
+        series = f" [{row['series']}]" if row.get("series") else ""
+        print(f"- {row['title']}{series} - {row['author'] or 'autor desconhecido'}")
+    return 0
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(prog="hermes-books", description=__doc__)
+    sub = parser.add_subparsers(dest="command", required=True)
+
+    search = sub.add_parser("search", help="busca audiobooks no Prowlarr")
+    search.add_argument("query")
+    search.add_argument("--limit", type=int, default=10)
+    search.set_defaults(func=cmd_search)
+
+    get = sub.add_parser("get", help="manda um resultado para o Transmission")
+    get.add_argument("index", type=int, nargs="?")
+    get.add_argument("--query", help="busca e baixa direto, sem usar a ultima lista")
+    get.add_argument("--best", action="store_true", help="pega o de mais seeders")
+    get.set_defaults(func=cmd_get)
+
+    status = sub.add_parser("status", help="estado dos torrents")
+    status.set_defaults(func=cmd_status)
+
+    library = sub.add_parser("library", help="lista a biblioteca do AudioBookshelf")
+    library.add_argument("--limit", type=int, default=100)
+    library.add_argument("--json", action="store_true")
+    library.set_defaults(func=cmd_library)
+
+    args = parser.parse_args()
+    return args.func(args)
+
+
+if __name__ == "__main__":
+    sys.exit(main())
