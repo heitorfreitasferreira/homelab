@@ -1,0 +1,59 @@
+# Prowlarr: indexadores do ReadMeABook. O MyAnonamouse entra pela interface, com o
+# mam_id como senha e fica no config (volume), fora do git.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: prowlarr-config
+spec:
+  accessModes: [ReadWriteOnce]
+  resources: {requests: {storage: 1Gi}}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prowlarr
+spec:
+  replicas: 1
+  strategy: {type: Recreate}
+  selector:
+    matchLabels: {app: prowlarr}
+  template:
+    metadata:
+      labels: {app: prowlarr}
+    spec:
+      nodeSelector:
+        kubernetes.io/hostname: racknerd
+      containers:
+        - name: prowlarr
+          image: lscr.io/linuxserver/prowlarr@sha256:45117ba8439e2337a92ffe38a451a4dafc0be771754d05d88cdf102419d09646
+          env:
+            - {name: PUID, value: "1000"}
+            - {name: PGID, value: "1000"}
+            - {name: TZ, value: America/Sao_Paulo}
+          ports:
+            - {name: http, containerPort: 9696}
+          readinessProbe:
+            httpGet: {path: /ping, port: http}
+            initialDelaySeconds: 20
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: {path: /ping, port: http}
+            initialDelaySeconds: 60
+            periodSeconds: 30
+          resources:
+            requests: {cpu: 50m, memory: 128Mi}
+            limits: {memory: 512Mi}
+          volumeMounts:
+            - {name: config, mountPath: /config}
+      volumes:
+        - name: config
+          persistentVolumeClaim: {claimName: prowlarr-config}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: prowlarr
+spec:
+  selector: {app: prowlarr}
+  ports:
+    - {name: http, port: 9696, targetPort: http}

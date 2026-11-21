@@ -16,6 +16,11 @@
         href: https://audio.htrlab.duckdns.org
         description: audiobooks e podcasts
         siteMonitor: https://audio.htrlab.duckdns.org/healthcheck
+    - ReadMeABook:
+        icon: readmeabook.png
+        href: https://pedidos.htrlab.duckdns.org
+        description: pedidos e download automatico
+        siteMonitor: https://pedidos.htrlab.duckdns.org/api/health
 - Nuvem:
     - Nextcloud:
         icon: nextcloud.png
@@ -45,6 +50,16 @@
         href: https://metricas.tail76c1c6.ts.net/vmui/
         description: consultas e alvos (tailnet)
         siteMonitor: http://vmui.monitoring.svc:8428/health
+    - Prowlarr:
+        icon: prowlarr.png
+        href: https://prowlarr.tail76c1c6.ts.net
+        description: indexadores (tailnet)
+        siteMonitor: http://prowlarr.audiobookshelf.svc:9696/ping
+    - Transmission:
+        icon: transmission.png
+        href: https://transmission.tail76c1c6.ts.net
+        description: torrents (tailnet)
+        siteMonitor: http://transmission.audiobookshelf.svc:9091/transmission/web/
     - Tailscale:
         icon: tailscale.png
         href: https://login.tailscale.com/admin/machines

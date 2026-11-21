@@ -15,4 +15,5 @@ resources:
   - apps/nextcloud.yaml
   - apps/securo.yaml
   - apps/audiobookshelf.yaml
+  - apps/audio-auto.yaml
   - apps/securo-backup.yaml

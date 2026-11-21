@@ -1,0 +1,12 @@
+# Namespace audiobookshelf de proposito: e o unico jeito de montar o PVC da
+# biblioteca (audiobookshelf-audiobooks) no ReadMeABook sem copiar dados.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: audiobookshelf
+resources:
+  - prowlarr.yaml
+  - transmission.yaml
+  - readmeabook.yaml
+  - ingress.yaml
+generators:
+  - secret-generator.yaml
