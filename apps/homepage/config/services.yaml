@@ -10,6 +10,12 @@
         href: https://securo.htrlab.duckdns.org
         description: financas + Pluggy
         siteMonitor: https://securo.htrlab.duckdns.org/api/health
+- Midia:
+    - AudioBookshelf:
+        icon: audiobookshelf.png
+        href: https://audio.htrlab.duckdns.org
+        description: audiobooks e podcasts
+        siteMonitor: https://audio.htrlab.duckdns.org/healthcheck
 - Nuvem:
     - Nextcloud:
         icon: nextcloud.png
@@ -17,6 +23,11 @@
         description: fotos e arquivos (R2)
         siteMonitor: http://nextcloud.nextcloud.svc/status.php
 - Admin:
+    - Pocket ID:
+        icon: pocket-id.png
+        href: https://auth.htrlab.duckdns.org
+        description: login unico (passkey)
+        siteMonitor: https://auth.htrlab.duckdns.org/healthz
     - Argo CD:
         icon: argo-cd.png
         href: https://argocd.tail76c1c6.ts.net

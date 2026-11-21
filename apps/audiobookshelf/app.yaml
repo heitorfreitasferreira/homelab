@@ -1,0 +1,71 @@
+# AudioBookshelf: audiobooks e podcasts. Config, metadata e a biblioteca ficam em local-path.
+# O login unico entra depois, por OIDC no Pocket ID (docs/sso.md).
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: audiobookshelf-config
+spec:
+  accessModes: [ReadWriteOnce]
+  resources: {requests: {storage: 1Gi}}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: audiobookshelf-metadata
+spec:
+  accessModes: [ReadWriteOnce]
+  resources: {requests: {storage: 2Gi}}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: audiobookshelf-audiobooks
+spec:
+  accessModes: [ReadWriteOnce]
+  resources: {requests: {storage: 20Gi}}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: audiobookshelf
+spec:
+  replicas: 1
+  strategy: {type: Recreate}
+  selector:
+    matchLabels: {app: audiobookshelf}
+  template:
+    metadata:
+      labels: {app: audiobookshelf}
+    spec:
+      # Os volumes sao local-path: o pod tem de ficar no no que os hospeda.
+      nodeSelector:
+        kubernetes.io/hostname: racknerd
+      containers:
+        - name: audiobookshelf
+          image: ghcr.io/advplyr/audiobookshelf@sha256:60064c23f32fd9099fd39e82c5132c51701d1221135bbca04cd099b589e1edc3
+          env:
+            - {name: TZ, value: America/Sao_Paulo}
+            - {name: PORT, value: "80"}
+          ports:
+            - {name: http, containerPort: 80}
+          readinessProbe:
+            httpGet: {path: /healthcheck, port: http}
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: {path: /healthcheck, port: http}
+            initialDelaySeconds: 30
+            periodSeconds: 30
+          resources:
+            requests: {cpu: 50m, memory: 128Mi}
+            limits: {memory: 512Mi}
+          volumeMounts:
+            - {name: config, mountPath: /config}
+            - {name: metadata, mountPath: /metadata}
+            - {name: audiobooks, mountPath: /audiobooks}
+      volumes:
+        - name: config
+          persistentVolumeClaim: {claimName: audiobookshelf-config}
+        - name: metadata
+          persistentVolumeClaim: {claimName: audiobookshelf-metadata}
+        - name: audiobooks
+          persistentVolumeClaim: {claimName: audiobookshelf-audiobooks}

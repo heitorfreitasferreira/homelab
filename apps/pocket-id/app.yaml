@@ -1,0 +1,56 @@
+# Pocket ID: OIDC com passkey para os apps do homelab (DECISIONS.md, item 35).
+# Um unico container com SQLite. O ENCRYPTION_KEY vem do pocket-id-secrets (SOPS).
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: pocket-id-data
+spec:
+  accessModes: [ReadWriteOnce]
+  resources: {requests: {storage: 1Gi}}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pocket-id
+spec:
+  replicas: 1
+  strategy: {type: Recreate}
+  selector:
+    matchLabels: {app: pocket-id}
+  template:
+    metadata:
+      labels: {app: pocket-id}
+    spec:
+      # O SQLite fica em local-path, preso ao no que hospeda o volume.
+      nodeSelector:
+        kubernetes.io/hostname: racknerd
+      containers:
+        - name: pocket-id
+          image: ghcr.io/pocket-id/pocket-id@sha256:189e03bb73bb86d7108fe81cbe2237c408cff2176b14cd7a39cc12a2ee8b2762
+          env:
+            # O passkey e preso ao dominio de APP_URL. Trocar depois invalida os passkeys.
+            - {name: APP_URL, value: https://auth.htrlab.duckdns.org}
+            # So o Traefik da VPS alcanca o pod, e ele esta na rede de pods.
+            - {name: TRUST_PROXY, value: "10.42.0.0/16"}
+            - {name: ANALYTICS_DISABLED, value: "true"}
+            - name: ENCRYPTION_KEY
+              valueFrom:
+                secretKeyRef: {name: pocket-id-secrets, key: ENCRYPTION_KEY}
+          ports:
+            - {name: http, containerPort: 1411}
+          readinessProbe:
+            httpGet: {path: /healthz, port: http}
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: {path: /healthz, port: http}
+            initialDelaySeconds: 20
+            periodSeconds: 30
+          resources:
+            requests: {cpu: 20m, memory: 64Mi}
+            limits: {memory: 256Mi}
+          volumeMounts:
+            - {name: data, mountPath: /app/data}
+          securityContext: {allowPrivilegeEscalation: false}
+      volumes:
+        - name: data
+          persistentVolumeClaim: {claimName: pocket-id-data}
