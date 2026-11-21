@@ -38,13 +38,14 @@ mise exec -- sops -d apps/audiobookshelf/oauth.sops.yaml
 
 ## Nextcloud
 
-Ligado em `apps/nextcloud/app.yaml`: `user_oidc` instalado no hook e provider `PocketID`
-criado com as env `NEXTCLOUD_OIDC_CLIENT_ID` e `NEXTCLOUD_OIDC_CLIENT_SECRET`, que vem de
-`nextcloud-secrets`. O `|| true` no `occ user_oidc:provider` cobre as proximas subidas,
-quando o provider ja existe.
+Ligado em `apps/nextcloud/app.yaml`: `user_oidc` instalado e provider `PocketID` criado por um hook
+`before-starting` (o `post-installation` so roda na instalacao), com as env
+`NEXTCLOUD_OIDC_CLIENT_ID` e `NEXTCLOUD_OIDC_CLIENT_SECRET`, que vem de `nextcloud-secrets`.
+O hook so cria o provider quando ele falta.
 
-A pagina de login do Nextcloud passa a mostrar o botao do Pocket ID. A senha do admin
-continua valendo.
+A pagina de login do Nextcloud mostra o botao `Login with PocketID`. A senha do admin
+continua valendo. O `homelab.io/hooks-rev` no Deployment existe porque mudar o ConfigMap
+do hook nao reinicia o pod: subir o numero quando o script mudar.
 
 ## Grafana
 
@@ -55,6 +56,9 @@ secao `auth.generic_oauth` no `grafana.ini`, com `client_id` e `client_secret` l
 `allow_sign_up: true` com `auto_assign_org_role: Admin`: qualquer conta do Pocket ID entra
 como Admin. Isso vale porque so o admin do Pocket ID cria contas e o Grafana e so da
 tailnet. Para restringir, trocar por `role_attribute_path` com um grupo `admins`.
+
+O Pocket ID manda `email` e `preferred_username` como texto no id token, entao o Grafana
+usa `email_attribute_path: email` e `login_attribute_path: preferred_username`.
 
 ## Argo CD
 
