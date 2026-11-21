@@ -675,7 +675,9 @@ spec:
             allow_sign_up: true
             auto_login: false
             skip_org_role_sync: true
-            email_attribute_name: email:primary
+            # O Pocket ID manda email como texto e preferred_username no id token.
+            email_attribute_path: email
+            login_attribute_path: preferred_username
             # Quem tem conta no Pocket ID e da casa. O login por senha do admin continua.
             auto_assign_org_role: Admin
         datasources:

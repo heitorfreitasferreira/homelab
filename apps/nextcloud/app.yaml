@@ -43,15 +43,13 @@ data:
       occ app:install user_oidc
     fi
     occ app:enable user_oidc >/dev/null 2>&1 || true
-    echo "providers antes:"
-    occ user_oidc:providers || echo "providers falhou"
-    occ user_oidc:provider PocketID \
-      --clientid="$NEXTCLOUD_OIDC_CLIENT_ID" \
-      --clientsecret="$NEXTCLOUD_OIDC_CLIENT_SECRET" \
-      --discoveryuri=https://auth.htrlab.duckdns.org/.well-known/openid-configuration \
-      --scope="openid email profile groups" || echo "create falhou"
-    echo "providers depois:"
-    occ user_oidc:providers || echo "providers falhou"
+    if ! occ user_oidc:providers | grep -q PocketID; then
+      occ user_oidc:provider PocketID \
+        --clientid="$NEXTCLOUD_OIDC_CLIENT_ID" \
+        --clientsecret="$NEXTCLOUD_OIDC_CLIENT_SECRET" \
+        --discoveryuri=https://auth.htrlab.duckdns.org/.well-known/openid-configuration \
+        --scope="openid email profile groups"
+    fi
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -67,7 +65,7 @@ spec:
       labels: {app: nextcloud}
       annotations:
         # Muda quando o hook muda: o ConfigMap sozinho nao reinicia o pod.
-        homelab.io/hooks-rev: "3"
+        homelab.io/hooks-rev: "4"
     spec:
       securityContext:
         fsGroup: 33
