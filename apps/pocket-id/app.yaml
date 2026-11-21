@@ -36,6 +36,11 @@ spec:
             - name: ENCRYPTION_KEY
               valueFrom:
                 secretKeyRef: {name: pocket-id-secrets, key: ENCRYPTION_KEY}
+            # Chave estatica da API, usada para criar os clients OIDC sem a interface.
+            # Segue o padrao STATIC_API_KEY do Pocket ID: todos os escopos admin.
+            - name: STATIC_API_KEY
+              valueFrom:
+                secretKeyRef: {name: pocket-id-secrets, key: STATIC_API_KEY}
           ports:
             - {name: http, containerPort: 1411}
           readinessProbe:
