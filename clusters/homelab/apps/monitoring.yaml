@@ -149,6 +149,8 @@ spec:
                         - https://grafana.tail76c1c6.ts.net
                         - https://pihole.tail76c1c6.ts.net/admin/
                         - https://nuvem.htrlab.duckdns.org
+                        - https://auth.htrlab.duckdns.org
+                        - https://audio.htrlab.duckdns.org
                   relabel_configs:
                     - source_labels: [__address__]
                       target_label: __param_target
