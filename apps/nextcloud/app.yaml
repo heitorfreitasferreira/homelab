@@ -63,6 +63,9 @@ spec:
   template:
     metadata:
       labels: {app: nextcloud}
+      annotations:
+        # Muda quando o hook muda: o ConfigMap sozinho nao reinicia o pod.
+        homelab.io/hooks-rev: "2"
     spec:
       securityContext:
         fsGroup: 33
