@@ -8,5 +8,3 @@ resources:
   - transmission.yaml
   - readmeabook.yaml
   - ingress.yaml
-generators:
-  - secret-generator.yaml

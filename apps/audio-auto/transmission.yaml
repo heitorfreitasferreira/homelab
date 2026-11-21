@@ -38,11 +38,8 @@ spec:
             - {name: PUID, value: "1000"}
             - {name: PGID, value: "1000"}
             - {name: TZ, value: America/Sao_Paulo}
-            - {name: USER, value: admin}
-            - name: PASS
-              valueFrom:
-                secretKeyRef: {name: transmission-secrets, key: TRANSMISSION_PASS}
-            - {name: TRANSMISSION_DOWNLOAD_DIR, value: /downloads}
+            # Sem senha: o RPC so e alcancado pela tailnet e pela rede do cluster.
+            - {name: TRANSMISSION_DOWNLOAD_DIR, value: /audiobooks}
             - {name: TRANSMISSION_INCOMPLETE_DIR_ENABLED, value: "false"}
           ports:
             - {name: rpc, containerPort: 9091}
@@ -62,11 +59,16 @@ spec:
           volumeMounts:
             - {name: config, mountPath: /config}
             - {name: downloads, mountPath: /downloads}
+            # A biblioteca do AudioBookshelf, para os torrents antigos continuarem semeando
+            # e para os 5 livros importados ficarem no lugar certo.
+            - {name: library, mountPath: /audiobooks}
       volumes:
         - name: config
           persistentVolumeClaim: {claimName: transmission-config}
         - name: downloads
           persistentVolumeClaim: {claimName: audiobookshelf-downloads}
+        - name: library
+          persistentVolumeClaim: {claimName: audiobookshelf-audiobooks}
 ---
 apiVersion: v1
 kind: Service

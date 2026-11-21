@@ -1,0 +1,17 @@
+username: admin
+password: Q3i5s2wUpI3JxbvW9ywUAsaXOduIxXUE
+sops:
+    age:
+        - enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBCWE9KY282SUNGMC90VWlV
+            bG5aMTFnT0tpSEpsQmg4ajdtdlJFYVRhcVJvCks0K2VyQlVRMTZsV3NnZ3FTQVc5
+            b0x0UStHc29YRnhaa21MeWlPU1RPR3MKLS0tIHRnSVY5U21KY0YwTXh0RVJWdllh
+            L2NSRUJlNWZtbTFDRjFvUzBJTlBJMW8KnyPtcxzkSuIWznu40Yswm3tl1I+wUXHe
+            ZX03a+6PLcqa5q6qMouoW0Up/0VUTpxvorQiiDgaXyjBlc5oHLxCDw==
+            -----END AGE ENCRYPTED FILE-----
+          recipient: age1m27q9ve7grcseq47reuhmgyqsdndht5gjfjkvk33l0w05fdqeqjs6rzug2
+    encrypted_regex: ^(data|stringData)$
+    lastmodified: "2026-11-21T17:04:03Z"
+    mac: ENC[AES256_GCM,data:h6UiBWwQIh4uDTIbq63vyJ4GBw+tLKTbC0fQpCALZeEMIbJN3pCSBEoU20/gEJ10mYqonI2fi3fv83P4uLcCSS3sZNHswlWm9TDDS0J3NjNHOiQZ/hU6b5emFb40ckrGZl42HShQ7siqaBCnPmR5VscPXVTftMVsDyc3Ocm4wnw=,iv:6M1MbUIxsNweA1p5QA5doZp7bam9QH3qcH4brhjoNKE=,tag:1239juH70xxldnOS3fYmwg==,type:str]
+    version: 3.13.3
