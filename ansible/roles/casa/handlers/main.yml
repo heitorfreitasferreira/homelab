@@ -41,6 +41,12 @@
     state: restarted
     daemon_reload: true
 
+- name: Restart lva
+  ansible.builtin.systemd_service:
+    name: lva.service
+    state: restarted
+    daemon_reload: true
+
 - name: Restart avahi
   ansible.builtin.service:
     name: avahi-daemon

@@ -1,0 +1,38 @@
+[Unit]
+Description=Linux Voice Assistant (satelite de voz do Home Assistant)
+After=network-online.target homeassistant.service
+Wants=network-online.target
+
+[Container]
+Image={{ casa_lva_image }}
+ContainerName=lva
+Network=host
+# Roda com o usuario dono da sessao PipeWire, que fica de pe pelo linger.
+User={{ casa_lva_uid }}:{{ casa_lva_gid }}
+GroupAdd=audio
+AddCapability=SYS_NICE
+Environment=TZ={{ timezone }}
+Environment=XDG_RUNTIME_DIR=/run/user/{{ casa_lva_uid }}
+Environment=PULSE_SERVER=unix:/run/user/{{ casa_lva_uid }}/pulse/native
+Environment=PULSE_COOKIE=DISABLED
+Environment=CLIENT_NAME={{ casa_lva_name }}
+# ESPHome API so em 127.0.0.1: o HA roda no mesmo host e nada fica aberto na LAN.
+Environment=HOST=127.0.0.1
+Environment=PORT=6053
+Environment=DISABLE_PERIPHERAL_API=1
+Environment=WAKE_MODEL={{ casa_lva_wake_model }}
+Environment=AUDIO_INPUT_DEVICE={{ casa_lva_input }}
+Environment=AUDIO_OUTPUT_DEVICE={{ casa_lva_output }}
+Environment=LIST_DEVICES={{ casa_lva_list_devices }}
+Volume=/run/user/{{ casa_lva_uid }}/pulse:/run/user/{{ casa_lva_uid }}/pulse
+Volume=/var/lib/lva/configuration:/app/configuration:Z
+Volume=/var/lib/lva/local:/app/local:Z
+PodmanArgs=--memory={{ casa_lva_memory }}
+
+[Service]
+Restart=always
+RestartSec=10
+TimeoutStartSec=600
+
+[Install]
+WantedBy=multi-user.target

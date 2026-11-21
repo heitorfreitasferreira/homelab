@@ -22,3 +22,15 @@ casa_matterhub_memory: 300m
 casa_matterhub_http_port: 8482
 casa_matterhub_serve_port: 8443
 casa_matterhub_host: casa.tail76c1c6.ts.net
+
+# Satelite de voz (Linux Voice Assistant 1.1.18). Microfone e caixa USB/P2 no proprio `casa`.
+# O HA conecta pela ESPHome API em 127.0.0.1:6053.
+casa_lva_image: ghcr.io/ohf-voice/linux-voice-assistant@sha256:089f321a4e7408c61fbcd1ec691eb073961be022d651139f32b0dbead9b2af58
+casa_lva_memory: 250m
+casa_lva_name: casa
+casa_lva_wake_model: okay_nabu
+# "default" e "pulse" usam a entrada e a saida padrao do PipeWire. Para escolher outra,
+# rode com casa_lva_list_devices=1, leia `journalctl -u lva` e troque pelo nome listado.
+casa_lva_input: default
+casa_lva_output: pulse
+casa_lva_list_devices: "0"

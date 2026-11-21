@@ -374,12 +374,57 @@
     mode: "0644"
   notify: Restart matterhub
 
+# Satelite de voz: microfone e caixa ligados no `casa`. O LVA fala com o audio pelo PipeWire da
+# sessao do admin, mantida sem login pelo linger. Wake word local, STT/LLM/TTS fora do `casa`.
+- name: Audio packages for the voice satellite
+  ansible.builtin.apt:
+    name: [pipewire, pipewire-pulse, wireplumber, alsa-utils, pulseaudio-utils]
+    state: present
+    install_recommends: false
+
+- name: Admin in the audio group
+  ansible.builtin.user:
+    name: "{{ admin_user }}"
+    groups: audio
+    append: true
+
+- name: User session (PipeWire) runs without login
+  ansible.builtin.command: loginctl enable-linger {{ admin_user }}
+  args:
+    creates: /var/lib/systemd/linger/{{ admin_user }}
+
+- name: Admin uid and gid for the satellite container
+  ansible.builtin.getent:
+    database: passwd
+    key: "{{ admin_user }}"
+
+- name: Satellite ids
+  ansible.builtin.set_fact:
+    casa_lva_uid: "{{ ansible_facts.getent_passwd[admin_user][1] }}"
+    casa_lva_gid: "{{ ansible_facts.getent_passwd[admin_user][2] }}"
+
+- name: Satellite data directories
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ casa_lva_uid }}"
+    group: "{{ casa_lva_gid }}"
+    mode: "0755"
+  loop: [/var/lib/lva, /var/lib/lva/configuration, /var/lib/lva/local]
+
+- name: Voice satellite quadlet
+  ansible.builtin.template:
+    src: lva.container.j2
+    dest: /etc/containers/systemd/lva.container
+    mode: "0644"
+  notify: Restart lva
+
 - name: Containers running (quadlet units start from their own [Install])
   ansible.builtin.systemd_service:
     name: "{{ item }}"
     state: started
     daemon_reload: true
-  loop: [homeassistant.service, matterhub.service]
+  loop: [homeassistant.service, matterhub.service, lva.service]
 
 # Nomes HTTPS da tailnet: https://casa.tail76c1c6.ts.net (HA) e :8443 (Matter Hub).
 # O certificado e o DNS ficam por conta do Tailscale, e nada e exposto fora da tailnet.
