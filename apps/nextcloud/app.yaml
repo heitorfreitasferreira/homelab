@@ -28,19 +28,6 @@ data:
     occ config:system:set preview_max_y --value=2048 --type=integer
     occ config:system:set default_phone_region --value=BR
 ---
-# Hook de uma subida so: tira o provider e desliga o user_oidc, que apontavam para o
-# Pocket ID removido. Sai no commit seguinte.
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: nextcloud-oidc
-data:
-  10-limpa-oidc.sh: |
-    #!/bin/sh
-    occ() { php /var/www/html/occ "$@"; }
-    occ user_oidc:provider:delete PocketID || true
-    occ app:disable user_oidc || true
----
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -53,9 +40,6 @@ spec:
   template:
     metadata:
       labels: {app: nextcloud}
-      annotations:
-        # Muda quando o hook muda: o ConfigMap sozinho nao reinicia o pod.
-        homelab.io/hooks-rev: "5"
     spec:
       securityContext:
         fsGroup: 33
@@ -116,7 +100,6 @@ spec:
           volumeMounts:
             - {name: html, mountPath: /var/www/html}
             - {name: hooks, mountPath: /docker-entrypoint-hooks.d/post-installation}
-            - {name: oidc-hook, mountPath: /docker-entrypoint-hooks.d/before-starting}
         # Cron do Nextcloud (a cada 5 min) e os jobs do Memories e do Preview Generator.
         - name: cron
           image: nextcloud:35.0.3-apache@sha256:8a7a65b8bae82a79568fec2ed9cf3e374a1944eda2a22ebe130d79463336fee3
@@ -137,8 +120,6 @@ spec:
           persistentVolumeClaim: {claimName: nextcloud-html}
         - name: hooks
           configMap: {name: nextcloud-hooks, defaultMode: 0755}
-        - name: oidc-hook
-          configMap: {name: nextcloud-oidc, defaultMode: 0755}
 ---
 apiVersion: v1
 kind: Service
