@@ -110,5 +110,11 @@ use os spaces `7bef7m` nem `723ija`.
   `~/.hermes/logs/gateway.log`.
 - Estado do Hermes: `hermes gateway status`, `hermes doctor`.
 - Estado do Anytype: `systemctl --user status anytype`.
-- Antes de reiniciar algo, avise e espere aprovacao. O gateway do Hermes nao
-  reinicia a si mesmo. Para apps no cluster, prefira `hermes-ops restart`.
+- Antes de reiniciar algo, avise e espere aprovacao. Para apps no cluster,
+  prefira `hermes-ops restart`.
+- O gateway do Hermes reinicia todo dia as 04:30 pelo
+  `hermes-gateway-restart.timer`. Se os MCPs sumirem do indice de ferramentas,
+  o Hermes pode se reiniciar sozinho, sem pedir: avise no Telegram e rode
+  `sudo systemctl start --no-block hermes-gateway-restart.service`. O servico
+  espera 20 s e reinicia o gateway por fora, entao a resposta sai antes da
+  queda. O gateway volta em cerca de 1 min.

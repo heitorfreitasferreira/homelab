@@ -1,0 +1,10 @@
+[Unit]
+Description=Reinicio diario do hermes-gateway
+
+[Timer]
+# 04:30 em Sao Paulo: fora dos crons do Geoffrey (07:30 e 23:00) e do robo (08:00 a 21:30).
+OnCalendar=*-*-* 04:30:00 America/Sao_Paulo
+Persistent=false
+
+[Install]
+WantedBy=timers.target

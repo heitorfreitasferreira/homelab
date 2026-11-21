@@ -112,8 +112,12 @@ hermes-ops revert 1a2b3c4
 - A VPS tem 6 GB de RAM e 8 GB de swap. Antes de subir algo, olhe `free -m` e o
   consumo dos pods. O dashboard do Hermes e os MCPs stdio sao os maiores
   consumidores.
-- Nao reinicie o `hermes-gateway` de dentro do Hermes. O processo nao reinicia a
-  si mesmo. Peça ao Heitor ou use o OpenCode.
+- O `hermes-gateway` reinicia todo dia as 04:30 (`hermes-gateway-restart.timer`).
+  De dentro do Hermes, use so
+  `sudo systemctl start --no-block hermes-gateway-restart.service`: ele espera
+  20 s e reinicia o gateway fora do cgroup dele. Nunca rode
+  `systemctl restart hermes-gateway` direto de dentro do Hermes. As units estao
+  em `scripts/hermes/`.
 - `pc-heito-wsl` usa `hostNetwork` para browser e Whisper porque o CNI do WSL nao
   entrega DNS/egress aos pods. Nao troque para ClusterIP sem testar DNS e saida.
 
@@ -193,7 +197,7 @@ hermes-ops logs <namespace> <pod> 200
 - Nunca force push, nunca reescreva historico publicado.
 - Nunca altere `DECISIONS.md` sem pedir.
 - Nunca rode `kubectl apply`, `helm install` ou edite recurso vivo como rotina.
-- Nunca reinicie o gateway do Hermes de dentro dele.
+- O gateway do Hermes so se reinicia pelo `hermes-gateway-restart.service`.
 - Mudanca de banco, storage, DNS publico ou Tailscale admin e trabalho de
   OpenCode, com janela e rollback explicito.
 

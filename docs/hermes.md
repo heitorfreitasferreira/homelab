@@ -163,6 +163,11 @@ hermes doctor
 ```
 
 - Atualizar Hermes: `hermes update` e `sudo systemctl restart hermes-gateway`.
+- Reinicio diario as 04:30 pelo `hermes-gateway-restart.timer`, porque os MCPs
+  stdio (`lazy`, `idle_timeout_seconds: 600`) somem do indice de ferramentas com
+  o gateway rodando ha muito tempo. O mesmo servico serve para o Hermes se
+  reiniciar: `sudo systemctl start --no-block hermes-gateway-restart.service`.
+  Units em `scripts/hermes/`, instaladas em `/etc/systemd/system/`.
 - Dashboard: `sudo systemctl status hermes-dashboard` e
   `sudo journalctl -u hermes-dashboard -f`.
 - Atualizar Anytype: `anytype update` e `systemctl --user restart anytype`.
