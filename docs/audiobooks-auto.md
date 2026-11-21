@@ -12,6 +12,11 @@ Tudo em `apps/audio-auto`, no mesmo namespace do AudioBookshelf porque o ReadMeA
 monta o PVC `audiobookshelf-audiobooks` em `/media/audiobooks`. E o mesmo diretorio que
 o AudioBookshelf ve como `/audiobooks`.
 
+O Ingress de Prowlarr e Transmission sobe pelo operator do Tailscale, mas o servico
+`svc:prowlarr` e `svc:transmission` nasce sem aprovacao. Aprovar o proxy em
+`https://login.tailscale.com/admin/services` uma vez. Ate la o RMAB fala com os dois
+pela rede do cluster, e so os nomes `*.tail76c1c6.ts.net` ficam sem resposta.
+
 Discos novos: config do Prowlarr 1 GiB, config e downloads do Transmission 1 + 10 GiB,
 ReadMeABook 1 GiB de config, 1 GiB de cache, 2 GiB de pgdata e 256 MiB de Redis.
 
