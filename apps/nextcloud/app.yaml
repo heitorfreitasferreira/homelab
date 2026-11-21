@@ -28,28 +28,18 @@ data:
     occ config:system:set preview_max_y --value=2048 --type=integer
     occ config:system:set default_phone_region --value=BR
 ---
-# Hook de toda subida (o post-installation so roda na instalacao). Idempotente:
-# o login unico do Pocket ID aparece na pagina de login e a senha do admin continua.
+# Hook de uma subida so: tira o provider e desliga o user_oidc, que apontavam para o
+# Pocket ID removido. Sai no commit seguinte.
 apiVersion: v1
 kind: ConfigMap
 metadata:
   name: nextcloud-oidc
 data:
-  20-oidc.sh: |
+  10-limpa-oidc.sh: |
     #!/bin/sh
-    set -e
     occ() { php /var/www/html/occ "$@"; }
-    if ! occ app:list --output=json | grep -q '"user_oidc"'; then
-      occ app:install user_oidc
-    fi
-    occ app:enable user_oidc >/dev/null 2>&1 || true
-    if ! occ user_oidc:providers | grep -q PocketID; then
-      occ user_oidc:provider PocketID \
-        --clientid="$NEXTCLOUD_OIDC_CLIENT_ID" \
-        --clientsecret="$NEXTCLOUD_OIDC_CLIENT_SECRET" \
-        --discoveryuri=https://auth.htrlab.duckdns.org/.well-known/openid-configuration \
-        --scope="openid email profile groups"
-    fi
+    occ user_oidc:provider:delete PocketID || true
+    occ app:disable user_oidc || true
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -65,7 +55,7 @@ spec:
       labels: {app: nextcloud}
       annotations:
         # Muda quando o hook muda: o ConfigMap sozinho nao reinicia o pod.
-        homelab.io/hooks-rev: "4"
+        homelab.io/hooks-rev: "5"
     spec:
       securityContext:
         fsGroup: 33
@@ -78,10 +68,6 @@ spec:
           image: nextcloud:35.0.3-apache@sha256:8a7a65b8bae82a79568fec2ed9cf3e374a1944eda2a22ebe130d79463336fee3
           env:
             - {name: NEXTCLOUD_TRUSTED_DOMAINS, value: nuvem.htrlab.duckdns.org}
-            - name: NEXTCLOUD_OIDC_CLIENT_ID
-              valueFrom: {secretKeyRef: {name: nextcloud-secrets, key: NEXTCLOUD_OIDC_CLIENT_ID}}
-            - name: NEXTCLOUD_OIDC_CLIENT_SECRET
-              valueFrom: {secretKeyRef: {name: nextcloud-secrets, key: NEXTCLOUD_OIDC_CLIENT_SECRET}}
             - {name: OVERWRITEPROTOCOL, value: https}
             - {name: TRUSTED_PROXIES, value: "10.42.0.0/16"}
             - {name: PHP_MEMORY_LIMIT, value: 512M}

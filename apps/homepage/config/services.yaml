@@ -23,11 +23,6 @@
         description: fotos e arquivos (R2)
         siteMonitor: http://nextcloud.nextcloud.svc/status.php
 - Admin:
-    - Pocket ID:
-        icon: pocket-id.png
-        href: https://auth.htrlab.duckdns.org
-        description: login unico (passkey)
-        siteMonitor: https://auth.htrlab.duckdns.org/healthz
     - Argo CD:
         icon: argo-cd.png
         href: https://argocd.tail76c1c6.ts.net

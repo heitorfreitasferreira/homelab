@@ -13,7 +13,6 @@ resources:
   - apps/hermes-browser.yaml
   - apps/hermes-whisper.yaml
   - apps/nextcloud.yaml
-  - apps/pocket-id.yaml
   - apps/securo.yaml
   - apps/audiobookshelf.yaml
   - apps/securo-backup.yaml

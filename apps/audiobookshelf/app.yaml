@@ -1,5 +1,4 @@
 # AudioBookshelf: audiobooks e podcasts. Config, metadata e a biblioteca ficam em local-path.
-# O login unico entra depois, por OIDC no Pocket ID (docs/sso.md).
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
