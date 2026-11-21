@@ -6,6 +6,9 @@ metadata:
   namespace: argocd
   annotations:
     argocd.argoproj.io/sync-wave: "20"
+  # Para o prune do root apagar namespace, PVC e Ingress junto com a Application.
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
 spec:
   project: default
   source:
