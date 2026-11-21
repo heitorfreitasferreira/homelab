@@ -68,6 +68,8 @@ O usuário cria um job no dashboard do Hermes (Cron) com este texto, domingo às
 - Se `hermes-books` falhar por falta de `ABS_TOKEN`, a sugestão continua
   possível pelo que o usuário contou, mas diga que a lista da biblioteca
   depende do token em `~/.hermes/books.env`.
-- O Prowlarr está sem login e usa a chave de `/initialize.json`. Se um dia
-  alguém definir login no Prowlarr, o cliente passa a exigir
-  `PROWLARR_API_KEY` no `~/.hermes/books.env`.
+- O Prowlarr tem login local (`admin`). A API key e a senha ficam em
+  `~/.hermes/books.env` (`PROWLARR_API_KEY`, `PROWLARR_USER`, `PROWLARR_PASS`).
+  Se a busca falhar com 401, a chave foi trocada: peça a nova em Settings > General.
+- Nunca mostre a senha do Prowlarr; se o usuario pedir, diga que esta no
+  `books.env` da racknerd.

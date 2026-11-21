@@ -22,16 +22,18 @@ o AudioBookshelf ve como `/audiobooks`.
   completos e com capa, autor, narrador e capitulos. Foram baixados pelo Knaben e
   gravados direto em `/audiobooks` (`TRANSMISSION_DOWNLOAD_DIR` temporario).
 - O ReadMeABook esta de pe, mas o wizard nao foi concluido (`setupComplete: false`).
-- O Prowlarr abre um modal de "Authentication Required" e nao deixa usar a interface
-  enquanto nao houver usuario e senha. A API funciona com a chave de
-  `/initialize.json`, que e o caminho usado para os indexadores.
+- O Prowlarr tem login local (`admin`), porque a versao nova exige autenticacao para
+  ouvir em rede. A senha e a API key ficam em `~/.hermes/books.env` na racknerd
+  (`PROWLARR_USER`, `PROWLARR_PASS`, `PROWLARR_API_KEY`), modo 600.
 
 ## Prowlarr e indexadores
 
-1. Abrir o Prowlarr e definir usuario e senha no modal (o campo nao aceita "None").
+1. Entrar em `https://prowlarr.tail76c1c6.ts.net` com `admin` e a senha de
+   `~/.hermes/books.env` (`PROWLARR_PASS`).
 2. Settings > Indexers > Add Indexer > MyAnonamouse, colar o cookie `mam_id` da sessao
    logada no site. Vale como credencial: trocar o cookie e trocar a senha.
-3. A API key fica em Settings > General.
+3. A API key fica em Settings > General e ja esta no `books.env` (`PROWLARR_API_KEY`).
+   Se for trocada, atualize o arquivo.
 
 ## Transmission
 
