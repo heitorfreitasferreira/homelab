@@ -1,7 +1,7 @@
 [Unit]
 Description=Linux Voice Assistant (satelite de voz do Home Assistant)
-After=network-online.target homeassistant.service
-Wants=network-online.target
+After=network-online.target homeassistant.service user@{{ casa_lva_uid }}.service
+Wants=network-online.target user@{{ casa_lva_uid }}.service
 
 [Container]
 Image={{ casa_lva_image }}
@@ -18,6 +18,8 @@ Environment=PULSE_COOKIE=DISABLED
 Environment=CLIENT_NAME={{ casa_lva_name }}
 # ESPHome API so em 127.0.0.1: o HA roda no mesmo host e nada fica aberto na LAN.
 Environment=HOST=127.0.0.1
+# O ID do aparelho no HA vem do MAC desta interface: o cabo, nao o Wi-Fi reserva.
+Environment=NETWORK_INTERFACE={{ casa_lan_iface }}
 Environment=PORT=6053
 Environment=DISABLE_PERIPHERAL_API=1
 Environment=WAKE_MODEL={{ casa_lva_wake_model }}

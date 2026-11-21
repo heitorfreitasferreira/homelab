@@ -29,8 +29,9 @@ casa_lva_image: ghcr.io/ohf-voice/linux-voice-assistant@sha256:089f321a4e7408c61
 casa_lva_memory: 250m
 casa_lva_name: casa
 casa_lva_wake_model: okay_nabu
-# "default" e "pulse" usam a entrada e a saida padrao do PipeWire. Para escolher outra,
-# rode com casa_lva_list_devices=1, leia `journalctl -u lva` e troque pelo nome listado.
-casa_lva_input: default
+# Vazio e "pulse" usam a entrada e a saida padrao do PipeWire: microfone no P2 e alto-falante
+# (ou a caixa no P2 de fone). Para escolher outra, rode com casa_lva_list_devices=1, leia
+# `journalctl -u lva` e troque pelo nome listado.
+casa_lva_input: ""
 casa_lva_output: pulse
 casa_lva_list_devices: "0"

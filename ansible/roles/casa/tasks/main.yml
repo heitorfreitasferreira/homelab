@@ -403,6 +403,17 @@
     casa_lva_uid: "{{ ansible_facts.getent_passwd[admin_user][1] }}"
     casa_lva_gid: "{{ ansible_facts.getent_passwd[admin_user][2] }}"
 
+# A sessao do usuario pode ter subido antes dos pacotes: os sockets ficam "enabled", mas parados.
+- name: PipeWire running in the admin session
+  ansible.builtin.systemd_service:
+    name: "{{ item }}"
+    scope: user
+    state: started
+  loop: [pipewire.socket, pipewire-pulse.socket, wireplumber.service]
+  become_user: "{{ admin_user }}"
+  environment:
+    XDG_RUNTIME_DIR: /run/user/{{ casa_lva_uid }}
+
 - name: Satellite data directories
   ansible.builtin.file:
     path: "{{ item }}"
