@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: Secret
+metadata:
+    name: grafana-oidc
+    namespace: monitoring
+stringData:
+    GF_OIDC_CLIENT_ID: ENC[AES256_GCM,data:jA9dfsItjA==,iv:BC6IPnsOwYmmVthAyPH3lGmHroJyidw8kBj0bftTQMs=,tag:tAdf+HnXbY16vSNOWwLrBg==,type:str]
+    GF_OIDC_CLIENT_SECRET: ENC[AES256_GCM,data:QkE1nT2V2wdUeuR2L1nb9z5Hr45inJjfOrX/iJWL1y4=,iv:uJw5CQLB46H5gVlTfuS5C1CEKZV4CgH7mLjwN+YGz3U=,tag:aqp/WDw5vhBymZWMZhCHjw==,type:str]
+sops:
+    age:
+        - enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSA4QWJPc2N1Y3RGZG5DQUNj
+            NjgrOXZXUVZpa3hpb1lVekxDWjJWc0Y1Wmk0CklhdWVhTzBKaTBmUjIzTkQyY1NC
+            V1ZnQUMrV3hzc1NjZ2NtQVM4ZitBQlEKLS0tIDgveVQvSFlIelBPb2RrRzdKQXh1
+            L0Frdis2R1ZVWUFZMk1tZnFHTWVIbDQK9yviSfwBGZZswxhqwamaTs+osnCCsQVf
+            brhe39zCQvLQ0Bluu9X7SDatCf1XFbWTg3DWNb/yzhiTAWwlM4DHyg==
+            -----END AGE ENCRYPTED FILE-----
+          recipient: age1m27q9ve7grcseq47reuhmgyqsdndht5gjfjkvk33l0w05fdqeqjs6rzug2
+    encrypted_regex: ^(data|stringData)$
+    lastmodified: "2026-11-21T15:34:52Z"
+    mac: ENC[AES256_GCM,data:n/Nff5upaVXR9mgEamdkG9WbEksn67FJMFKWLE8dvSnLgsYjrCF4R4WjS4Eo7Z6Yq7ruYW3UIH0aFG00/5yXG1kUav4BliAbkQccLEkTIh+XCIc/HxOKRrQfAZivUNEsSaaSc/5oKwJMEgHBu6A/h4bM/yr7/ahyMLEM9mcAQlk=,iv:QaCCG6ajuKOSeYNvKyC+d6h6gGTdN9JNx+1Z5sOax3M=,tag:VNAqnABE5zh7BwAJ12e+LA==,type:str]
+    version: 3.13.3

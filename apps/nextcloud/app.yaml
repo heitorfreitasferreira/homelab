@@ -23,6 +23,13 @@ data:
     occ app:install memories || occ app:enable memories
     occ app:install previewgenerator || occ app:enable previewgenerator
     occ app:install photos || occ app:enable photos
+    occ app:install user_oidc || occ app:enable user_oidc
+    # O login unico do Pocket ID (docs/sso.md). O login por senha continua valendo.
+    occ user_oidc:provider PocketID \
+      --clientid="$NEXTCLOUD_OIDC_CLIENT_ID" \
+      --clientsecret="$NEXTCLOUD_OIDC_CLIENT_SECRET" \
+      --discoveryuri=https://auth.htrlab.duckdns.org/.well-known/openid-configuration \
+      --scope="openid email profile groups" || true
     occ background:cron
     occ config:system:set preview_max_x --value=2048 --type=integer
     occ config:system:set preview_max_y --value=2048 --type=integer
@@ -52,6 +59,10 @@ spec:
           image: nextcloud:35.0.3-apache@sha256:8a7a65b8bae82a79568fec2ed9cf3e374a1944eda2a22ebe130d79463336fee3
           env:
             - {name: NEXTCLOUD_TRUSTED_DOMAINS, value: nuvem.htrlab.duckdns.org}
+            - name: NEXTCLOUD_OIDC_CLIENT_ID
+              valueFrom: {secretKeyRef: {name: nextcloud-secrets, key: NEXTCLOUD_OIDC_CLIENT_ID}}
+            - name: NEXTCLOUD_OIDC_CLIENT_SECRET
+              valueFrom: {secretKeyRef: {name: nextcloud-secrets, key: NEXTCLOUD_OIDC_CLIENT_SECRET}}
             - {name: OVERWRITEPROTOCOL, value: https}
             - {name: TRUSTED_PROXIES, value: "10.42.0.0/16"}
             - {name: PHP_MEMORY_LIMIT, value: 512M}

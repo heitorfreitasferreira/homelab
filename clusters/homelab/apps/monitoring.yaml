@@ -618,6 +618,8 @@ spec:
     helm:
       valuesObject:
         fullnameOverride: grafana
+        # GF_OIDC_CLIENT_ID e GF_OIDC_CLIENT_SECRET vem do SOPS (apps/monitoring).
+        envFromSecret: grafana-oidc
         # O init roda como root com apenas CAP_CHOWN. Como /var/lib/grafana/csv,
         # pdf e png ficam 0700 do uid 472, root sem DAC_OVERRIDE nao consegue
         # atravessar os diretorios e o chown -R falha (ExitCode 1, CrashLoopBackOff).
@@ -660,6 +662,22 @@ spec:
             check_for_updates: false
           users:
             default_language: pt-BR
+          auth.generic_oauth:
+            enabled: true
+            name: Pocket ID
+            scopes: openid profile email groups
+            auth_url: https://auth.htrlab.duckdns.org/authorize
+            token_url: https://auth.htrlab.duckdns.org/api/oidc/token
+            api_url: https://auth.htrlab.duckdns.org/api/oidc/userinfo
+            client_id: $__env{GF_OIDC_CLIENT_ID}
+            client_secret: $__env{GF_OIDC_CLIENT_SECRET}
+            use_pkce: true
+            allow_sign_up: true
+            auto_login: false
+            skip_org_role_sync: true
+            email_attribute_name: email:primary
+            # Quem tem conta no Pocket ID e da casa. O login por senha do admin continua.
+            auto_assign_org_role: Admin
         datasources:
           datasources.yaml:
             apiVersion: 1

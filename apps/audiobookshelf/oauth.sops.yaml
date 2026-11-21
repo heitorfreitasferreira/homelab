@@ -1,0 +1,20 @@
+# Copia cifrada do OIDC do AudioBookshelf. Nao e manifesto: o app guarda estes
+# valores no SQLite, e este arquivo existe para recuperar o client secret.
+issuer: ENC[AES256_GCM,data:rkFgMF2eZjXA6/g5eNW1Ac3A1Tp6rfLVztiqt4MaYg==,iv:A5O7uoV5tjPWxnfaXIfIESzZXB/0RIfYGiprihaHY7g=,tag:VL3NQ1g12opfIFDicPHgqA==,type:str]
+clientId: ENC[AES256_GCM,data:og8sgxsAlckw+04I4zo=,iv:q/Ae0RnkjwzfvZGnjzVy7NmwRw1V9c7P3yR7TsdSyUU=,tag:lz+O1ruyuu/yAeUfjE4fsw==,type:str]
+clientSecret: ENC[AES256_GCM,data:kUhmFaPIvxDfk8KG5EfTvJAXwxbYGaSafjCx459hnYc=,iv:8wHalSUaIdv+O3HOhMZTsJDV9iPWAJKyrZdSNUsmUDU=,tag:ysHxHDxfmjWNfnSEBEXtLQ==,type:str]
+sops:
+    age:
+        - enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBjei90NndpZEtDZ0FyRkQ2
+            UzY3L05uL3NkVkttMGdFZml2SGNRWjFyNG44CldaTFhYVVl1ZmtxTTZZMXA3SHRy
+            Nk9Vd1Q0UWUxRGVGVzZ5N05MZnNRMlEKLS0tIFdrbzNoYjRnRXV1R1ZrUGxvVTN2
+            eXRSZngrbkYrazBiZml1cThtNlpEVzgKvhhRiWEXo7+0d24C1gUk/FzRQGNrHsd6
+            4LZIhZjVLqRBVtrDT/WsxpmiE5eFZYI1ZvncDJPHsxOT4IkggQv3CA==
+            -----END AGE ENCRYPTED FILE-----
+          recipient: age1m27q9ve7grcseq47reuhmgyqsdndht5gjfjkvk33l0w05fdqeqjs6rzug2
+    encrypted_regex: .*
+    lastmodified: "2026-11-21T15:34:52Z"
+    mac: ENC[AES256_GCM,data:ny9H1PS34SBRJOOjOkifNOyHoMWDg7g5B0dJcqYaghMXA7alybj1l25ta/u4MA/AwJsPuzRXZvG40s2C0Xnt77oI60qaU8GrUrO8KQOC456cyM0ZxwtYmeLS6984sG2VBu3gJrD1blRUrm2nkWBPeTIjPZ37tKptvz95RvqIT/w=,iv:f8POKSJpypBP42FKiBv8YSuZgn7I1GMo3OVnkMFmmYo=,tag:gusOfWKjLc4yxkG70HD4Aw==,type:str]
+    version: 3.13.3
