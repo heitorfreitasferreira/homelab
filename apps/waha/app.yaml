@@ -38,17 +38,20 @@ spec:
               valueFrom:
                 secretKeyRef: {name: waha-secrets, key: WAHA_DASHBOARD_PASSWORD}
           ports: [{containerPort: 3000}]
+          # TCP: o /health passa pelo API key e devolveria 401 no probe.
           readinessProbe:
-            httpGet: {path: /health, port: 3000}
-            initialDelaySeconds: 10
-            periodSeconds: 15
+            tcpSocket: {port: 3000}
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            failureThreshold: 6
           livenessProbe:
-            httpGet: {path: /health, port: 3000}
-            initialDelaySeconds: 30
+            tcpSocket: {port: 3000}
+            initialDelaySeconds: 60
             periodSeconds: 30
+            failureThreshold: 3
           resources:
-            requests: {cpu: 100m, memory: 192Mi}
-            limits: {cpu: 500m, memory: 512Mi}
+            requests: {cpu: 200m, memory: 192Mi}
+            limits: {cpu: "1", memory: 512Mi}
           securityContext:
             allowPrivilegeEscalation: false
             capabilities: {drop: [ALL]}
