@@ -85,8 +85,6 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: waha
-  annotations:
-    tailscale.com/proxy-group: ingress
 spec:
   ingressClassName: tailscale
   defaultBackend:
