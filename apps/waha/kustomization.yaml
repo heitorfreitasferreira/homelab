@@ -3,6 +3,7 @@ kind: Kustomization
 namespace: waha
 resources:
   - namespace.yaml
+  - policy.yaml
   - app.yaml
 generators:
   - secret-generator.yaml

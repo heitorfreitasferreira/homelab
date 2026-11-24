@@ -1,0 +1,8 @@
+# Permite que o Ingress do WAHA use o ProxyGroup compartilhado da tailnet.
+apiVersion: tailscale.com/v1alpha1
+kind: ProxyGroupPolicy
+metadata:
+  name: tailscale-ingress
+spec:
+  ingress:
+    - ingress

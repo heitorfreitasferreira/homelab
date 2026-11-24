@@ -90,6 +90,17 @@ metadata:
 spec:
   selector: {app: waha}
   ports: [{port: 80, targetPort: 3000}]
-# Exposto pelo tailscale serve do racknerd em :9443.
-# O Ingress do operador Tailscale esta quebrado para recursos novos
-# (failed to create or get API key secret: input does not match format).
+---
+# Tailnet only: https://waha.tail76c1c6.ts.net
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: waha
+  annotations:
+    tailscale.com/proxy-group: ingress
+spec:
+  ingressClassName: tailscale
+  defaultBackend:
+    service: {name: waha, port: {number: 80}}
+  tls:
+    - hosts: [waha]
