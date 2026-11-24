@@ -30,6 +30,10 @@ spec:
             - name: WAHA_API_KEY
               valueFrom:
                 secretKeyRef: {name: waha-secrets, key: WAHA_API_KEY}
+            # O modulo de Apps exige a chave em texto puro para emitir as chaves dos apps.
+            - name: WAHA_API_KEY_PLAIN
+              valueFrom:
+                secretKeyRef: {name: waha-secrets, key: WAHA_API_KEY}
             - name: WAHA_DASHBOARD_PASSWORD
               valueFrom:
                 secretKeyRef: {name: waha-secrets, key: WAHA_DASHBOARD_PASSWORD}
