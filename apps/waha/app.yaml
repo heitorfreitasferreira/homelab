@@ -1,0 +1,88 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: waha
+spec:
+  replicas: 1
+  # A sessao fica em PVC local-path RWO: dois pods no rollout travariam.
+  strategy:
+    type: Recreate
+  revisionHistoryLimit: 2
+  selector:
+    matchLabels: {app: waha}
+  template:
+    metadata:
+      labels: {app: waha}
+    spec:
+      securityContext:
+        seccompProfile: {type: RuntimeDefault}
+      containers:
+        - name: waha
+          image: devlikeapro/waha:gows@sha256:1f7faeb0227ad5edb5711f7058bfce807ea65e5f92234af0778e4db140f6eb46
+          env:
+            - {name: WHATSAPP_DEFAULT_ENGINE, value: GOWS}
+            - {name: WAHA_APPS_ENABLED, value: "True"}
+            - {name: WAHA_DASHBOARD_ENABLED, value: "true"}
+            - {name: WAHA_DASHBOARD_USERNAME, value: admin}
+            - {name: WHATSAPP_SWAGGER_ENABLED, value: "false"}
+            - {name: WAHA_API_KEY_EXCLUDE_PATH, value: "health,ping"}
+            - {name: TZ, value: America/Sao_Paulo}
+            - name: WAHA_API_KEY
+              valueFrom:
+                secretKeyRef: {name: waha-secrets, key: WAHA_API_KEY}
+            - name: WAHA_DASHBOARD_PASSWORD
+              valueFrom:
+                secretKeyRef: {name: waha-secrets, key: WAHA_DASHBOARD_PASSWORD}
+          ports: [{containerPort: 3000}]
+          readinessProbe:
+            httpGet: {path: /health, port: 3000}
+            initialDelaySeconds: 10
+            periodSeconds: 15
+          livenessProbe:
+            httpGet: {path: /health, port: 3000}
+            initialDelaySeconds: 30
+            periodSeconds: 30
+          resources:
+            requests: {cpu: 100m, memory: 192Mi}
+            limits: {cpu: 500m, memory: 512Mi}
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities: {drop: [ALL]}
+          volumeMounts:
+            - {name: sessions, mountPath: /app/.sessions}
+      volumes:
+        - name: sessions
+          persistentVolumeClaim: {claimName: waha-sessions}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: waha-sessions
+spec:
+  accessModes: [ReadWriteOnce]
+  storageClassName: local-path
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: waha
+spec:
+  selector: {app: waha}
+  ports: [{port: 80, targetPort: 3000}]
+---
+# Tailnet only: https://waha.tail76c1c6.ts.net
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: waha
+  annotations:
+    tailscale.com/proxy-group: ingress
+spec:
+  ingressClassName: tailscale
+  defaultBackend:
+    service: {name: waha, port: {number: 80}}
+  tls:
+    - hosts: [waha]
