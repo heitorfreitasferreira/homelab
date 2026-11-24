@@ -2,8 +2,9 @@
 """Busca vagas em fontes publicas e imprime um resumo em Markdown ou JSON.
 
 Fontes: LinkedIn guest, LinkedIn pelo navegador do WSL, Remotive, RemoteOK,
-We Work Remotely, Adzuna, Jooble e SerpApi Google Jobs. As fontes com chave leem
-~/.hermes/vagas/api.env. Nao aplica em vaga nenhuma. So coleta e ordena.
+We Work Remotely, Adzuna, Jooble, SerpApi Google Jobs e grupos do WhatsApp pelo
+WAHA. As fontes com chave leem ~/.hermes/vagas/api.env. Nao aplica em vaga
+nenhuma. So coleta e ordena.
 """
 from __future__ import annotations
 
@@ -14,6 +15,8 @@ import os
 import re
 import sys
 import time
+import unicodedata
+import urllib.error
 import urllib.parse
 import urllib.request
 import xml.etree.ElementTree as ET
@@ -442,11 +445,232 @@ def serpapi(query: str, location: str, limit: int, days: int) -> list[dict]:
     return jobs
 
 
-def render_markdown(query: str, location: str, jobs: list[dict], errors: list[str]) -> str:
+# WhatsApp pelo WAHA, com chave de sessao somente leitura (WAHA_READ_KEY).
+WAHA_URL = "https://waha.tail76c1c6.ts.net"
+WAHA_SESSION = "heitor"
+WAHA_CHATS = "Dominando Cloud;UberHub Comunidade"
+WAHA_PAGE = 200
+WAHA_MAX_MESSAGES = 1000  # por chat e por busca
+WAHA_MAX_CHATS = 2000
+WAHA_SKIP_URLS = ("whatsapp.com", "wa.me/")
+
+URL_RE = re.compile(r"https?://[^\s<>\"']+")
+EMAIL_RE = re.compile(r"[\w.+-]+@[\w-]+(?:\.[\w-]+)+")
+ROLE_RE = re.compile(
+    r"\b(engineers?|engenheir[oa]s?|analistas?|analysts?|developers?|desenvolvedor(?:a|es)?|"
+    r"arquitet[oa]s?|architects?|especialistas?|specialists?|consultor(?:a|es)?|"
+    r"administrador(?:a|es)?|sysadmin|devops|devsecops|sre|tech lead|cientistas?|"
+    r"scientists?|coordenador(?:a|es)?|gerentes?|managers?|head of)\b"
+)
+# Ordem importa: hibrido explicito vence, "100% remoto" vence "presencial".
+WORK_MODES = (
+    ("hibrid", "Híbrido"),
+    ("hybrid", "Híbrido"),
+    ("100% remot", "Remoto"),
+    ("full remote", "Remoto"),
+    ("fully remote", "Remoto"),
+    ("totalmente remot", "Remoto"),
+    ("presencial", "Presencial"),
+    ("on-site", "Presencial"),
+    ("onsite", "Presencial"),
+    ("remot", "Remoto"),
+)
+QUERY_STOP = {
+    "engineer", "engenheiro", "engenheira", "engenharia", "engineering", "analista",
+    "analyst", "developer", "desenvolvedor", "senior", "pleno", "junior", "jr", "sr",
+    "pl", "de", "da", "do", "em", "and", "or", "the", "of", "vaga", "vagas", "job",
+    "jobs", "remote", "remoto", "remota", "site",
+}
+QUERY_ALIASES = {
+    "sre": ["sre", "site reliability", "confiabilidade"],
+    "reliability": ["reliability", "confiabilidade", "sre"],
+    "devops": ["devops", "dev ops", "devsecops"],
+    "platform": ["platform", "plataforma"],
+    "plataforma": ["platform", "plataforma"],
+    "cloud": ["cloud", "nuvem"],
+    "kubernetes": ["kubernetes", "k8s"],
+    "k8s": ["kubernetes", "k8s"],
+    "infra": ["infra", "infraestrutura", "infrastructure"],
+    "infraestrutura": ["infra", "infraestrutura", "infrastructure"],
+    "infrastructure": ["infra", "infraestrutura", "infrastructure"],
+    "dados": ["dados", "data"],
+    "data": ["dados", "data"],
+}
+
+
+def fold(value: str) -> str:
+    """Minusculas sem acento. NFKD tambem desfaz o negrito Unicode dos posts."""
+    decomposed = unicodedata.normalize("NFKD", value or "")
+    return "".join(c for c in decomposed if not unicodedata.combining(c)).lower()
+
+
+def clean_line(value: str) -> str:
+    value = re.sub(r"[*_~`]", "", value)
+    value = re.sub(r"^[^\w(]+", "", value.strip())
+    return re.sub(r"\s+", " ", value).strip()
+
+
+def query_terms(query: str) -> list[list[str]]:
+    """Grupos de termos. A mensagem bate se tiver qualquer termo de qualquer grupo."""
+    groups = []
+    for word in re.findall(r"[a-z0-9+#.-]+", fold(query)):
+        if len(word) < 2 or word in QUERY_STOP:
+            continue
+        groups.append(QUERY_ALIASES.get(word, [word]))
+    return groups
+
+
+def has_term(term: str, text: str) -> bool:
+    return re.search(r"(?<![a-z0-9])" + re.escape(term) + r"(?![a-z0-9])", text) is not None
+
+
+def whatsapp_job(message: dict, chat_name: str, terms: list[list[str]]) -> dict | None:
+    """Converte um post de vaga em resultado. Conversa, evento e artigo ficam fora."""
+    body = str(message.get("body") or "").strip()
+    if len(body) < 40:
+        return None
+    raw = [line.strip() for line in body.splitlines() if line.strip()]
+    lines = [clean_line(line) for line in raw]
+    title = next((line for line in lines[:3] if line and ROLE_RE.search(fold(line))), "")
+    if not title:
+        return None
+    urls = [u.rstrip(".,;:!?)]") for u in URL_RE.findall(body)]
+    urls = [u for u in urls if not any(s in u.lower() for s in WAHA_SKIP_URLS)]
+    without_urls = URL_RE.sub(" ", body)
+    emails = EMAIL_RE.findall(without_urls)
+    if not urls and not emails:
+        return None
+    folded = fold(without_urls)
+    if terms and not any(has_term(term, folded) for group in terms for term in group):
+        return None
+
+    company = ""
+    place = ""
+    for line, text in zip(raw[:10], lines[:10]):
+        head = fold(text)
+        labeled = head.startswith(("empresa:", "company:"))
+        if not company and ("\U0001F3E2" in line[:3] or labeled):
+            company = clean_line(text.split(":", 1)[1]) if labeled else text
+        labeled = head.startswith(("local:", "localizacao:", "location:", "cidade:"))
+        if not place and ("\U0001F4CD" in line[:3] or labeled):
+            place = clean_line(text.split(":", 1)[1]) if labeled else text
+    if not place:
+        match = re.search(r"\(([^()]{2,40})\)\s*$", title)
+        place = match.group(1).strip() if match else ""
+    mode = next((label for key, label in WORK_MODES if key in folded), "")
+    location = place
+    if mode and fold(mode)[:5] not in fold(place):
+        location = f"{place}, {mode}" if place else mode
+
+    try:
+        date = datetime.fromtimestamp(int(float(message.get("timestamp") or 0))).strftime("%Y-%m-%d")
+    except (TypeError, ValueError, OSError, OverflowError):
+        date = ""
+    excerpt = re.sub(r"\s+", " ", body)
+    if len(excerpt) > 280:
+        excerpt = excerpt[:279].rstrip() + "…"
+    return {
+        "source": "whatsapp",
+        "title": title[:140],
+        "company": company[:80],
+        "location": location[:80],
+        "date": date,
+        "url": urls[0] if urls else f"mailto:{emails[0]}",
+        "score": score(fold(title), folded, [fold(location)]),
+        "group": chat_name,
+        "excerpt": excerpt,
+    }
+
+
+def waha_get(base: str, token: str, path: str, params: dict) -> list:
+    request = urllib.request.Request(
+        f"{base}{path}?{urllib.parse.urlencode(params)}",
+        headers={"X-Api-Key": token, "Accept": "application/json", "User-Agent": "vagas-buscar"},
+    )
+    reasons = {
+        401: "chave recusada",
+        403: "chave sem permissao de leitura",
+        404: "sessao inexistente",
+        422: "sessao fora do WORKING",
+    }
+    try:
+        with urllib.request.urlopen(request, timeout=30) as response:
+            data = json.load(response)
+    except urllib.error.HTTPError as exc:
+        raise SourceUnavailable(f"WAHA {exc.code}, {reasons.get(exc.code, 'erro')}") from exc
+    except urllib.error.URLError as exc:
+        raise SourceUnavailable(f"WAHA inacessivel: {exc.reason}") from exc
+    except TimeoutError as exc:
+        raise SourceUnavailable("WAHA sem resposta em 30 s") from exc
+    if not isinstance(data, list):
+        raise SourceUnavailable("WAHA respondeu fora do formato esperado")
+    return data
+
+
+def whatsapp(query: str, limit: int, days: int, errors: list[str]) -> list[dict]:
+    keys = api_keys()
+    token = keys.get("WAHA_READ_KEY", "")
+    if not token:
+        raise SourceUnavailable("sem WAHA_READ_KEY")
+    base = keys.get("WAHA_URL", WAHA_URL).rstrip("/")
+    session = urllib.parse.quote(keys.get("WAHA_SESSION", WAHA_SESSION), safe="")
+    wanted = [c.strip() for c in keys.get("WAHA_JOB_CHATS", WAHA_CHATS).split(";") if c.strip()]
+
+    # Entrada com @ e id de chat. O resto e trecho do nome, sem caixa e sem acento.
+    chats = {c: c for c in wanted if "@" in c}
+    patterns = {c: re.sub(r"\s+", " ", fold(c)) for c in wanted if "@" not in c}
+    matched: set[str] = set()
+    if patterns:
+        for offset in range(0, WAHA_MAX_CHATS, WAHA_PAGE):
+            page = waha_get(base, token, f"/api/{session}/chats", {"limit": WAHA_PAGE, "offset": offset})
+            for chat in page:
+                chat_id = str(chat.get("id") or "")
+                name = str(chat.get("name") or "")
+                folded_name = re.sub(r"\s+", " ", fold(name))
+                for label, pattern in patterns.items():
+                    if chat_id and pattern in folded_name:
+                        chats[chat_id] = name
+                        matched.add(label)
+            if len(page) < WAHA_PAGE:
+                break
+    for label in patterns:
+        if label not in matched:
+            errors.append(f"whatsapp (nenhum chat com '{label}')")
+    if not chats:
+        raise SourceUnavailable("nenhum chat de WAHA_JOB_CHATS encontrado")
+
+    since = int(time.time()) - days * 86400
+    terms = query_terms(query)
+    jobs: dict[str, dict] = {}
+    for chat_id, name in chats.items():
+        path = f"/api/{session}/chats/{urllib.parse.quote(chat_id, safe='')}/messages"
+        for offset in range(0, WAHA_MAX_MESSAGES, WAHA_PAGE):
+            page = waha_get(
+                base,
+                token,
+                path,
+                {"limit": WAHA_PAGE, "offset": offset, "downloadMedia": "false", "filter.timestamp.gte": since},
+            )
+            for message in page:
+                job = whatsapp_job(message, name, terms)
+                if job and job["url"] not in jobs:
+                    jobs[job["url"]] = job
+            if len(page) < WAHA_PAGE:
+                break
+        else:
+            errors.append(f"whatsapp ({name}: so as {WAHA_MAX_MESSAGES} mensagens mais recentes)")
+    ranked = sorted(jobs.values(), key=lambda j: (j["score"], j["date"]), reverse=True)
+    return ranked[:limit]
+
+
+def render_markdown(
+    query: str, location: str, jobs: list[dict], errors: list[str], sources: list[str]
+) -> str:
     lines = [
         f"# Vagas: {query}" + (f" em {location}" if location else ""),
         "",
         f"Gerado em {datetime.now().strftime('%Y-%m-%d %H:%M')}.",
+        "Fontes: " + ", ".join(sources) + ".",
         "",
     ]
     if errors:
@@ -460,12 +684,20 @@ def render_markdown(query: str, location: str, jobs: list[dict], errors: list[st
         meta = [job.get("company") or "", job.get("location") or "", job.get("source") or "", job.get("date") or ""]
         lines.append(" | ".join([m for m in meta if m]))
         lines.append(f"- link: {job['url']}")
+        if job.get("group"):
+            lines.append(f"- grupo: {job['group']}")
+        if job.get("excerpt"):
+            lines.append(f"- trecho: {job['excerpt']}")
         lines.append(f"- score: {job['score']}")
         lines.append("")
     return "\n".join(lines)
 
 
 def main() -> int:
+    # O WhatsApp entra no padrao onde a chave existe (racknerd), e fica fora no notebook.
+    default_sources = "linkedin,remotive,remoteok,wwr"
+    if api_keys().get("WAHA_READ_KEY"):
+        default_sources += ",whatsapp"
     parser = argparse.ArgumentParser(description="Busca vagas em fontes publicas.")
     parser.add_argument("query", help="cargo ou palavras-chave")
     parser.add_argument("--location", default="Brazil", help="local para o LinkedIn")
@@ -473,8 +705,9 @@ def main() -> int:
     parser.add_argument("--days", type=int, default=21, help="janela em dias")
     parser.add_argument(
         "--sources",
-        default="linkedin,remotive,remoteok,wwr",
-        help="linkedin, linkedin-browser, remotive, remoteok, wwr, adzuna, jooble, serpapi",
+        default=default_sources,
+        help="linkedin, linkedin-browser, remotive, remoteok, wwr, adzuna, jooble, serpapi, "
+        "whatsapp (padrao: " + default_sources + ")",
     )
     parser.add_argument("--json", action="store_true", help="saida JSON")
     parser.add_argument("--out", help="arquivo para salvar o Markdown")
@@ -483,7 +716,7 @@ def main() -> int:
     sources = {s.strip().lower() for s in args.sources.split(",") if s.strip()}
     jobs: list[dict] = []
     errors: list[str] = []
-    for name, func in (
+    runners = (
         ("linkedin", lambda: linkedin(args.query, args.location, args.limit, args.days)),
         ("linkedin-browser", lambda: linkedin_browser(args.query, args.location, args.limit, args.days)),
         ("remotive", lambda: remotive(args.query, args.limit, args.days)),
@@ -492,7 +725,10 @@ def main() -> int:
         ("adzuna", lambda: adzuna(args.query, args.location, args.limit, args.days)),
         ("jooble", lambda: jooble(args.query, args.location, args.limit, args.days)),
         ("serpapi", lambda: serpapi(args.query, args.location, args.limit, args.days)),
-    ):
+        ("whatsapp", lambda: whatsapp(args.query, args.limit, args.days, errors)),
+    )
+    selected = [name for name, _ in runners if name in sources]
+    for name, func in runners:
         if name not in sources:
             continue
         try:
@@ -510,9 +746,13 @@ def main() -> int:
     jobs = sorted(unique.values(), key=lambda j: (j["score"], j.get("date") or ""), reverse=True)
 
     if args.json:
-        output = json.dumps({"query": args.query, "errors": errors, "jobs": jobs}, ensure_ascii=False, indent=2)
+        output = json.dumps(
+            {"query": args.query, "sources": selected, "errors": errors, "jobs": jobs},
+            ensure_ascii=False,
+            indent=2,
+        )
     else:
-        output = render_markdown(args.query, args.location, jobs, errors)
+        output = render_markdown(args.query, args.location, jobs, errors, selected)
 
     if args.out:
         with open(args.out, "w", encoding="utf-8") as handle:

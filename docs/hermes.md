@@ -87,6 +87,9 @@ Assistente pessoal do homelab. Roda na VPS, so pela tailnet e pelo Telegram.
 - `vagas-buscar` busca em LinkedIn guest, Remotive, RemoteOK e We Work
   Remotely. Da racknerd o LinkedIn pode falhar por rate limit, entao use a
   ultima busca sincronizada do notebook.
+- Na racknerd ele tambem le os grupos de vagas do WhatsApp (Dominando Cloud e
+  UberHub) pelo WAHA, com a chave somente leitura `WAHA_READ_KEY` em
+  `~/.hermes/vagas/api.env`. Detalhes em `docs/vagas.md`.
 - A skill `vagas` mede aderencia, prepara curriculo derivado, carta, respostas e
   checklist. O padrao e preparar e abrir o formulario, sem enviar sozinho.
 - O pacote de curriculo, triagem, descricoes e busca chega no digest diario do
