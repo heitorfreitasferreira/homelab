@@ -27,6 +27,15 @@ spec:
             - {name: WHATSAPP_SWAGGER_ENABLED, value: "false"}
             - {name: WAHA_API_KEY_EXCLUDE_PATH, value: "health,ping"}
             - {name: TZ, value: America/Sao_Paulo}
+            # So texto. Baixar a midia de todos os grupos do numero principal satura CPU e memoria.
+            - {name: WAHA_EVENTS_DOWNLOAD_MEDIA, value: "false"}
+            - {name: WAHA_API_DOWNLOAD_MEDIA, value: "false"}
+            # Historico de 30 dias no pareamento, em vez do historico inteiro.
+            # Vale para o proximo pareamento (logout e QR novo).
+            - {name: WAHA_GOWS_DEVICE_REQUIRE_FULL_SYNC, value: "false"}
+            - {name: WAHA_GOWS_DEVICE_HISTORY_SYNC_FULL_SYNC_DAYS_LIMIT, value: "30"}
+            - {name: WAHA_GOWS_DEVICE_HISTORY_SYNC_RECENT_SYNC_DAYS_LIMIT, value: "30"}
+            - {name: WAHA_GOWS_DEVICE_HISTORY_SYNC_INITIAL_SYNC_MAX_MESSAGES_PER_CHAT, value: "200"}
             - name: WAHA_API_KEY
               valueFrom:
                 secretKeyRef: {name: waha-secrets, key: WAHA_API_KEY}
@@ -51,7 +60,8 @@ spec:
             failureThreshold: 3
           resources:
             requests: {cpu: 200m, memory: 192Mi}
-            limits: {cpu: "1", memory: 512Mi}
+            # 512Mi travou em thrashing no primeiro pareamento (RSS 499 MiB, cache 3 MiB).
+            limits: {cpu: "1", memory: 768Mi}
           securityContext:
             allowPrivilegeEscalation: false
             capabilities: {drop: [ALL]}
