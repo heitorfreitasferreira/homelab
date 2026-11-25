@@ -1,0 +1,96 @@
+#!/usr/bin/env bash
+# Restaura o backup enxuto do racknerd (k3s) no racknerd NixOS. Roda no notebook.
+# Uso: restaurar-racknerd <backup> <destino-ssh> [porta]
+#   backup: ~/backups/racknerd-AAAAMMDD (files/, pg/, sqlite/)
+#   destino: htr@host com sudo sem senha
+# Antes: containers parados (systemctl stop 'podman-*.service'). Depois: ver "proximos passos".
+# Opcoes: SEM_WAHA=1 nao restaura a sessao do WhatsApp (ensaio).
+#         SEM_TAILSCALE=1 nao restaura /var/lib/tailscale (ensaio).
+set -euo pipefail
+
+B=${1:?backup}
+DST=${2:?destino ssh}
+PORT=${3:-22}
+F=$B/files
+P=$F/var/lib/rancher/k3s/storage
+SSH_OPTS=(-p "$PORT" -o BatchMode=yes ${SSH_EXTRA:-})
+ssh_() { ssh "${SSH_OPTS[@]}" "$DST" "$@"; }
+
+# --fake-super no lado que envia le o dono e o modo originais dos xattrs gravados no backup.
+sync() {
+  local src=$1 dst=$2
+  ssh_ "sudo mkdir -p '$dst'"
+  rsync -aH --numeric-ids --fake-super --delete --rsync-path="sudo rsync" \
+    -e "ssh ${SSH_OPTS[*]}" "$src/" "$DST:$dst/"
+  echo "ok $dst"
+}
+pvc() { ls -d "$P"/pvc-*_"$1" | head -n1; }
+
+sync "$(pvc nextcloud_nextcloud-html)/config" /srv/nextcloud/html/config
+sync "$(pvc nextcloud_nextcloud-html)/data" /srv/nextcloud/html/data
+sync "$(pvc nextcloud_nextcloud-html)/themes" /srv/nextcloud/html/themes
+sync "$(pvc securo_securo-attachments)" /srv/securo/attachments
+sync "$(pvc securo_redis-data-securo-redis-master-0)" /srv/securo/redis
+sync "$(pvc pihole_pihole-etc)" /srv/pihole/etc
+sync "$(pvc audiobookshelf_audiobookshelf-config)" /srv/audiobooks/abs-config
+sync "$(pvc audiobookshelf_audiobookshelf-metadata)" /srv/audiobooks/abs-metadata
+sync "$(pvc audiobookshelf_prowlarr-config)" /srv/audiobooks/prowlarr
+sync "$(pvc audiobookshelf_transmission-config)" /srv/audiobooks/transmission
+sync "$(pvc audiobookshelf_readmeabook-config)" /srv/audiobooks/readmeabook/config
+# Livros sem .torrent (os outros 6 o transmission rebaixa no caminho original da biblioteca).
+for livro in "Frank Herbert" "Karl Marx, Friedrich Friedrich Engels"; do
+  sync "$(pvc audiobookshelf_audiobookshelf-audiobooks)/$livro" "/srv/audiobooks/library/$livro"
+done
+[ "${SEM_WAHA:-0}" = 1 ] || sync "$(pvc waha_waha-sessions)" /srv/waha/sessions
+[ "${SEM_TAILSCALE:-0}" = 1 ] || sync "$F/var/lib/tailscale" /var/lib/tailscale
+sync "$F/home/htr" /home/htr
+
+# /usr/local: scripts e modulos npm usados pelo Hermes (o binario do k3s nao veio no backup).
+sync "$F/usr/local/lib" /usr/local/lib
+sync "$F/usr/local/bin" /usr/local/bin
+
+# SQLite: as copias consistentes substituem as copiadas vivas, sem WAL nem SHM antigos.
+put_sqlite() {
+  local snap=$1 dst=$2 owner=$3
+  ssh_ "sudo rm -f '$dst-wal' '$dst-shm'"
+  rsync -a --rsync-path="sudo rsync" -e "ssh ${SSH_OPTS[*]}" "$B/sqlite/$snap" "$DST:$dst"
+  ssh_ "sudo chown $owner '$dst' && sudo chmod 644 '$dst'"
+  echo "ok sqlite $dst"
+}
+put_sqlite audiobookshelf_audiobookshelf-config__absdatabase.sqlite /srv/audiobooks/abs-config/absdatabase.sqlite "$(ssh_ "stat -c %u:%g /srv/audiobooks/abs-config")"
+put_sqlite audiobookshelf_prowlarr-config__prowlarr.db /srv/audiobooks/prowlarr/prowlarr.db 1000:1000
+for db in state kanban shared-state; do
+  put_sqlite ".hermes__$db.db" "/home/htr/.hermes/$db.db" 1000:1000
+done
+
+# Postgres nativo: Nextcloud no banco app, Securo no securo (pgvector criado antes, como superusuario).
+ssh_ "sudo -u postgres psql -v ON_ERROR_STOP=1 -d securo -c 'CREATE EXTENSION IF NOT EXISTS vector'"
+restore_pg() {
+  local dump=$1 db=$2 role=$3
+  ssh_ "sudo -u postgres pg_restore --clean --if-exists --no-owner --no-acl --role=$role -d $db" < "$B/pg/$dump"
+  echo "ok pg $db"
+}
+restore_pg nextcloud-app.dump app app
+restore_pg securo.dump securo securo
+
+# Readmeabook: o Postgres embutido sobe uma vez com o servico (cria o pgdata) e e restaurado
+# num container temporario so com o Postgres. Sem --no-owner: as tabelas sao do usuario readmeabook.
+# Com o app rodando, a migracao dele falha antes do restore terminar e o container reinicia em laco.
+RMAB=ghcr.io/kikootwo/readmeabook@sha256:3c4e18563b3e22c7b67bcf3b323e81fda840159ea6c71eee91ab13a2d49b0cf1
+ssh_ "sudo systemctl start podman-readmeabook; for i in \$(seq 60); do sudo podman exec readmeabook su postgres -c 'psql -Atc \"select 1\" -d readmeabook' >/dev/null 2>&1 && break; sleep 3; done; sudo systemctl stop podman-readmeabook"
+ssh_ "sudo podman run --rm -i -v /srv/audiobooks/readmeabook/pgdata:/var/lib/postgresql/data --entrypoint sh $RMAB -c '
+  B=/usr/lib/postgresql/16/bin
+  su postgres -c \"\$B/pg_ctl -D /var/lib/postgresql/data -w -o \\\"-c listen_addresses=\\\" start\" >/dev/null
+  cat > /tmp/d.dump
+  su postgres -c \"\$B/pg_restore --clean --if-exists -d readmeabook /tmp/d.dump\"
+  su postgres -c \"\$B/pg_ctl -D /var/lib/postgresql/data -w stop\" >/dev/null'" < "$B/pg/readmeabook.dump"
+echo "ok pg readmeabook"
+
+cat <<'EOF'
+Proximos passos (no host):
+  sudo systemctl start 'podman-*.service'
+  sudo podman exec -u www-data nextcloud php occ app:install memories
+  sudo podman exec -u www-data nextcloud php occ app:install previewgenerator
+  sudo podman exec transmission transmission-remote -t all --verify --start   (rebaixa os 6 livros com .torrent)
+  Manifesto e Dune Messiah ja voltam do backup para library (o torrent do Manifesto so volta a semear).
+EOF

@@ -27,7 +27,7 @@
     }:
     let
       host =
-        name:
+        name: extra:
         nixpkgs.lib.nixosSystem {
           system = "x86_64-linux";
           modules = [
@@ -36,10 +36,13 @@
             comin.nixosModules.comin
             ./modules/base.nix
             ./hosts/${name}
-          ];
+          ]
+          ++ extra;
         };
     in
     {
-      nixosConfigurations.racknerd = host "racknerd";
+      nixosConfigurations.racknerd = host "racknerd" [ ];
+      # Ensaio local da virada (nixos/README.md). Nunca aplicar no racknerd real.
+      nixosConfigurations.racknerd-ensaio = host "racknerd" [ ./hosts/racknerd/ensaio.nix ];
     };
 }

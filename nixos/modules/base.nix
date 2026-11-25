@@ -40,8 +40,9 @@
       "wheel"
       "systemd-journal"
     ];
-    # Sem senha: SSH so por chave ou Tailscale SSH.
-    hashedPassword = "!";
+    # Sem senha valida, mas conta ativa. "!" marcaria a conta como bloqueada,
+    # e o sshd recusaria ate a chave (achado no ensaio).
+    hashedPassword = "*";
     linger = true;
     openssh.authorizedKeys.keys = [
       "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOQOe/8Byvgfm8cMhzfplDufCqonIz57NGip3i835ugu heitor.ff@hotmail.com"

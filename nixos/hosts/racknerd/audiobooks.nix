@@ -86,5 +86,9 @@ in
     "d ${d}/prowlarr 0755 1000 1000 -"
     "d ${d}/transmission 0755 1000 1000 -"
     "d ${d}/readmeabook 0755 1000 1000 -"
+    "d ${d}/readmeabook/config 0755 1000 1000 -"
+    "d ${d}/readmeabook/cache 0755 1000 1000 -"
+    "d ${d}/readmeabook/pgdata 0700 root root -"
+    "d ${d}/readmeabook/redis 0755 root root -"
   ];
 }

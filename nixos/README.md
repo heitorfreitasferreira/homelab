@@ -50,10 +50,43 @@ reinstalar o Debian 13 pelo painel da RackNerd e restaurar desse backup.
 5. Parar os apps, gerar os dumps finais e o rsync final da lista enxuta.
 6. `nixos-anywhere` com kexec a partir do Debian, levando por `--extra-files`:
    `/var/lib/sops-nix/key.txt`, `/var/lib/tailscale` e as chaves de host do SSH.
+   Os diretorios da pasta de extra-files viram os do disco novo com as mesmas permissoes:
+   `etc`, `etc/ssh`, `var` e `var/lib` precisam ser 755. Com `etc/ssh` em 700 o sshd nao le
+   `authorized_keys.d/htr` e ninguem entra por SSH (achado no ensaio).
+   Opcoes usadas no ensaio: `--target-host htr@<ip> --post-kexec-ssh-port 22`.
 7. Restaurar `/srv`, `/home/htr`, os bancos (pg_restore com `--no-owner` e `ALTER ... OWNER`),
    reinstalar Hermes (git no commit do manifesto), OpenCode, Anytype e os custom_apps do Nextcloud
    (`occ app:install memories previewgenerator`).
 8. Conferir cada app, devolver o Pi-hole ao DNS global e rebaixar os audiobooks pelo transmission.
+
+## Ensaio (2026-11-25)
+
+Config `.#racknerd-ensaio` (`hosts/racknerd/ensaio.nix`): a do racknerd sem comin, wal-g, restic,
+Alertmanager, cron do Nextcloud, gateway do Hermes, waha, worker do Securo e Tailscale Services.
+VM no notebook (`~/vms/ensaio`): QEMU com BIOS, 6 GB, 5 vCPUs, MAC e IP do racknerd, Debian 13 cloud.
+`instalar.sh` refaz do zero, `aplicar.sh` aplica mudancas, `rodar.sh` so liga.
+
+Resultado com o backup de 2026-11-24:
+
+- Debian -> kexec -> disko -> instalacao -> boot BIOS sem intervencao. O IP fixo sobreviveu ao kexec.
+  A placa vira `ens3` no NixOS: a config casa pelo MAC, nao pelo nome.
+- Chaves de host do SSH preservadas (mesma impressao digital do racknerd) e secrets decifrados.
+- Bancos restaurados iguais aos dumps: Nextcloud 151 tabelas, Securo 67, readmeabook 28.
+- Nextcloud 35.0.3 sobe com o config.php antigo, lista as pastas e baixa fotos do R2.
+- Securo, audiobookshelf (2 usuarios, 2 progressos, 8 itens), readmeabook, prowlarr, transmission,
+  Pi-hole, homepage e Grafana respondem. Os aliases mantem os nomes do cluster validos no readmeabook.
+- Hermes reinstalado no commit de producao com as mesmas versoes de Node, npm e Python (nix-ld).
+- Memoria com o ensaio todo no ar: 2,0 GB usados, swap vazio. Os servicos desligados no ensaio
+  somam cerca de 1,5 GB na producao.
+
+Achados corrigidos:
+
+- `etc/ssh` em 700 na pasta de extra-files trancava o SSH de todos (passo 6 da virada).
+- `hashedPassword = "!"` marca a conta como bloqueada. O htr usa `"*"`.
+- Faltavam os diretorios cache, pgdata e redis do readmeabook (podman nao cria caminho de volume).
+- O dump do readmeabook vai sem `--no-owner`, num container temporario com o app parado.
+- Dune Messiah nao tem .torrent: ele e o Manifesto (ja organizado) entram no backup.
+- O worker do Securo consome a fila restaurada do Redis e chama a Pluggy: no ensaio ficou desligado.
 
 ## Pendencias
 
