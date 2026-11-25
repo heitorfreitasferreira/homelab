@@ -5,21 +5,25 @@ Este repositorio declara o homelab pessoal. A fonte de verdade das escolhas e
 
 ## Topologia
 
-- `racknerd`: VPS Debian 13 em 23.254.208.229, k3s de um no, Tailscale. Roda o
-  Argo CD, o Nextcloud, o Securo, o Pi-hole, o monitoring e os MCPs. Tambem
-  roda o OpenCode e o Hermes em systemd. Nada e exposto fora da tailnet.
+- `racknerd`: VPS em 23.254.208.229, **NixOS 26.05**, Tailscale. Roda o
+  Nextcloud, o Securo, o Pi-hole, os audiobooks, o monitoring, o Hermes, o
+  OpenCode e o Anytype. Nada e exposto fora da tailnet.
 - `casa`: Positivo C14CR21, Celeron B800, 2 GB, Debian 13, Podman Quadlet.
   Roda o Home Assistant e o Matter Hub. E subnet router de `192.168.100.0/24`
-  na tailnet.
-- Notebook: Ubuntu, OpenCode com MCPs. Nao e servidor.
+  na tailnet. Ainda provisionado por Ansible (`ansible/casa.yml`).
+- `pc-heito-wsl`: Windows com WSL, computacao sob demanda. Nao e servidor.
+- Notebook: Arch com Omarchy, Nix em container, OpenCode com MCPs. Nao e servidor.
 - Tailnet: `tail76c1c6.ts.net`. MagicDNS resolve os nos.
 
 ## Onde esta o que
 
-- `clusters/homelab/apps/*.yaml`: Applications do Argo CD, uma por chart.
-- `apps/<nome>/`: manifests Kustomize dos apps.
-- `platform/`: base, CoreDNS e Tailscale operator.
-- `ansible/`: provisionamento da VPS e do `casa`.
+- `nixos/`: config declarativa dos hosts NixOS. `nixos/README.md` tem o fluxo,
+  a operacao e o runbook da virada.
+- `nixos/hosts/racknerd/`: tudo do racknerd, um arquivo por assunto (containers,
+  postgres, caddy, nextcloud, securo, waha, pihole, audiobooks, homepage,
+  monitoring, agents, backup).
+- `nixos/secrets/<host>.sops.yaml`: secrets do host, cifrados com a chave age.
+- `ansible/`: so o `casa` (Debian + Podman).
 - `docs/`: operacao, Hermes, Geoffrey, vagas e runbooks.
 - `DECISIONS.md`: decisoes numeradas com o porque e o que foi descartado.
 
@@ -28,17 +32,18 @@ Este repositorio declara o homelab pessoal. A fonte de verdade das escolhas e
 - Nunca leia, imprima ou copie segredos. Tokens ficam em
   `~/.config/opencode-secrets` e no `.env` do Hermes, fora do git. Arquivos
   `*.sops.yaml` sao cifrados e nao devem ser descriptografados.
-- O caminho padrao de mudanca e editar o repo, `git add`, `git commit` e
-  `git push`. O Argo reconcilia. Use o `/usr/local/sbin/hermes-ops` para status,
-  sync, logs, restart e revert.
-- Nao execute `kubectl`, `helm`, `argocd`, `sops`, `age`, `ansible-playbook`,
-  `systemctl`, `curl`, `ssh` ou `tailscale` pelo shell. Consulta por MCP
-  read-only. Mudanca de infraestrutura vai por commit no repo e pelo Argo CD.
+- Mudanca no racknerd: editar `nixos/`, `git add`, `git commit` e `git push`.
+  O comin puxa o `main` em ate 1 min e aplica. Nao edite `/etc/nixos` nem
+  arquivos gerenciados pelo Nix a mao.
+- Secret novo: `nixos/scripts/secret-gen nixos/secrets/racknerd.sops.yaml <chave>`
+  (gera) ou `sops nixos/secrets/racknerd.sops.yaml` (valor dado). Rotacao:
+  `nixos/scripts/rotacionar r2|healthchecks`.
 - Nao altere `DECISIONS.md` sem pedir. Mudanca de infraestrutura: mostre o
   diff, explique o efeito e espere aprovacao.
-- Excecao publica: Home Assistant em `casa.htrlab.duckdns.org` e Securo em
-  `securo.htrlab.duckdns.org`, atras do Traefik da VPS. Todo o resto e pela
-  tailnet. A VPS tem SSH publico, a VPN e as duas entradas HTTPS.
+- Excecao publica: Home Assistant em `casa.htrlab.duckdns.org`, Securo em
+  `securo.htrlab.duckdns.org`, Nextcloud em `nuvem.htrlab.duckdns.org`,
+  audiobooks em `audio.htrlab.duckdns.org` e pedidos em
+  `pedidos.htrlab.duckdns.org`, todos no Caddy da VPS. O resto e pela tailnet.
 - Escrita de arquivos permitida em `/home/htr/homelab` e `/home/htr/.hermes`.
   Fora disso, peca.
 - Responda em pt-BR, curto, direto. Sem travessao, sem ponto e virgula em prosa,
@@ -48,8 +53,9 @@ Este repositorio declara o homelab pessoal. A fonte de verdade das escolhas e
 
 - Repo: `git -C /home/htr/homelab log --oneline -20` e
   `git -C /home/htr/homelab status --short`.
-- Cluster: MCP `kubernetes` (read-only, Secret negado).
-- Argo CD: MCP `argocd` (conta `mcp`, readonly).
+- Estado do host: `systemctl status`, `journalctl -u <unidade>`,
+  `podman ps`, `free -m`. Deploy: `systemctl status comin` e
+  `curl -s 127.0.0.1:4243/metrics | grep comin_deployment_info`.
 - Metricas e logs: MCP `grafana` (Viewer, sem escrita).
 - Tailnet: MCP `tailscale` (no local, risco read).
 - DNS: MCP `pihole` (ferramentas de leitura).
@@ -75,20 +81,24 @@ use os spaces `7bef7m` nem `723ija`.
 
 ## Servicos
 
-- Nextcloud com Postgres CNPG e originais no R2 (`htr-nextcloud`).
-- Securo com Postgres, Redis e anexos em local-path, backup no R2.
+- Nextcloud 35 com Postgres 17 nativo e originais no R2 (`htr-nextcloud`).
+- Securo com Postgres no mesmo cluster, Redis e anexos em `/srv/securo`.
+- Audiobooks: audiobookshelf, readmeabook, prowlarr e transmission em
+  `/srv/audiobooks`.
 - Home Assistant em `https://casa.htrlab.duckdns.org` (publico, login) e
   `https://casa.tail76c1c6.ts.net` (tailnet). O interno e
   `http://192.168.100.207:8123`.
 - Pi-hole com `hostNetwork` e DNS preso em `tailscale0`, web em `:8053`.
+  E o DNS global da tailnet.
 - Monitoring: VictoriaMetrics, vmalert, Alertmanager no Telegram e Grafana.
 - Homepage em `home.tail76c1c6.ts.net`.
-- Argo CD em `argocd.tail76c1c6.ts.net`.
-- Grafana em `grafana.tail76c1c6.ts.net`.
-- Browser e STT do Hermes no `pc-heito-wsl`: Chromium CDP em
-  `http://100.89.110.97:30922` e Whisper em `http://100.89.110.97:8000/v1`.
-  Quando o PC esta desligado os pods ficam Pending e as ferramentas falham. Isso
-  e normal, nao e falha do cluster.
+- Grafana em `grafana.tail76c1c6.ts.net`, metricas em
+  `metricas.tail76c1c6.ts.net`.
+- OpenCode em `racknerd.tail76c1c6.ts.net:8443` e o dashboard do Hermes em
+  `racknerd.tail76c1c6.ts.net` (porta 443 da tailnet).
+- Backup: wal-g (WAL e base diaria do Postgres) e restic diario, os dois no R2
+  em `htr-backups`. Securo tem copia propria por rclone.
+- Browser e STT do Hermes dependiam de pods no PC e ainda nao tem substituto.
 - Vagas: `vagas-buscar` e skill `vagas`, runbook em `docs/vagas.md`. Preparar e
   abrir o formulario e o padrao. Nunca envie candidatura sem confirmacao.
 - Email: use `hermes-mail` (`accounts`, `list`, `search`, `read`, `send`).
@@ -98,20 +108,15 @@ use os spaces `7bef7m` nem `723ija`.
 
 ## Operacao
 
-- Mudanca: edite o repo, `git add`, `git commit` e `git push`. O Argo
-  sincroniza `main`. O `hermes-ops publish` faz os tres em um passo, se preferir.
-- `hermes-ops status`, `sync <app>`, `logs <ns> <pod>`, `restart <ns> <deploy>`
-  e `revert <sha>` cobrem a rotina. O runbook completo esta em
-  `docs/operacao.md`.
-- Mudanca pesada de infra, banco, storage ou DNS publico fica para o OpenCode no
-  notebook, com janela e rollback explicito.
+- Mudanca: edite o repo, `git add`, `git commit` e `git push`. O comin aplica.
+  Rollback: `git revert` e push, ou `nixos-rebuild --rollback` no host.
+- Estado do deploy: `systemctl status comin` e `journalctl -u comin`.
 - Logs do OpenCode: `journalctl -u opencode -n 100 --no-pager`.
 - Logs do Hermes: `journalctl -u hermes-gateway -n 100 --no-pager` e
   `~/.hermes/logs/gateway.log`.
 - Estado do Hermes: `hermes gateway status`, `hermes doctor`.
 - Estado do Anytype: `systemctl --user status anytype`.
-- Antes de reiniciar algo, avise e espere aprovacao. Para apps no cluster,
-  prefira `hermes-ops restart`.
+- Antes de reiniciar algo, avise e espere aprovacao.
 - O gateway do Hermes reinicia todo dia as 04:30 pelo
   `hermes-gateway-restart.timer`. Se os MCPs sumirem do indice de ferramentas,
   o Hermes pode se reiniciar sozinho, sem pedir: avise no Telegram e rode

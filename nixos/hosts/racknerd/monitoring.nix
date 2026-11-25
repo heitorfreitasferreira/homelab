@@ -43,7 +43,7 @@ let
   };
   dashboards = pkgs.runCommand "grafana-dashboards" { } ''
     mkdir -p $out
-    cp ${../../../apps/monitoring/dashboards}/*.json $out/
+    cp ${./dashboards}/*.json $out/
     cp ${nodeExporterFull} $out/node-exporter-full.json
   '';
   cred = name: "/run/credentials/alertmanager.service/${name}";

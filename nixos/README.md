@@ -104,10 +104,9 @@ restauracao e o transmission precisou de restart para ler a config restaurada.
 
 - Rotacionar o que vazou no chat da migracao: token R2 de backups, chave do WAHA, senhas do
   Grafana, Pi-hole e admin do Nextcloud, URL do Healthchecks.
-- `hermes-ops` e especifico do k8s (kubectl, Argo): reescrever para systemd e podman.
-- Tirar os MCPs kubernetes e argocd da config do Hermes e do OpenCode (o cluster nao existe mais).
 - Home Assistant bane os acessos por casa.tail76c1c6.ts.net (403, ja antes da virada): revisar ip_bans no casa.
 - Chromium e whisper do Hermes: containers no PC (eram pods do k3s no WSL).
 - Healthchecks: check novo alertmanager-watchdog criado, falta trocar a URL (nixos/scripts/rotacionar healthchecks).
-- Remover da tailnet os nos k8s-operator-racknerd e racknerd-ingress-0 e o svc:argocd.
+- Remover da tailnet os nos k8s-operator-racknerd e racknerd-ingress-0, o svc:argocd e o vcluster.
+- Atualizar o `DECISIONS.md` para a arquitetura NixOS (decisao 1 e as de k3s).
 - Hosts `casa` (por ultimo, roda o Home Assistant) e `pc-wsl` (NixOS-WSL, worker sob demanda).

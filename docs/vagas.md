@@ -82,7 +82,7 @@ Para criar a chave na racknerd sem ela passar pela tela:
 
 ```bash
 ( umask 077
-  ADMIN=$(sudo kubectl -n waha get secret waha-secrets -o jsonpath='{.data.WAHA_API_KEY}' | base64 -d)
+  ADMIN=$(sudo cat /run/secrets/waha_api_key)
   curl -fsS https://waha.tail76c1c6.ts.net/api/keys \
     -H "X-Api-Key: $ADMIN" -H 'Content-Type: application/json' \
     -d '{"isAdmin":false,"session":"heitor","isActive":true,"actions":{"read":true,"send":false,"control":false,"setting":false,"app":false,"delete":false}}' \

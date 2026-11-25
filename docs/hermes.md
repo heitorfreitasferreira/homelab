@@ -107,8 +107,7 @@ Assistente pessoal do homelab. Roda na VPS, so pela tailnet e pelo Telegram.
 
 - `approvals.mode: manual`, timeout de 600 s. Comando perigoso pede aprovacao no
   Telegram.
-- `approvals.deny` bloqueia leitura de segredos, `sudo`, `kubectl`, `helm`,
-  `argocd`, `k3s`, `tailscale`, `systemctl`, `ansible-playbook`, `sops`, `age`,
+- `approvals.deny` bloqueia leitura de segredos, `sudo`, `tailscale`, `systemctl`, `ansible-playbook`, `sops`, `age`,
   `curl`, `wget`, `ssh`, `scp`, `rsync`, `crontab`, `docker` e `podman` pelo
   shell. Commit e `git push` no repo sao permitidos.
 - Kubernetes, Argo CD, Grafana, Tailscale e Pi-hole ficam read-only. O Pi-hole
@@ -124,7 +123,7 @@ Assistente pessoal do homelab. Roda na VPS, so pela tailnet e pelo Telegram.
   sao transcritas quando o PC esta ligado.
 - Rotina de cluster pelo `/usr/local/sbin/hermes-ops`: `status`, `sync`, `logs`,
   `restart` e `revert`. O runbook esta em `docs/operacao.md`. Os comandos crus
-  (`kubectl`, `sudo`, `ssh`) continuam negados. `git add`, `git commit` e
+  (`sudo`, `ssh`, `tailscale`) continuam negados. `git add`, `git commit` e
   `git push` sao o caminho padrao de mudanca.
 - Vision e nativa no modelo `opencode-go/deepseek-v4.1-flash` (input text+image).
   Imagens enviadas no Telegram vao direto para o modelo, sem OpenRouter.

@@ -37,12 +37,12 @@ o AudioBookshelf ve como `/audiobooks`.
 
 ## Transmission
 
-Sem senha por decisao desta rodada: o Ingress e so da tailnet e o RPC nao responde fora
-do cluster. Para voltar a exigir senha, use `USER` e `PASS` no Deployment e um Secret
+Sem senha por decisao desta rodada: a entrada e so da tailnet e o RPC nao responde fora
+do host. Para voltar a exigir senha, use `USER` e `PASS` no Deployment e um Secret
 SOPS com a chave `TRANSMISSION_PASS`.
 
 A porta 51413 nao esta publicada na internet: so conexoes de saida, ratio pior. Abrir
-exige regra no firewall da VPS e TCP no Traefik.
+exige regra no firewall da VPS e publicacao no container.
 
 ## ReadMeABook
 

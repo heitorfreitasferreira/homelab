@@ -5,8 +5,7 @@ Uso:
   nixos/scripts/rotacionar r2            token R2 de backups (ACCESS_KEY_ID e ACCESS_SECRET_KEY)
   nixos/scripts/rotacionar healthchecks  URL de ping do Healthchecks do Watchdog
 
-Atualiza os Secrets do cluster (enquanto o k3s existir) e nixos/secrets/racknerd.sops.yaml.
-Nada e impresso alem dos nomes das chaves trocadas.
+Atualiza nixos/secrets/racknerd.sops.yaml. Nada e impresso alem dos nomes das chaves trocadas.
 Precisa de sops (ou SOPS=/caminho) e da chave age em SOPS_AGE_KEY_FILE.
 """
 import getpass
@@ -54,12 +53,6 @@ def ask(label, pattern):
 def r2():
     key_id = ask("Access Key ID do token novo", r"[0-9a-f]{32}")
     secret = ask("Secret Access Key do token novo", r"[0-9a-f]{64}")
-    for path in ("apps/nextcloud/r2-backups.sops.yaml", "apps/securo-backup/r2-backups.sops.yaml"):
-        d = decrypt(path)
-        d["stringData"]["ACCESS_KEY_ID"] = key_id
-        d["stringData"]["ACCESS_SECRET_KEY"] = secret
-        encrypt(path, d)
-        print(f"{path}: ACCESS_KEY_ID, ACCESS_SECRET_KEY")
     d = decrypt(NIXOS)
     d["r2_backups_access_key_id"] = key_id
     d["r2_backups_secret_access_key"] = secret
@@ -69,14 +62,6 @@ def r2():
 
 def healthchecks():
     url = ask("URL de ping nova", r"https://hc-ping\.com/[0-9a-f-]{36}")
-    path = "apps/monitoring/alertmanager-config.sops.yaml"
-    d = decrypt(path)
-    cfg = yaml.safe_load(d["stringData"]["alertmanager.yaml"])
-    hooks = [r for r in cfg["receivers"] if r["name"] == "healthchecks"][0]["webhook_configs"]
-    hooks[0]["url"] = url
-    d["stringData"]["alertmanager.yaml"] = yaml.safe_dump(cfg, sort_keys=False, allow_unicode=True)
-    encrypt(path, d)
-    print(f"{path}: receivers.healthchecks.url")
     d = decrypt(NIXOS)
     d["alertmanager_healthchecks_url"] = url
     encrypt(NIXOS, d)

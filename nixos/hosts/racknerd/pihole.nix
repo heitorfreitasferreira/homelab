@@ -6,7 +6,7 @@
     image = "jacklul/pihole:2026.11.0@sha256:49b9b92527a1675752181a71f966e0f3aecee5b773e94ac2e461e43d8351a74f";
     volumes = [
       "/srv/pihole/etc:/etc/pihole"
-      "${../../../apps/pihole/adlists.txt}:/etc/adlists/adlists.txt:ro"
+      "${./adlists.txt}:/etc/adlists/adlists.txt:ro"
     ];
     environment = {
       TZ = "America/Sao_Paulo";
