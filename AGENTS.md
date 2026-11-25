@@ -68,9 +68,8 @@ Este repositorio declara o homelab pessoal. A fonte de verdade das escolhas e
   Fallback em `~/.hermes/scripts/ha.py` (REST com `~/.hermes/ha.env`) quando o
   MCP estiver fora. A loja da comunidade e o Marketplace nativo do HA 2026.11,
   nao existe mais instalacao separada do HACS.
-- Conhecimento: MCP `anytype`. Use o space `Homelab` (`7bef7m`) para notas,
-  decisoes e runbooks. Se o bot tiver sido convidado para um space seu, use o
-  space que o Heitor indicar.
+- Conhecimento: MCP `anytype`. Use o space que o Heitor indicar para notas,
+  decisoes e runbooks.
 
 ## Geoffrey e o space de organizacao
 
@@ -98,7 +97,8 @@ use os spaces `7bef7m` nem `723ija`.
   `racknerd.tail76c1c6.ts.net` (porta 443 da tailnet).
 - Backup: wal-g (WAL e base diaria do Postgres) e restic diario, os dois no R2
   em `htr-backups`. Securo tem copia propria por rclone.
-- Browser e STT do Hermes dependiam de pods no PC e ainda nao tem substituto.
+- Browser do Hermes: CDP no Chrome do notebook (`100.90.131.64:9222`, servido por `tailscale serve --tcp 9222`).
+  Perfil real do Heitor, que resolve o CAPTCHA na propria janela. STT ainda sem substituto.
 - Vagas: `vagas-buscar` e skill `vagas`, runbook em `docs/vagas.md`. Preparar e
   abrir o formulario e o padrao. Nunca envie candidatura sem confirmacao.
 - Email: use `hermes-mail` (`accounts`, `list`, `search`, `read`, `send`).

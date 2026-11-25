@@ -5,10 +5,10 @@ description: Busca, baixa e acompanha audiobooks pelo Prowlarr e Transmission, e
 
 # Livros
 
-Automação do stack de audiobooks do homelab. O cliente é o `hermes-books`
-(`/usr/local/bin/hermes-books`), que fala com o Prowlarr, o Transmission e o
-AudioBookshelf pela rede `apps` do podman, pelos nomes de servico (prowlarr,
-transmission, audiobookshelf). Nunca chame `curl` ou a API direto: use o cliente.
+Automação do stack de audiobooks do homelab. O cliente é o `hermes-books`, que
+fala com o Prowlarr (127.0.0.1:9696), o Transmission (127.0.0.1:9091) e o
+AudioBookshelf (127.0.0.1:13378) no racknerd. Nunca chame `curl` ou a API
+direto: use o cliente.
 
 ## Comandos
 

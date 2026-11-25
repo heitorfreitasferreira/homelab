@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 """Audiobooks para o Hermes: Prowlarr, Transmission e AudioBookshelf.
 
-Fala com os ClusterIP do namespace audiobookshelf, entao roda na racknerd.
-Config em ~/.hermes/books.env (600): PROWLARR_API_KEY, ABS_TOKEN e,
-opcional, ABS_LIBRARY_ID. Sem PROWLARR_API_KEY o script tenta a chave de
-/initialize.json, que existe enquanto o Prowlarr nao tem login.
+Fala com os servicos publicados em 127.0.0.1 pela rede do podman, entao roda na
+racknerd. Config em ~/.hermes/books.env (600): PROWLARR_API_KEY, ABS_TOKEN,
+ABS_LIBRARY_ID e, opcional, PROWLARR_URL, TRANSMISSION_URL e ABS_URL. Sem
+PROWLARR_API_KEY o script tenta a chave de /initialize.json, que existe
+enquanto o Prowlarr nao tem login.
 """
 from __future__ import annotations
 
@@ -23,9 +24,9 @@ ENV_FILE = HOME / "books.env"
 STATE_DIR = HOME / "books"
 LAST_SEARCH = STATE_DIR / "last-search.json"
 
-PROWLARR = os.environ.get("PROWLARR_URL", "http://10.43.116.77:9696")
-TRANSMISSION = os.environ.get("TRANSMISSION_URL", "http://10.43.54.175:9091")
-ABS = os.environ.get("ABS_URL", "http://10.43.40.87/audiobookshelf")
+PROWLARR = os.environ.get("PROWLARR_URL", "http://127.0.0.1:9696")
+TRANSMISSION = os.environ.get("TRANSMISSION_URL", "http://127.0.0.1:9091")
+ABS = os.environ.get("ABS_URL", "http://127.0.0.1:13378")
 DEFAULT_LIBRARY = "3e1d2334-575b-4564-9e4d-36cec204ed74"
 
 TIMEOUT = 60
@@ -40,7 +41,7 @@ def config() -> dict:
                 continue
             key, value = line.split("=", 1)
             values[key.strip()] = value.strip().strip('"').strip("'")
-    for key in ("PROWLARR_API_KEY", "ABS_TOKEN", "ABS_LIBRARY_ID"):
+    for key in ("PROWLARR_API_KEY", "ABS_TOKEN", "ABS_LIBRARY_ID", "PROWLARR_URL", "TRANSMISSION_URL", "ABS_URL"):
         if os.environ.get(key):
             values[key] = os.environ[key]
     return values
@@ -72,7 +73,7 @@ def as_json(raw: bytes):
 
 class Prowlarr:
     def __init__(self, cfg: dict):
-        self.url = PROWLARR.rstrip("/")
+        self.url = cfg.get("PROWLARR_URL", PROWLARR).rstrip("/")
         self.key = cfg.get("PROWLARR_API_KEY") or self._bootstrap_key()
 
     def _bootstrap_key(self) -> str:
@@ -110,8 +111,8 @@ class Prowlarr:
 
 
 class Transmission:
-    def __init__(self):
-        self.url = TRANSMISSION.rstrip("/")
+    def __init__(self, cfg: dict):
+        self.url = cfg.get("TRANSMISSION_URL", TRANSMISSION).rstrip("/")
         self.sid = ""
 
     def call(self, method: str, arguments: dict) -> dict:
@@ -199,7 +200,7 @@ def cmd_get(args) -> int:
 
 
 def cmd_status(args) -> int:
-    torrents = Transmission().torrents()
+    torrents = Transmission(config()).torrents()
     if not torrents:
         print("nenhum torrent no Transmission")
         return 0
@@ -221,7 +222,7 @@ def cmd_library(args) -> int:
             "falta ABS_TOKEN em ~/.hermes/books.env. Crie em AudioBookshelf > Settings > API Keys."
         )
     library = cfg.get("ABS_LIBRARY_ID", DEFAULT_LIBRARY)
-    url = f"{ABS.rstrip('/')}/api/libraries/{library}/items?limit={args.limit}&sort=media.metadata.title"
+    url = f"{cfg.get('ABS_URL', ABS).rstrip('/')}/api/libraries/{library}/items?limit={args.limit}&sort=media.metadata.title"
     status, _, raw = request(url, headers={"Authorization": f"Bearer {token}"})
     if status != 200:
         raise SystemExit(f"AudioBookshelf respondeu {status}. Token vencido?")

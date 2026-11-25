@@ -115,6 +115,7 @@
     sqlite
     tmux
     vim
+    zstd
   ];
 
   # Metricas do host. A porta 9100 so fica aberta na tailnet (interface confiavel).

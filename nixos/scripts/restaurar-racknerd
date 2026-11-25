@@ -19,6 +19,7 @@ ssh_() { ssh "${SSH_OPTS[@]}" "$DST" "$@"; }
 # --fake-super no lado que envia le o dono e o modo originais dos xattrs gravados no backup.
 sync() {
   local src=$1 dst=$2
+  [ -d "$src" ] || { echo "origem ausente: $src" >&2; exit 1; }
   ssh_ "sudo mkdir -p '$dst'"
   rsync -aH --numeric-ids --fake-super --delete --rsync-path="sudo rsync" \
     -e "ssh ${SSH_OPTS[*]}" "$src/" "$DST:$dst/"

@@ -47,6 +47,10 @@
     };
   };
 
+  # O redis divide o namespace do waha. Recriar o waha sem recriar o redis deixa
+  # o redis na rede antiga, e o waha novo nao o encontra em localhost.
+  systemd.services.podman-waha-redis.partOf = [ "podman-waha.service" ];
+
   sops.secrets."waha_api_key" = { };
   sops.secrets."waha_dashboard_password" = { };
   sops.templates."waha.env".content = ''

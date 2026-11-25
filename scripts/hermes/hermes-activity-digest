@@ -133,12 +133,16 @@ def job_search() -> str:
         return ""
     blocks = [f"# Busca de vagas\n\nGerado em {datetime.now().strftime('%Y-%m-%d %H:%M')}."]
     for query in [q.strip() for q in JOB_QUERIES.split(",") if q.strip()][:3]:
-        result = subprocess.run(
-            [str(script), query, "--location", "Brazil", "--limit", "8"],
-            text=True,
-            capture_output=True,
-            timeout=120,
-        )
+        try:
+            result = subprocess.run(
+                [str(script), query, "--location", "Brazil", "--limit", "8"],
+                text=True,
+                capture_output=True,
+                timeout=120,
+            )
+        except subprocess.TimeoutExpired:
+            blocks.append(f"## {query}\n\nfalhou: tempo esgotado")
+            continue
         if result.stdout.strip():
             blocks.append(result.stdout.strip())
         elif result.stderr.strip():

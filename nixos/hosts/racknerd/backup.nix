@@ -67,10 +67,12 @@ in
       "/home/htr/.local/share/uv"
     ];
     backupPrepareCommand = ''
+      set -eu
       ${sqliteSnap}
       mkdir -p ${dumps}/readmeabook
       ${pkgs.podman}/bin/podman exec readmeabook su postgres -c 'pg_dump -Fc -d readmeabook' \
-        > ${dumps}/readmeabook/readmeabook.dump || echo "aviso: dump do readmeabook falhou" >&2
+        > ${dumps}/readmeabook/readmeabook.dump.tmp
+      mv ${dumps}/readmeabook/readmeabook.dump.tmp ${dumps}/readmeabook/readmeabook.dump
     '';
     timerConfig = {
       OnCalendar = "*-*-* 03:30:00";

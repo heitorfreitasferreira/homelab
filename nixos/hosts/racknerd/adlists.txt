@@ -5,14 +5,14 @@
 # feeds (URLhaus, Phishing Army, quidsup, RPiList, ...) trade false positives
 # for coverage and break logins/browsing more often than they help here.
 #
-# This file is the source of truth. It is mounted as a ConfigMap at
+# This file is the source of truth. It is mounted read-only at
 # /etc/adlists/adlists.txt and pihole-updatelists syncs gravity.db from it every
 # Saturday at 03:25 (adding new lists, disabling ones removed here, then running
 # gravity). Only lists commented "Managed by pihole-updatelists" are managed;
 # the StevenBlack list inherited from the old setup is left alone.
 #
 # Apply now without waiting for the cron:
-#   kubectl exec -n pihole deploy/pihole -- pihole-updatelists
+#   sudo podman exec pihole pihole-updatelists
 #
 # Suspicious
 https://raw.githubusercontent.com/PolishFiltersTeam/KADhosts/master/KADhosts.txt

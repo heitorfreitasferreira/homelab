@@ -21,17 +21,20 @@ racknerd, 18:50 pull dos rascunhos.
 
 ## Ferramentas da VPS
 
-- `hermes-mail`: cliente unico de e-mail. Instalar em `/usr/local/bin` como root.
-  A config fica em `~/.hermes/mail_accounts.json` (`600`), as senhas de app em
+As quatro ferramentas da VPS (`hermes-mail`, `hermes-cv`, `hermes-books` e
+`vagas-buscar`) vem do `nixos/hosts/racknerd/agents.nix`, com o Python e o
+WeasyPrint do Nix. Nada de `apt` nem de copia em `/usr/local/bin`.
+
+- `hermes-mail`: cliente unico de e-mail. A config fica em
+  `~/.hermes/mail_accounts.json` (`600`), as senhas de app em
   `~/.hermes/mail_<alias>.pass` (`600`) e os tokens Graph em
   `~/.hermes/msgraph_*.json` (`600`). Leitura e envio com `--yes` explicito. O
   Hotmail e somente leitura.
-- `hermes-cv`: renderiza CV Markdown em PDF A4 na VPS com WeasyPrint. Depende de
-  `weasyprint`, `python3-markdown` e `poppler-utils` via apt, e do CSS em
-  `~/.hermes/vagas/cv.css`.
+- `hermes-cv`: renderiza CV Markdown em PDF A4 na VPS. O CSS fica em
+  `~/.hermes/vagas/cv.css` e o `pdftotext` vem do poppler do sistema.
 - `hermes-books`: busca no Prowlarr, manda para o Transmission e lista a
-  biblioteca do AudioBookshelf. Instalar em `/usr/local/bin`. Config em
-  `~/.hermes/books.env` (`600`). Skill `livros` em `~/.hermes/skills/livros`.
+  biblioteca do AudioBookshelf. Config em `~/.hermes/books.env` (`600`). Skill
+  `livros` em `~/.hermes/skills/livros`.
 - Skills de runtime: `multi-mail`, `hotmail-graph`, `vagas` e `livros` em
   `~/.hermes/skills`. O digest diario sincroniza `cv.css`, o curriculo base, as
   derivadas e as descricoes de vaga.

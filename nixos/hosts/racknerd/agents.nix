@@ -17,8 +17,8 @@ let
     "${home}/.hermes/hermes-agent/node_modules/.bin"
     "${home}/.local/bin"
     "/usr/local/sbin"
-    "/usr/local/bin"
     sysPath
+    "/usr/local/bin"
   ];
   hermesEnv = {
     HOME = home;
@@ -27,20 +27,25 @@ let
     PATH = lib.mkForce hermesPath;
     HERMES_HOME = "${home}/.hermes";
   };
-  # Scripts do Hermes que estao no repo (no Debian ficavam em /usr/local/bin).
+  # Scripts do Hermes que estao no repo, com o Python do Nix no shebang.
   script =
     name: src:
-    pkgs.writeShellApplication {
-      inherit name;
-      text = builtins.readFile src;
-      checkPhase = "";
-    };
+    pkgs.writers.writePython3Bin name { doCheck = false; } (builtins.readFile src);
+  cv = pkgs.writers.writePython3Bin "hermes-cv" {
+    doCheck = false;
+    libraries = with pkgs.python3Packages; [
+      markdown
+      weasyprint
+    ];
+  } (builtins.readFile ../../../scripts/hermes/hermes-cv);
 in
 {
   environment.systemPackages = [
     (script "hermes-books" ../../../scripts/hermes/hermes-books)
     (script "hermes-mail" ../../../scripts/hermes/hermes-mail)
     (script "vagas-buscar" ../../../scripts/vagas-buscar)
+    cv
+    pkgs.poppler_utils
   ];
 
   systemd.services.hermes-gateway = {

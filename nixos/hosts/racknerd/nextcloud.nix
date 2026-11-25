@@ -31,8 +31,14 @@ in
     ];
   };
   systemd.services.podman-nextcloud = {
-    after = [ "postgresql.service" ];
-    wants = [ "postgresql.service" ];
+    after = [
+      "postgresql.service"
+      "postgresql-passwords.service"
+    ];
+    wants = [
+      "postgresql.service"
+      "postgresql-passwords.service"
+    ];
   };
 
   sops.secrets."nextcloud_s3_key" = { };

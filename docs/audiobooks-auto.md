@@ -2,21 +2,22 @@
 
 Prowlarr busca, o ReadMeABook decide e pede, o Transmission baixa, o AudioBookshelf toca.
 
-| Servico       | Onde                                              | Namespace       |
-| ------------- | ------------------------------------------------- | --------------- |
-| ReadMeABook   | `https://pedidos.htrlab.duckdns.org`              | audiobookshelf  |
-| Prowlarr      | `https://prowlarr.tail76c1c6.ts.net`              | audiobookshelf  |
-| Transmission  | `https://transmission.tail76c1c6.ts.net`          | audiobookshelf  |
+| Servico       | Onde                                              |
+| ------------- | ------------------------------------------------- |
+| ReadMeABook   | `https://pedidos.htrlab.duckdns.org`              |
+| Prowlarr      | `https://prowlarr.tail76c1c6.ts.net`              |
+| Transmission  | `https://transmission.tail76c1c6.ts.net`          |
 
-Tudo em `apps/audio-auto`, no mesmo namespace do AudioBookshelf porque o ReadMeABook
-monta o PVC `audiobookshelf-audiobooks` em `/media/audiobooks`. E o mesmo diretorio que
-o AudioBookshelf ve como `/audiobooks`.
+Tudo em containers podman na rede `apps` do racknerd, com as portas em
+127.0.0.1: ReadMeABook 3030, Prowlarr 9696, Transmission 9091 e AudioBookshelf
+13378. O ReadMeABook monta `/srv/audiobooks/library` em `/media/audiobooks`, o
+mesmo diretorio que o AudioBookshelf ve como `/audiobooks`.
 
 ## Estado em 21/11/2026
 
 - Prowlarr 3.0.2 com o indexador publico **Knaben** e um cliente de download
   **Transmission** configurado. O MyAnonamouse ainda nao entrou: falta o cookie `mam_id`.
-- Transmission 4.1.4 sem senha no RPC (so tailnet e rede do cluster) e com a biblioteca
+- Transmission 4.1.4 sem senha no RPC (so a tailnet e 127.0.0.1) e com a biblioteca
   montada em `/audiobooks`. O diretorio padrao de download e `/downloads`.
 - Os 5 livros de Percy Jackson e os Olimpianos estao na biblioteca do AudioBookshelf,
   completos e com capa, autor, narrador e capitulos. Foram baixados pelo Knaben e
@@ -62,13 +63,14 @@ Os 5 livros ja estao na biblioteca. O RMAB marca "In Your Library" e nao vai ped
 
 ## Skill do Hermes
 
-O Hermes pede e baixa livros com a skill `livros` e o cliente `hermes-books`, que fala
-com os ClusterIP do namespace `audiobookshelf`. Roda na racknerd, usuario `htr`.
+O Hermes pede e baixa livros com a skill `livros` e o cliente `hermes-books`,
+que fala com Prowlarr (127.0.0.1:9696), Transmission (127.0.0.1:9091) e
+AudioBookshelf (127.0.0.1:13378). Roda na racknerd, usuario `htr`.
 
-Instalar na VPS:
+O cliente vem do `nixos/hosts/racknerd/agents.nix`. So o env e a skill sao
+criados a mao:
 
 ```sh
-install -m 755 scripts/hermes/hermes-books /usr/local/bin/hermes-books
 install -d ~/.hermes/skills/livros
 install -m 644 scripts/hermes/skills/livros/SKILL.md ~/.hermes/skills/livros/SKILL.md
 install -m 600 /dev/null ~/.hermes/books.env
@@ -80,6 +82,9 @@ Em `~/.hermes/books.env`:
 ABS_TOKEN=...            # AudioBookshelf > Settings > API Keys, para a biblioteca
 # ABS_LIBRARY_ID=3e1d2334-575b-4564-9e4d-36cec204ed74  # opcional, este e o default
 # PROWLARR_API_KEY=...   # so depois que o Prowlarr tiver login
+# PROWLARR_URL=http://127.0.0.1:9696      # opcional
+# TRANSMISSION_URL=http://127.0.0.1:9091  # opcional
+# ABS_URL=http://127.0.0.1:13378          # opcional
 ```
 
 Sem `PROWLARR_API_KEY` o cliente usa a chave de `/initialize.json`, que existe enquanto
@@ -101,7 +106,8 @@ entrega no Telegram, com o texto que esta na skill (`scripts/hermes/skills/livro
 
 Dois volumes andam juntos: `readmeabook-pgdata` (Postgres do RMAB) e
 `readmeabook-config` (`.secrets` com a senha do Postgres e o JWT). Restaurar um sem o
-outro quebra o RMAB. Ainda nao ha backup no R2.
+outro quebra o RMAB. O restic diario leva o config e o dump do banco, feito antes da
+copia. O pgdata fica fora.
 
 ## RAM
 

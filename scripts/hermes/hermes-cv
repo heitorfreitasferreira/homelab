@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 """Renderiza um CV Markdown em PDF A4 na VPS, sem Chromium.
 
 Usa WeasyPrint com o cv.css do workspace. Remove emoji e faz o gate de ATS:

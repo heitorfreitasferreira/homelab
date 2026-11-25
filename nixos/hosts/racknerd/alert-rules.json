@@ -414,6 +414,33 @@
       ]
     },
     {
+      "name": "banco",
+      "rules": [
+        {
+          "alert": "ArquivamentoFalhou",
+          "expr": "time() - pg_archiver_last_failed_timestamp_seconds < 3600",
+          "for": "5m",
+          "labels": {
+            "severity": "critical"
+          },
+          "annotations": {
+            "summary": "racknerd: o arquivamento do WAL falhou na ultima hora, o restore para no ultimo segmento no R2"
+          }
+        },
+        {
+          "alert": "WalAcumulando",
+          "expr": "pg_wal_bytes > 8e9",
+          "for": "30m",
+          "labels": {
+            "severity": "critical"
+          },
+          "annotations": {
+            "summary": "racknerd: pg_wal acima de 8 GB, o arquivamento nao esta dando conta"
+          }
+        }
+      ]
+    },
+    {
       "name": "racknerd",
       "rules": [
         {

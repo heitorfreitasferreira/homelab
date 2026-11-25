@@ -2,7 +2,7 @@
 # Worker com concorrencia 1: no chart eram 2 processos e o uso nao pede mais.
 { config, lib, ... }:
 let
-  backend = "ghcr.io/securo-finance/securo-backend:0.20.0";
+  backend = "ghcr.io/securo-finance/securo-backend:0.20.0@sha256:c161123067ada4fe332e5647e5af2b0c1e2840087166638b52b6db42a7d4a2c0";
   net = [ "--network=apps" ];
   env = {
     AGENTS_BUILTIN_MCP_URL = "http://securo-mcp:8765/mcp";
@@ -10,7 +10,7 @@ let
     AGENTS_DEFAULT_PROVIDER = "ollama";
     AGENTS_EMBEDDING_MODEL = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2";
     AGENTS_EMBEDDING_PROVIDER = "native";
-    AGENTS_ENABLED = "true";
+    AGENTS_ENABLED = "false";
     AGENTS_EXTERNAL_MCP_URL = "";
     AGENTS_EXTRA_MCP_SERVERS = "";
     AGENTS_KNOWLEDGE_STORAGE_PATH = "/app/data/agent_knowledge";
@@ -65,7 +65,7 @@ in
 {
   virtualisation.oci-containers.containers = {
     securo-redis = {
-      image = "docker.io/library/redis:8-alpine";
+      image = "docker.io/library/redis:8-alpine@sha256:5af80107c1eeecb484a2269b80a26d12bfa6521787da4663bd9f19f60a163483";
       volumes = [ "/srv/securo/redis:/data" ];
       extraOptions = net;
     };
@@ -102,7 +102,7 @@ in
         ports = [ "127.0.0.1:8765:8765" ];
       };
     securo-frontend = {
-      image = "ghcr.io/securo-finance/securo-frontend:0.20.0";
+      image = "ghcr.io/securo-finance/securo-frontend:0.20.0@sha256:5ee5d91f46c5da54ee2479038a9a4ac3f90c8a0bf8c9124d8455c4f77e94cffc";
       ports = [ "127.0.0.1:8082:8080" ];
       environment = {
         BACKEND_URL = "http://securo-backend:8000";

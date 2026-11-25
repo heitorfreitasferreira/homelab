@@ -10,8 +10,7 @@ Assistente pessoal do homelab. Roda na VPS, so pela tailnet e pelo Telegram.
   em `127.0.0.1:9119`, publicado pelo Tailscale serve em `:8443`.
 - `anytype.service` (systemd de usuario de `htr`, linger ligado): anytype-cli
   v0.5.4, API JSON em `127.0.0.1:31012`.
-- MCPs do Hermes: Kubernetes, Argo CD, Grafana, Tailscale, Pi-hole, Home
-  Assistant e Anytype.
+- MCPs do Hermes: Grafana, Tailscale, Pi-hole, Home Assistant e Anytype.
 
 ## Modelo
 
@@ -99,7 +98,7 @@ Assistente pessoal do homelab. Roda na VPS, so pela tailnet e pelo Telegram.
 
 - `terminal.cwd` e `/home/htr/homelab`. O `AGENTS.md` do repo entra no system
   prompt.
-- O agente le `DECISIONS.md`, `apps/`, `platform/`, `ansible/` e `docs/`.
+- O agente le `DECISIONS.md`, `nixos/`, `ansible/`, `scripts/` e `docs/`.
 - Escrita de arquivos limitada a `/home/htr/homelab` e `/home/htr/.hermes`
   (`HERMES_WRITE_SAFE_ROOT`).
 
@@ -110,17 +109,15 @@ Assistente pessoal do homelab. Roda na VPS, so pela tailnet e pelo Telegram.
 - `approvals.deny` bloqueia leitura de segredos, `sudo`, `tailscale`, `systemctl`, `ansible-playbook`, `sops`, `age`,
   `curl`, `wget`, `ssh`, `scp`, `rsync`, `crontab`, `docker` e `podman` pelo
   shell. Commit e `git push` no repo sao permitidos.
-- Kubernetes, Argo CD, Grafana, Tailscale e Pi-hole ficam read-only. O Pi-hole
+- Grafana, Tailscale e Pi-hole ficam read-only. O Pi-hole
   tem allowlist de 29 ferramentas de leitura.
 - O Home Assistant expoe so `GetLiveContext`, `GetDateTime` e `todo__get_items`.
   Controle de dispositivos fica fora do Hermes.
 - O Anytype pode criar e editar objetos, mas `API-delete-*` e
   `API-batch-delete-*` estao bloqueados.
-- Browser e TTS ligados. O Chromium roda no `pc-heito-wsl` e o Hermes fala com
-  ele por CDP, entao o browser so existe quando o PC esta ligado. O TTS usa Edge
-  TTS e nao depende do PC.
-- STT ligado com Whisper `small` no `pc-heito-wsl`. Mensagens de voz do Telegram
-  sao transcritas quando o PC esta ligado.
+- Browser e TTS ligados. O TTS usa Edge TTS. O browser fala CDP com o Chrome do
+  notebook, o mesmo em que o Heitor esta logado: veja "Browser do Hermes" abaixo.
+  O STT continua fora ate virar container no PC.
 - Rotina de cluster pelo `/usr/local/sbin/hermes-ops`: `status`, `sync`, `logs`,
   `restart` e `revert`. O runbook esta em `docs/operacao.md`. Os comandos crus
   (`sudo`, `ssh`, `tailscale`) continuam negados. `git add`, `git commit` e
@@ -169,7 +166,7 @@ hermes doctor
   stdio (`lazy`, `idle_timeout_seconds: 600`) somem do indice de ferramentas com
   o gateway rodando ha muito tempo. O mesmo servico serve para o Hermes se
   reiniciar: `sudo systemctl start --no-block hermes-gateway-restart.service`.
-  Units em `scripts/hermes/`, instaladas em `/etc/systemd/system/`.
+  Units em `nixos/hosts/racknerd/agents.nix`.
 - Dashboard: `sudo systemctl status hermes-dashboard` e
   `sudo journalctl -u hermes-dashboard -f`.
 - Atualizar Anytype: `anytype update` e `systemctl --user restart anytype`.
@@ -177,27 +174,30 @@ hermes doctor
 - Sessoes e memoria em `~/.hermes` (2,8 GB). Anytype em `~/.config/anytype`
   (161 MB).
 
-## Capacidades no pc-heito-wsl
+## Browser do Hermes
 
-- `apps/hermes-browser`: Chromium headless `chromedp/headless-shell` preso ao
-  `pc-heito-wsl`, com `hostNetwork` porque o CNI do WSL nao entrega DNS/egress
-  aos pods. O CDP fica em `http://100.89.110.97:30922` (NodePort 30922) e o
-  perfil persistente no PVC `hermes/chromium-profile`.
-- `apps/hermes-whisper`: Speaches `0.8.3-cpu` com
-  `Systran/faster-whisper-small`, `hostNetwork` e API OpenAI em
-  `http://100.89.110.97:8000/v1`. Modelo no PVC `hermes/whisper-models`.
-- Os dois pods tem `nodeSelector` do WSL e toleram o taint
-  `homelab.io/compute=true:NoSchedule`. Quando o PC desliga, ficam Pending.
-  Ferramenta de browser ou STT falhando com connection refused nesse estado e
-  normal, nao e incidente. O Argo mostra os dois apps como `Progressing`
-  enquanto o PC estiver desligado.
+O Hermes dirige o Chrome **do notebook**, com o perfil real do Heitor. Assim ele
+navega e preenche formulario com as sessoes que ja existem, e o Heitor resolve o
+CAPTCHA na propria janela.
+
+- No notebook, `--remote-debugging-port=9222` em `~/.config/chrome-flags.conf`.
+  O Chrome so escuta em `127.0.0.1`, entao precisa nascer com a flag.
+- Publicacao na tailnet: `sudo tailscale serve --bg --tcp 9222
+  tcp://127.0.0.1:9222`. Sem isso o racknerd nao alcanca a porta. Fica so na
+  tailnet, nunca na LAN.
+- No Hermes: `browser.cdp_url: http://100.90.131.64:9222` e
+  `use_real_profile: true`.
+- Teste rapido, do racknerd: `curl http://100.90.131.64:9222/json/version`.
+- Se o Chrome do notebook nao estiver aberto, as ferramentas de browser falham.
+  Fechar e reabrir o Chrome desfaz a flag ate ele subir de novo.
+- O Chrome aceita um depurador por aba: a extensao do OpenCode e o Hermes nao
+  devem usar a mesma aba ao mesmo tempo.
+- O STT (Speaches) era `apps/hermes-whisper`, removido na virada e ainda sem
+  substituto: `stt.provider: openai`, `stt.openai.base_url`,
+  `stt.openai.model` seguem apontando para o pod que nao existe.
 - Config no `~/.hermes/config.yaml`: `browser.cdp_url`, `stt.provider: openai`,
   `stt.openai.base_url`, `stt.openai.model`, `tts.provider: edge` e
   `tts.edge.voice: pt-BR-FranciscaNeural`.
-- O `PRELOAD_MODELS` do Speaches 0.8.3 nao baixou o modelo. O download e manual
-  e fica no PVC:
-  `curl -X POST http://100.89.110.97:8000/v1/models/Systran/faster-whisper-small`.
-- Se o PVC do Whisper for recriado, repita o POST antes de usar voz.
 - Teste rapido do browser: `curl http://100.89.110.97:30922/json/version`.
 - Teste rapido do STT: `curl http://100.89.110.97:8000/v1/models`.
 
