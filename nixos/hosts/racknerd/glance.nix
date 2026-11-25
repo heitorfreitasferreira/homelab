@@ -153,6 +153,69 @@ let
     '';
   };
 
+  casaHostCard = {
+    type = "custom-api";
+    title = "Servidor";
+    cache = "30s";
+    url = "http://127.0.0.1:8428/api/v1/query?query=" + lib.escapeURL casaQuery;
+    template = ''
+      {{ range sortByInt "metric.ordem" "asc" (.JSON.Array "data.result") }}
+      <div class="margin-top-3">
+        <div class="flex justify-between items-end">
+          <div class="size-h5">{{ .String "metric.nome" }}</div>
+          <div class="color-highlight text-very-compact">{{ .Float "value.1" | printf "%.0f" }} <span class="color-base">%</span></div>
+        </div>
+        <div class="progress-bar progress-bar-combined">
+          <div class="progress-value" style="--percent: {{ .Float "value.1" | printf "%.0f" }}"></div>
+        </div>
+      </div>
+      {{ end }}
+    '';
+  };
+
+  dnsStats = {
+    type = "dns-stats";
+    service = "pihole-v6";
+    url = "http://127.0.0.1:8053";
+    password = "\${PIHOLE_PASSWORD}";
+    hour-format = "24h";
+  };
+
+  latencyCard = {
+    type = "custom-api";
+    title = "Latencia";
+    cache = "1m";
+    template = ''
+      {{ $start := (offsetNow "-12h").Unix }}
+      {{ $end := now.Unix }}
+      {{ $resp := newRequest "http://127.0.0.1:8428/api/v1/query_range" | withParameter "query" "probe_duration_seconds{job=\"probe-https\",instance=~\"https://.+\"}" | withParameter "start" (printf "%d" $start) | withParameter "end" (printf "%d" $end) | withParameter "step" "600" | getResponse }}
+      {{ $series := $resp.JSON.Array "data.result" }}
+      <svg viewBox="0 0 1000 100" preserveAspectRatio="none" style="width:100%;height:10rem">
+        <line x1="0" y1="98" x2="1000" y2="98" stroke="var(--color-graph-gridlines)"/>
+        {{ range $i, $s := $series }}
+          {{ $vals := $s.Array "values" }}
+          {{ $pts := "" }}
+          {{ range $j, $v := $vals }}{{ $x := div (mul (toFloat $j) 1000) (toFloat (len $vals)) }}{{ $y := sub 98 (div (mul ($v.Float "1") 98) 0.8) }}{{ $pts = printf "%s %.1f,%.1f" $pts $x $y }}{{ end }}
+          <polyline fill="none" stroke="hsl({{ printf "%.0f" (mul (toFloat $i) 45) }}, 65%, 60%)" stroke-width="1.5" vector-effect="non-scaling-stroke" points="{{ $pts }}"/>
+        {{ end }}
+      </svg>
+      <div class="flex flex-wrap gap-10 margin-top-10 size-h6">
+        {{ range $i, $s := $series }}<span style="color:hsl({{ printf "%.0f" (mul (toFloat $i) 45) }}, 65%, 60%)">{{ $s.String "metric.instance" | replaceMatches "^https://([^.]+).*$" "$1" }}</span>{{ end }}
+      </div>
+      <div class="flex justify-between size-h6 color-subdue margin-top-5">
+        <span>12h atras</span>
+        <span>escala 0.8s</span>
+        <span>agora</span>
+      </div>
+    '';
+  };
+
+  containersCard = {
+    type = "docker-containers";
+    title = "Containers";
+    format-container-names = true;
+  };
+
   configFile = (pkgs.formats.yaml { }).generate "glance.yml" {
     server = { host = "127.0.0.1"; port = 3003; };
     branding = { app-name = "homelab"; logo-text = "h"; hide-footer = true; };
@@ -166,6 +229,10 @@ let
           .page-column { display: block !important; }
           .page-column-full { order: 1; }
           .page-column-small { order: 2; }
+        }
+        @media (max-width: 550px) {
+          .header-container { --header-items-gap: 1.2rem; }
+          .nav-item { font-size: var(--font-size-h4); }
         }
       </style>
     '';
@@ -188,25 +255,6 @@ let
                   }
                 ];
               }
-              {
-                type = "custom-api";
-                title = "casa";
-                cache = "30s";
-                url = "http://127.0.0.1:8428/api/v1/query?query=" + lib.escapeURL casaQuery;
-                template = ''
-                  {{ range sortByInt "metric.ordem" "asc" (.JSON.Array "data.result") }}
-                  <div class="margin-top-3">
-                    <div class="flex justify-between items-end">
-                      <div class="size-h5">{{ .String "metric.nome" }}</div>
-                      <div class="color-highlight text-very-compact">{{ .Float "value.1" | printf "%.0f" }} <span class="color-base">%</span></div>
-                    </div>
-                    <div class="progress-bar progress-bar-combined">
-                      <div class="progress-value" style="--percent: {{ .Float "value.1" | printf "%.0f" }}"></div>
-                    </div>
-                  </div>
-                  {{ end }}
-                '';
-              }
               { type = "clock"; hour-format = "24h"; }
             ];
           }
@@ -218,51 +266,6 @@ let
                 title = "Servicos";
                 cache = "1m";
                 sites = publicSites ++ tailnetSites;
-              }
-              {
-                type = "dns-stats";
-                service = "pihole-v6";
-                url = "http://127.0.0.1:8053";
-                password = "\${PIHOLE_PASSWORD}";
-                hour-format = "24h";
-              }
-              {
-                type = "custom-api";
-                title = "Latencia";
-                cache = "1m";
-                template = ''
-                  {{ $start := (offsetNow "-12h").Unix }}
-                  {{ $end := now.Unix }}
-                  {{ $resp := newRequest "http://127.0.0.1:8428/api/v1/query_range" | withParameter "query" "probe_duration_seconds{job=\"probe-https\",instance=~\"https://.+\"}" | withParameter "start" (printf "%d" $start) | withParameter "end" (printf "%d" $end) | withParameter "step" "600" | getResponse }}
-                  {{ $series := $resp.JSON.Array "data.result" }}
-                  <svg viewBox="0 0 1000 100" preserveAspectRatio="none" style="width:100%;height:10rem">
-                    <line x1="0" y1="98" x2="1000" y2="98" stroke="var(--color-graph-gridlines)"/>
-                    {{ range $i, $s := $series }}
-                      {{ $vals := $s.Array "values" }}
-                      {{ $pts := "" }}
-                      {{ range $j, $v := $vals }}{{ $x := div (mul (toFloat $j) 1000) (toFloat (len $vals)) }}{{ $y := sub 98 (div (mul ($v.Float "1") 98) 0.8) }}{{ $pts = printf "%s %.1f,%.1f" $pts $x $y }}{{ end }}
-                      <polyline fill="none" stroke="hsl({{ printf "%.0f" (mul (toFloat $i) 45) }}, 65%, 60%)" stroke-width="1.5" vector-effect="non-scaling-stroke" points="{{ $pts }}"/>
-                    {{ end }}
-                  </svg>
-                  <div class="flex flex-wrap gap-10 margin-top-10 size-h6">
-                    {{ range $i, $s := $series }}<span style="color:hsl({{ printf "%.0f" (mul (toFloat $i) 45) }}, 65%, 60%)">{{ $s.String "metric.instance" | replaceMatches "^https://([^.]+).*$" "$1" }}</span>{{ end }}
-                  </div>
-                  <div class="flex justify-between size-h6 color-subdue margin-top-5">
-                    <span>12h atras</span>
-                    <span>escala 0.8s</span>
-                    <span>agora</span>
-                  </div>
-                '';
-              }
-            ];
-          }
-          {
-            size = "small";
-            widgets = [
-              {
-                type = "docker-containers";
-                title = "Containers";
-                format-container-names = true;
               }
             ];
           }
@@ -276,12 +279,33 @@ let
             size = "small";
             widgets = [
               { type = "weather"; location = "Uberlandia, Brazil"; units = "metric"; hour-format = "24h"; }
+              casaHostCard
               { type = "calendar"; first-day-of-week = "monday"; }
             ];
           }
           {
             size = "full";
             widgets = [ energyCard casaCard ];
+          }
+        ];
+      }
+      {
+        name = "Rede";
+        width = "slim";
+        columns = [
+          {
+            size = "full";
+            widgets = [ dnsStats latencyCard ];
+          }
+        ];
+      }
+      {
+        name = "Containers";
+        width = "slim";
+        columns = [
+          {
+            size = "full";
+            widgets = [ containersCard ];
           }
         ];
       }
