@@ -233,14 +233,14 @@ let
                 template = ''
                   {{ $start := (offsetNow "-12h").Unix }}
                   {{ $end := now.Unix }}
-                  {{ $resp := newRequest "http://127.0.0.1:8428/api/v1/query_range" | withParameter "query" "probe_duration_seconds{job=\"probe-https\",instance=~\"https://.+\",instance!=\"https://casa.tail76c1c6.ts.net\"}" | withParameter "start" (printf "%d" $start) | withParameter "end" (printf "%d" $end) | withParameter "step" "600" | getResponse }}
+                  {{ $resp := newRequest "http://127.0.0.1:8428/api/v1/query_range" | withParameter "query" "probe_duration_seconds{job=\"probe-https\",instance=~\"https://.+\"}" | withParameter "start" (printf "%d" $start) | withParameter "end" (printf "%d" $end) | withParameter "step" "600" | getResponse }}
                   {{ $series := $resp.JSON.Array "data.result" }}
                   <svg viewBox="0 0 1000 100" preserveAspectRatio="none" style="width:100%;height:10rem">
                     <line x1="0" y1="98" x2="1000" y2="98" stroke="var(--color-graph-gridlines)"/>
                     {{ range $i, $s := $series }}
                       {{ $vals := $s.Array "values" }}
                       {{ $pts := "" }}
-                      {{ range $j, $v := $vals }}{{ $x := div (mul (toFloat $j) 1000) (toFloat (len $vals)) }}{{ $y := sub 98 (div (mul ($v.Float "1") 98) 0.5) }}{{ $pts = printf "%s %.1f,%.1f" $pts $x $y }}{{ end }}
+                      {{ range $j, $v := $vals }}{{ $x := div (mul (toFloat $j) 1000) (toFloat (len $vals)) }}{{ $y := sub 98 (div (mul ($v.Float "1") 98) 0.8) }}{{ $pts = printf "%s %.1f,%.1f" $pts $x $y }}{{ end }}
                       <polyline fill="none" stroke="hsl({{ printf "%.0f" (mul (toFloat $i) 45) }}, 65%, 60%)" stroke-width="1.5" vector-effect="non-scaling-stroke" points="{{ $pts }}"/>
                     {{ end }}
                   </svg>
@@ -249,7 +249,7 @@ let
                   </div>
                   <div class="flex justify-between size-h6 color-subdue margin-top-5">
                     <span>12h atras</span>
-                    <span>escala 0.5s</span>
+                    <span>escala 0.8s</span>
                     <span>agora</span>
                   </div>
                 '';
