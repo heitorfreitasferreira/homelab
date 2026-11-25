@@ -180,8 +180,12 @@ O Hermes dirige o Chrome **do notebook**, com o perfil real do Heitor. Assim ele
 navega e preenche formulario com as sessoes que ja existem, e o Heitor resolve o
 CAPTCHA na propria janela.
 
-- No notebook, `--remote-debugging-port=9222` em `~/.config/chrome-flags.conf`.
-  O Chrome so escuta em `127.0.0.1`, entao precisa nascer com a flag.
+- No notebook, `~/.config/chrome-flags.conf` com duas linhas:
+  `--user-data-dir=/home/heitor/.config/google-chrome-cdp` e
+  `--remote-debugging-port=9222`. O perfil e uma copia do perfil real, feita com
+  o Chrome fechado, porque o Chrome 136+ recusa a porta de depuracao no perfil
+  padrao ("DevTools remote debugging requires a non-default data directory").
+  O Chrome so escuta em `127.0.0.1`, entao precisa nascer com as duas flags.
 - Publicacao na tailnet: `sudo tailscale serve --bg --tcp 9222
   tcp://127.0.0.1:9222`. Sem isso o racknerd nao alcanca a porta. Fica so na
   tailnet, nunca na LAN.

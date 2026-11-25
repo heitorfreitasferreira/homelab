@@ -45,7 +45,7 @@ in
     (script "hermes-mail" ../../../scripts/hermes/hermes-mail)
     (script "vagas-buscar" ../../../scripts/vagas-buscar)
     cv
-    pkgs.poppler_utils
+    pkgs.poppler-utils
   ];
 
   systemd.services.hermes-gateway = {
