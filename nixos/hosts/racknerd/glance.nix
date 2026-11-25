@@ -117,10 +117,10 @@ let
                   {
                     title = "Contas";
                     links = [
-                      { title = "Senhas Google"; url = "https://passwords.google.com/"; icon = "di:google"; }
+                      { title = "Senhas"; url = "https://passwords.google.com/"; icon = "di:google"; }
                       { title = "Google"; url = "https://myaccount.google.com/"; icon = "di:google"; }
-                      { title = "Gmail principal"; url = "https://mail.google.com/mail/u/0/"; icon = "di:gmail"; }
-                      { title = "Gmail jogos"; url = "https://mail.google.com/mail/u/1/"; icon = "di:gmail"; }
+                      { title = "Gmail pessoal"; url = "https://mail.google.com/mail/u/0/"; icon = "di:gmail"; }
+                      { title = "Gmail profissional"; url = "https://mail.google.com/mail/u/1/"; icon = "di:gmail"; }
                       { title = "Hotmail"; url = "https://outlook.live.com/mail/"; icon = "di:microsoft-outlook"; }
                     ];
                   }
