@@ -26,7 +26,7 @@ let
     { title = "Manga"; url = "https://manga.tail76c1c6.ts.net"; check-url = "http://127.0.0.1:4567/"; }
     { title = "VictoriaMetrics"; url = "https://metricas.tail76c1c6.ts.net"; check-url = "http://127.0.0.1:8428/health"; icon = "di:victoriametrics"; }
     { title = "Matter Hub"; url = "https://casa.tail76c1c6.ts.net:8443/"; icon = "di:matter"; }
-    { title = "Waha"; url = "https://waha.tail76c1c6.ts.net:8443/"; icon = "di:waha"; }
+    { title = "Waha"; url = "https://waha.tail76c1c6.ts.net/dashboard"; alt-status-codes = [ 401 ]; icon = "di:waha"; }
   ];
 
   # CPU, RAM e disco do casa no formato do widget de server-stats.
@@ -196,7 +196,7 @@ let
       }
       {
         name = "Casa";
-        width = "wide";
+        width = "slim";
         columns = [
           {
             size = "small";
