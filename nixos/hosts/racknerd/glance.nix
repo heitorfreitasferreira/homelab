@@ -77,7 +77,7 @@ let
         <div>previsao {{ .JSON.Float "forecast" | printf "%.1f" }} kWh</div>
         <div>inversor {{ .JSON.Float "temp" | printf "%.0f" }} °C, {{ .JSON.String "state" }}</div>
       </div>
-      {{ $start := printf "%sT00:00:00-03:00" (now.Format "2006-01-02") }}
+      {{ $start := (offsetNow "-6h").Format "2006-01-02T15:04:05Z07:00" }}
       {{ $auth := "Bearer ''${HA_TOKEN}" }}
       {{ $pv := newRequest (printf "${haUrl}/api/history/period/%s?filter_entity_id=sensor.inversor_pv_power&minimal_response" $start) | withHeader "Authorization" $auth | getResponse }}
       {{ $fc := newRequest (printf "${haUrl}/api/history/period/%s?filter_entity_id=sensor.casa_power_production_now&minimal_response" $start) | withHeader "Authorization" $auth | getResponse }}
@@ -93,7 +93,7 @@ let
         <polyline fill="none" stroke="var(--color-text-subdue)" stroke-width="1.5" stroke-dasharray="4 3" vector-effect="non-scaling-stroke" points="{{ $forecast }}"/>
       </svg>
       <div class="flex justify-between size-h6 color-subdue">
-        <span>00:00</span>
+        <span>6h atras</span>
         <span><span class="color-primary">real</span> / tracejado previsao</span>
         <span>agora</span>
       </div>
