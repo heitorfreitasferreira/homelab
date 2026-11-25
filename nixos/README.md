@@ -88,9 +88,26 @@ Achados corrigidos:
 - Dune Messiah nao tem .torrent: ele e o Manifesto (ja organizado) entram no backup.
 - O worker do Securo consome a fila restaurada do Redis e chama a Pluggy: no ensaio ficou desligado.
 
+## Virada (2026-11-25, 01:45 a 02:40)
+
+Feita com o runbook acima, a partir do backup de 2026-11-24 atualizado com os dumps finais.
+Bancos conferidos contra o banco antigo congelado (0 diferencas), 7 livros rebaixados (299 arquivos),
+os 8 nomes da tailnet com os mesmos IPs (servicos em tag:server), Let's Encrypt nos 5 dominios,
+primeira base do wal-g e primeiro snapshot do restic no R2. O DNS da tailnet voltou ao Pi-hole.
+
+Achados na virada: o pg_restore do Securo sai com codigo 1 pelos avisos do pgvector (script corrigido);
+o tailscaled limpa a rota DNS de ts.net (timer); o Hermes passa PATH minimo aos MCPs (os wrappers em
+~/.config/hermes/mcp e ~/.config/opencode/mcp declaram o proprio PATH); containers subiram durante a
+restauracao e o transmission precisou de restart para ler a config restaurada.
+
 ## Pendencias
 
 - Rotacionar o que vazou no chat da migracao: token R2 de backups, chave do WAHA, senhas do
   Grafana, Pi-hole e admin do Nextcloud, URL do Healthchecks.
 - `hermes-ops` e especifico do k8s (kubectl, Argo): reescrever para systemd e podman.
+- Tirar os MCPs kubernetes e argocd da config do Hermes e do OpenCode (o cluster nao existe mais).
+- Home Assistant bane os acessos por casa.tail76c1c6.ts.net (403, ja antes da virada): revisar ip_bans no casa.
+- Chromium e whisper do Hermes: containers no PC (eram pods do k3s no WSL).
+- Healthchecks: check novo alertmanager-watchdog criado, falta trocar a URL (nixos/scripts/rotacionar healthchecks).
+- Remover da tailnet os nos k8s-operator-racknerd e racknerd-ingress-0 e o svc:argocd.
 - Hosts `casa` (por ultimo, roda o Home Assistant) e `pc-wsl` (NixOS-WSL, worker sob demanda).
