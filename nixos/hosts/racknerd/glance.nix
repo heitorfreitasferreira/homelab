@@ -46,7 +46,7 @@ let
                     type = "local";
                     name = "racknerd";
                     hide-mountpoints-by-default = true;
-                    mountpoints."/host".name = "Root";
+                    mountpoints."/host" = { name = "Root"; hide = false; };
                   }
                 ];
               }
