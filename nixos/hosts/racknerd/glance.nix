@@ -36,10 +36,9 @@ let
   ];
 
   haUrl = "https://casa.htrlab.duckdns.org";
-  haWidget = { title, jinja, template }: {
+  haWidget = { title, jinja, template, cache ? "30s" }: {
     type = "custom-api";
-    inherit title template;
-    cache = "30s";
+    inherit title template cache;
     url = "${haUrl}/api/template";
     method = "POST";
     body-type = "json";
@@ -49,6 +48,7 @@ let
 
   energyCard = haWidget {
     title = "Energia";
+    cache = "5m";
     jinja = ''
       {% set pv = states('sensor.inversor_pv_power') | float(0) %}
       {% set today = states('sensor.inversor_today_production') | float(0) %}
@@ -77,11 +77,32 @@ let
         <div>previsao {{ .JSON.Float "forecast" | printf "%.1f" }} kWh</div>
         <div>inversor {{ .JSON.Float "temp" | printf "%.0f" }} °C, {{ .JSON.String "state" }}</div>
       </div>
+      {{ $start := printf "%sT00:00:00-03:00" (now.Format "2006-01-02") }}
+      {{ $auth := "Bearer ''${HA_TOKEN}" }}
+      {{ $pv := newRequest (printf "${haUrl}/api/history/period/%s?filter_entity_id=sensor.inversor_pv_power&minimal_response" $start) | withHeader "Authorization" $auth | getResponse }}
+      {{ $fc := newRequest (printf "${haUrl}/api/history/period/%s?filter_entity_id=sensor.casa_power_production_now&minimal_response" $start) | withHeader "Authorization" $auth | getResponse }}
+      {{ $pvpts := $pv.JSON.Array "0" }}
+      {{ $fcpts := $fc.JSON.Array "0" }}
+      <svg viewBox="0 0 1000 80" preserveAspectRatio="none" style="width:100%;height:8rem;margin-top:1.5rem">
+        <line x1="0" y1="78" x2="1000" y2="78" stroke="var(--color-graph-gridlines)"/>
+        {{ $real := "" }}
+        {{ range $i, $p := $pvpts }}{{ if eq (mod $i 20) 0 }}{{ $x := div (mul (toFloat $i) 1000) (toFloat (len $pvpts)) }}{{ $y := sub 78 (div (mul ($p.Float "state") 78) 4500) }}{{ $real = printf "%s %.1f,%.1f" $real $x $y }}{{ end }}{{ end }}
+        <polyline fill="none" stroke="var(--color-primary)" stroke-width="2" vector-effect="non-scaling-stroke" points="{{ $real }}"/>
+        {{ $forecast := "" }}
+        {{ range $i, $p := $fcpts }}{{ $x := div (mul (toFloat $i) 1000) (toFloat (len $fcpts)) }}{{ $y := sub 78 (div (mul ($p.Float "state") 78) 4500) }}{{ $forecast = printf "%s %.1f,%.1f" $forecast $x $y }}{{ end }}
+        <polyline fill="none" stroke="var(--color-text-subdue)" stroke-width="1.5" stroke-dasharray="4 3" vector-effect="non-scaling-stroke" points="{{ $forecast }}"/>
+      </svg>
+      <div class="flex justify-between size-h6 color-subdue">
+        <span>00:00</span>
+        <span><span class="color-primary">real</span> / tracejado previsao</span>
+        <span>agora</span>
+      </div>
     '';
   };
 
   casaCard = haWidget {
     title = "Casa agora";
+    cache = "1m";
     jinja = ''
       {% set room = states('sensor.temperatura_quarto') | float(0) %}
       {% set lights = states.light | selectattr('state','eq','on') | list | count %}
@@ -115,6 +136,20 @@ let
           <span class="color-highlight">{{ if eq (.JSON.String "heitor") "home" }}em casa{{ else }}fora{{ end }}</span>
         </li>
       </ul>
+      {{ $start := printf "%sT00:00:00-03:00" (now.Format "2006-01-02") }}
+      {{ $hist := newRequest (printf "${haUrl}/api/history/period/%s?filter_entity_id=sensor.temperatura_quarto&minimal_response" $start) | withHeader "Authorization" "Bearer ''${HA_TOKEN}" | getResponse }}
+      {{ $pts := $hist.JSON.Array "0" }}
+      <svg viewBox="0 0 1000 70" preserveAspectRatio="none" style="width:100%;height:6rem;margin-top:1.5rem">
+        <line x1="0" y1="68" x2="1000" y2="68" stroke="var(--color-graph-gridlines)"/>
+        {{ $line := "" }}
+        {{ range $i, $p := $pts }}{{ $x := div (mul (toFloat $i) 1000) (toFloat (len $pts)) }}{{ $y := sub 68 (div (mul (sub ($p.Float "state") 20) 68) 12) }}{{ $line = printf "%s %.1f,%.1f" $line $x $y }}{{ end }}
+        <polyline fill="none" stroke="var(--color-primary)" stroke-width="2" vector-effect="non-scaling-stroke" points="{{ $line }}"/>
+      </svg>
+      <div class="flex justify-between size-h6 color-subdue">
+        <span>00:00</span>
+        <span>20 a 32 °C</span>
+        <span>agora</span>
+      </div>
     '';
   };
 
@@ -122,6 +157,18 @@ let
     server = { host = "127.0.0.1"; port = 3003; };
     branding = { app-name = "homelab"; logo-text = "h"; hide-footer = true; };
     theme.disable-picker = true;
+    document.head = ''
+      <style>
+        @media (max-width: 1190px) {
+          .header-container { display: block !important; }
+          .mobile-navigation, .mobile-navigation-offset { display: none !important; }
+          .page-columns { flex-direction: column !important; }
+          .page-column { display: block !important; }
+          .page-column-full { order: 1; }
+          .page-column-small { order: 2; }
+        }
+      </style>
+    '';
     pages = [
       {
         name = "Home";
@@ -178,6 +225,34 @@ let
                 url = "http://127.0.0.1:8053";
                 password = "\${PIHOLE_PASSWORD}";
                 hour-format = "24h";
+              }
+              {
+                type = "custom-api";
+                title = "Latencia";
+                cache = "1m";
+                template = ''
+                  {{ $start := (offsetNow "-12h").Unix }}
+                  {{ $end := now.Unix }}
+                  {{ $resp := newRequest "http://127.0.0.1:8428/api/v1/query_range" | withParameter "query" "probe_duration_seconds{job=\"probe-https\",instance=~\"https://.+\",instance!=\"https://casa.tail76c1c6.ts.net\"}" | withParameter "start" (printf "%d" $start) | withParameter "end" (printf "%d" $end) | withParameter "step" "600" | getResponse }}
+                  {{ $series := $resp.JSON.Array "data.result" }}
+                  <svg viewBox="0 0 1000 100" preserveAspectRatio="none" style="width:100%;height:10rem">
+                    <line x1="0" y1="98" x2="1000" y2="98" stroke="var(--color-graph-gridlines)"/>
+                    {{ range $i, $s := $series }}
+                      {{ $vals := $s.Array "values" }}
+                      {{ $pts := "" }}
+                      {{ range $j, $v := $vals }}{{ $x := div (mul (toFloat $j) 1000) (toFloat (len $vals)) }}{{ $y := sub 98 (div (mul ($v.Float "1") 98) 0.5) }}{{ $pts = printf "%s %.1f,%.1f" $pts $x $y }}{{ end }}
+                      <polyline fill="none" stroke="hsl({{ printf "%.0f" (mul (toFloat $i) 45) }}, 65%, 60%)" stroke-width="1.5" vector-effect="non-scaling-stroke" points="{{ $pts }}"/>
+                    {{ end }}
+                  </svg>
+                  <div class="flex flex-wrap gap-10 margin-top-10 size-h6">
+                    {{ range $i, $s := $series }}<span style="color:hsl({{ printf "%.0f" (mul (toFloat $i) 45) }}, 65%, 60%)">{{ $s.String "metric.instance" | replaceMatches "^https://([^.]+).*$" "$1" }}</span>{{ end }}
+                  </div>
+                  <div class="flex justify-between size-h6 color-subdue margin-top-5">
+                    <span>12h atras</span>
+                    <span>escala 0.5s</span>
+                    <span>agora</span>
+                  </div>
+                '';
               }
             ];
           }
