@@ -50,6 +50,7 @@ in
       "/srv/audiobooks/library"
       "/srv/audiobooks/downloads"
       "/srv/audiobooks/readmeabook/pgdata"
+      "/srv/manga/data/downloads"
       "/srv/nextcloud/html/apps"
       "/srv/nextcloud/html/core"
       "/srv/nextcloud/html/3rdparty"

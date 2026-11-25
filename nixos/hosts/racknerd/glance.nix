@@ -23,6 +23,7 @@ let
     { title = "Pi-hole"; url = "https://pihole.tail76c1c6.ts.net/admin/"; check-url = "http://127.0.0.1:8053/admin/"; icon = "di:pi-hole"; timeout = "5s"; alt-status-codes = [ 302 ]; }
     { title = "Prowlarr"; url = "https://prowlarr.tail76c1c6.ts.net"; check-url = "http://127.0.0.1:9696/ping"; icon = "di:prowlarr"; }
     { title = "Transmission"; url = "https://transmission.tail76c1c6.ts.net"; check-url = "http://127.0.0.1:9091/transmission/web/"; icon = "di:transmission"; }
+    { title = "Manga"; url = "https://manga.tail76c1c6.ts.net"; check-url = "http://127.0.0.1:4567/"; }
     { title = "VictoriaMetrics"; url = "https://metricas.tail76c1c6.ts.net"; check-url = "http://127.0.0.1:8428/health"; icon = "di:victoriametrics"; }
     { title = "Matter Hub"; url = "https://casa.tail76c1c6.ts.net:8443/"; icon = "di:matter"; }
   ];
