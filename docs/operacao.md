@@ -74,7 +74,7 @@ Tudo cai em `htr-backups` no R2.
 Depois de instalar o NixOS com a chave age (`nixos/README.md`), como root:
 
 ```bash
-systemctl stop restic-backups-r2.timer wal-g-backup.timer
+systemctl stop restic-backups-r2.timer wal-g-backup.timer 'postgresqlBackup-*.timer'
 systemctl stop 'podman-*.service'
 restic-r2 restore latest --target /
 
@@ -110,7 +110,7 @@ como no `nixos/README.md`, e confira cada app.
 
 ```bash
 systemctl start 'podman-*.service'
-systemctl start restic-backups-r2.timer wal-g-backup.timer
+systemctl start restic-backups-r2.timer wal-g-backup.timer 'postgresqlBackup-*.timer'
 ```
 
 ## Secrets

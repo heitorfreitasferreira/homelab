@@ -202,8 +202,6 @@ CAPTCHA na propria janela.
 - Config no `~/.hermes/config.yaml`: `browser.cdp_url`, `stt.provider: openai`,
   `stt.openai.base_url`, `stt.openai.model`, `tts.provider: edge` e
   `tts.edge.voice: pt-BR-FranciscaNeural`.
-- Teste rapido do browser: `curl http://100.89.110.97:30922/json/version`.
-- Teste rapido do STT: `curl http://100.89.110.97:8000/v1/models`.
 
 ## Recursos
 

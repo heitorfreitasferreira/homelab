@@ -33,7 +33,8 @@ grupos de vagas do WhatsApp. Da racknerd o LinkedIn pode falhar por rate limit.
 Use as outras fontes e a ultima busca que o notebook sincronizou. A linha
 `Fontes:` da saida diz o que rodou.
 
-Com o PC ligado, o LinkedIn sai pelo navegador do WSL:
+Com o Chrome do notebook ligado, o LinkedIn sai pelo seu CDP
+(`http://100.90.131.64:9222`, ou `HERMES_BROWSER_CDP`):
 
 ```bash
 vagas-buscar "platform engineer" --location Brazil --limit 10 \
@@ -97,8 +98,9 @@ dashboard), `sem resposta em 30 s` e WAHA sobrecarregado.
 O script so coleta. Ele nao aplica, nao cria conta e nao envia formulario.
 
 LinkedIn nao tem chave pessoal de busca. O limite e por IP: a VPS e datacenter,
-o notebook e residencial. Com o PC ligado, `--sources linkedin-browser` passa
-pelo Chromium do WSL. Sem PC, use a busca sincronizada do notebook e, para
+o notebook e residencial. Com o Chrome do notebook ligado,
+`--sources linkedin-browser` passa pelo perfil real dele
+(`http://100.90.131.64:9222`). Sem o notebook, use a busca sincronizada e, para
 rotina, alertas de vaga do LinkedIn lidos por `hermes-mail`. Nao use cookie de
 sessao para scraping.
 

@@ -43,7 +43,10 @@ in
   environment.systemPackages = [
     (script "hermes-books" ../../../scripts/hermes/hermes-books)
     (script "hermes-mail" ../../../scripts/hermes/hermes-mail)
-    (script "vagas-buscar" ../../../scripts/vagas-buscar)
+    (pkgs.writers.writePython3Bin "vagas-buscar" {
+      doCheck = false;
+      libraries = [ pkgs.python3Packages.websockets ];
+    } (builtins.readFile ../../../scripts/vagas-buscar))
     cv
     pkgs.poppler-utils
   ];

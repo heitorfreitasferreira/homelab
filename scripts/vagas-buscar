@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Busca vagas em fontes publicas e imprime um resumo em Markdown ou JSON.
 
-Fontes: LinkedIn guest, LinkedIn pelo navegador do WSL, Remotive, RemoteOK,
+Fontes: LinkedIn guest, LinkedIn pelo Chrome do notebook, Remotive, RemoteOK,
 We Work Remotely, Adzuna, Jooble, SerpApi Google Jobs e grupos do WhatsApp pelo
 WAHA. As fontes com chave leem ~/.hermes/vagas/api.env. Nao aplica em vaga
 nenhuma. So coleta e ordena.
@@ -268,7 +268,7 @@ def linkedin_browser(query: str, location: str, limit: int, days: int) -> list[d
     except ImportError as exc:
         raise SourceUnavailable("sem python3-websockets") from exc
 
-    cdp = os.environ.get("HERMES_BROWSER_CDP", "http://100.89.110.97:30922").rstrip("/")
+    cdp = os.environ.get("HERMES_BROWSER_CDP", "http://100.90.131.64:9222").rstrip("/")
     target = "https://www.linkedin.com/jobs/search?" + urllib.parse.urlencode(
         {"keywords": query, "location": location, "f_TPR": f"r{days * 86400}"}
     )
