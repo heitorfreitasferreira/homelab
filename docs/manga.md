@@ -20,13 +20,15 @@ autoApprover do policy libera o racknerd, mas não cria o serviço.
 1. Abrir o endereço acima e conferir se a loja Keiyoushi apareceu em
    Settings > Browse. Se não apareceu, adicionar
    `https://github.com/keiyoushi/extensions/raw/repo/index.pb`.
-2. Browse > Extensions: instalar **MangaDex** e o que mais quiser
-   (Comick, WeebCentral). Filtrar por idioma antes de instalar.
-3. Nas opções da extensão MangaDex, entrar com conta do MangaDex. Sem conta o
-   site libera 10 capítulos por dia desde maio de 2026.
-4. Filtrar a busca por `pt-br` no canto da tela.
-5. Buscar, adicionar à biblioteca e marcar os capítulos para baixar. O timer do
-   Suwayomi busca capítulo novo das séries seguidas a cada algumas horas.
+2. Browse > Extension: instalar **MangaDex** e o que mais quiser (Comick,
+   WeebCentral). O idioma vem em fontes separadas, entao escolha a de `PT-BR`.
+3. A extensão MangaDex 1.6.5 não tem login de conta: o MangaDex tirou o login
+   por usuário e senha da API. O limite de 10 capítulos por dia é do site, não
+   há como autenticar pela extensão, então se um download falhar com 429,
+   espere o dia virar.
+4. Em Settings > Downloads, deixar **Save as CBZ archive** ligado.
+5. Buscar, adicionar a biblioteca e baixar. O timer do Suwayomi busca capitulo
+   novo das series seguidas a cada algumas horas.
 
 ## Mihon
 
