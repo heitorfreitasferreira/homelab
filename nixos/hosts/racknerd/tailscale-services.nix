@@ -15,7 +15,6 @@ let
     waha = 3001;
     prowlarr = 9696;
     transmission = 9091;
-    manga = 4567;
     metricas = 8428;
     securo-mcp = 8765;
   };

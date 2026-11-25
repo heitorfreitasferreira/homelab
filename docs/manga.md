@@ -1,63 +1,38 @@
 # Manga
 
-Suwayomi (o Tachidesk) faz o papel do readmeabook, do transmission e do
-Audiobookshelf juntos: busca na fonte, baixa o capítulo em CBZ, guarda a
-biblioteca e serve as páginas. O Mihon do celular lê pelo plugin Suwayomi.
+A biblioteca vive no celular, no Mihon. Não há serviço no servidor: o
+Suwayomi saiu da VPS e o `svc:manga` saiu da tailnet.
 
-| Servico | Onde |
-| ------- | ---- |
-| Suwayomi | `https://manga.tail76c1c6.ts.net` |
-| Dados | `/srv/manga/data` (container `suwayomi`, porta 127.0.0.1:4567) |
+| O que | Onde |
+| ----- | ---- |
+| Acervo | `/storage/emulated/0/Mihon/local/<Série>/` |
+| Downloads do Mihon | `/storage/emulated/0/Mihon/downloads/<Fonte>/<Série>/` |
+| Backup da biblioteca | `/storage/emulated/0/Mihon/autobackup/` (12 h) |
 
-Só tailnet, sem senha, como o transmission. Fora da tailnet não responde.
+Estado em 25/11/2026, no M53: Storage location em `/storage/emulated/0/Mihon`,
+**Salvar como arquivo CBZ** ligado e One Piece em `local` com um capítulo.
 
-O serviço `svc:manga` precisa existir antes: Services > Add service, nome
-`manga`, porta `tcp:443`. O `tailscale serve` só vira host depois disso. O
-autoApprover do policy libera o racknerd, mas não cria o serviço.
+## Como a biblioteca cresce
 
-## Primeiro acesso
+1. Baixar pelo Mihon normalmente. Com CBZ ligado, cada capítulo vira um
+   arquivo em `downloads/<Fonte>/<Série>/`.
+2. Para o acervo, mover a pasta da série de `downloads/<Fonte>/` para `local/`.
+   Isso corta o vínculo com a extensão: `local` não usa rede nem fonte.
+3. Browse > Fontes > Fonte local, puxar para atualizar. Série nova aparece.
+4. `cover.jpg` na pasta da série vira a capa, e `.nomedia` em `local/` mantém as
+   páginas fora da galeria.
 
-1. Abrir o endereço acima e conferir se a loja Keiyoushi apareceu em
-   Settings > Browse. Se não apareceu, adicionar
-   `https://github.com/keiyoushi/extensions/raw/repo/index.pb`.
-2. Browse > Extension: instalar **MangaDex** e o que mais quiser (Comick,
-   WeebCentral). O idioma vem em fontes separadas, entao escolha a de `PT-BR`.
-3. A extensão MangaDex 1.6.5 não tem login de conta: o MangaDex tirou o login
-   por usuário e senha da API. O limite de 10 capítulos por dia é do site, não
-   há como autenticar pela extensão, então se um download falhar com 429,
-   espere o dia virar.
-4. Em Settings > Downloads, deixar **Save as CBZ archive** ligado.
-5. Buscar, adicionar a biblioteca e baixar. O timer do Suwayomi busca capitulo
-   novo das series seguidas a cada algumas horas.
+`downloads` e `local` são bibliotecas diferentes no Mihon. A primeira lê
+offline enquanto o arquivo existir, mas continua presa à extensão. A segunda é
+o acervo.
 
-## Mihon
+## Espaço
 
-1. Browse > Extensions > Extension stores > Add e colar
-   `https://raw.githubusercontent.com/suwayomi/tachiyomi-extension/repo/index.min.json`.
-2. Instalar a extensão **Suwayomi** e, nas configurações dela, pôr a URL do
-   servidor. Usuário e senha em branco.
-3. Settings > Tracking > Suwayomi, mesma URL. É o tracker que leva o capítulo
-   lido do Mihon para o servidor e traz o estado de volta ao abrir a ficha da
-   série.
+Um capítulo em CBZ fica em 20 a 30 MB. O aparelho tinha 10 GB livres, o que dá
+uns 300 a 500 capítulos. `local/` está no armazenamento compartilhado, então
+sobrevive a desinstalar o Mihon, mas não a um reset ou perda do aparelho.
 
-O progresso vive no Mihon e sincroniza com o servidor pelo tracker. Entre dois
-celulares, abrir a ficha da série força a atualização.
+## Quando a fonte cair
 
-## Disco e backup
-
-Os CBZ ficam em `/srv/manga/data/downloads` e não entram no restic, como os
-audiobooks. O banco e o `server.conf` do app entram. Com 66 GB livres cabem
-umas 250 a 400 volumes de 150 a 250 MB. Volume novo vem de série nova.
-
-## Quando o MangaDex recusar
-
-O MangaDex limita por IP (5 req/s) e alguns IPs de datacenter nunca passam. Teste
-na racknerd:
-
-```sh
-curl -s -o /dev/null -w '%{http_code}\n' https://api.mangadex.org/ping
-```
-
-`200` está liberado. `403` quer dizer IP barrado: trocar para outra fonte na
-lista de extensões (Comick, WeebCentral) ou baixar pelo notebook, que sai pelo
-IP residencial.
+Capítulo que já está em `local` abre para sempre, sem rede. Crescer a
+biblioteca depende da fonte existir, e isso vale para qualquer solução.

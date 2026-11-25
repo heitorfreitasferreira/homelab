@@ -14,7 +14,6 @@
     ./waha.nix
     ./pihole.nix
     ./audiobooks.nix
-    ./manga.nix
     ./glance.nix
     ./monitoring.nix
     ./agents.nix

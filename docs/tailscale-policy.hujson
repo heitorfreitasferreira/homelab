@@ -22,7 +22,6 @@
 			"svc:waha":       ["tag:server"],
 			"svc:prowlarr":   ["tag:server"],
 			"svc:transmission":["tag:server"],
-			"svc:manga":      ["tag:server"],
 			"svc:metricas":   ["tag:server"],
 			"svc:securo-mcp": ["tag:server"],
 		},

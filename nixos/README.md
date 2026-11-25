@@ -19,14 +19,14 @@ nixos/
 | Postgres 17 + pgvector | nativo. Bancos `app` (Nextcloud) e `securo`. WAL e base diaria no R2 com wal-g (`s3://htr-backups/pg/racknerd`) |
 | Apps | containers podman com as mesmas imagens fixadas do cluster, na rede `apps` (10.89.0.0/24, host em 10.89.0.1) |
 | Entradas publicas | Caddy com Let's Encrypt: nuvem, audio, pedidos, securo e casa `.htrlab.duckdns.org` |
-| Entradas da tailnet | Tailscale Services do proprio no: grafana, home, pihole, waha, prowlarr, transmission, manga, metricas, securo-mcp |
+| Entradas da tailnet | Tailscale Services do proprio no: grafana, home, pihole, waha, prowlarr, transmission, metricas, securo-mcp |
 | Metricas | VictoriaMetrics, vmalert, Alertmanager (Telegram), blackbox e Grafana nativos |
 | Agentes | Hermes (gateway e dashboard), OpenCode e Anytype em systemd, binarios no home via nix-ld |
 | Backup | restic diario no R2 (`htr-backups/restic/racknerd`), com dumps e snapshots SQLite antes |
 
 Dados dos apps em `/srv/<app>`. Portas em 127.0.0.1: nextcloud 8081, securo 8000 (api),
 8082 (web) e 8765 (mcp), waha 3001, glance 3003, grafana 3000, vm 8428, audiobookshelf 13378,
-readmeabook 3030, prowlarr 9696, transmission 9091, pihole web 8053, suwayomi 4567.
+readmeabook 3030, prowlarr 9696, transmission 9091, pihole web 8053.
 
 ## Operacao
 
