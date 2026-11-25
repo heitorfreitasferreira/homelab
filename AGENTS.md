@@ -57,7 +57,9 @@ Este repositorio declara o homelab pessoal. A fonte de verdade das escolhas e
   `podman ps`, `free -m`. Deploy: `systemctl status comin` e
   `curl -s 127.0.0.1:4243/metrics | grep comin_deployment_info`.
 - Metricas e logs: MCP `grafana` (Viewer, sem escrita).
-- Tailnet: MCP `tailscale` (no local, risco read).
+- Tailnet: MCP `tailscale` (no local). Escreve policy e services: `tailnet_policy_*` e
+  `tailnet_service_*` substituem o arquivo e o servico inteiros, entao leia antes e
+  mande o objeto completo de volta.
 - DNS: MCP `pihole` (ferramentas de leitura).
 - Home Assistant: MCP `home-assistant` com escrita. O servidor nativo do HA
   (`/api/mcp`) expoe `intent__HassTurnOn/Off`, `light__HassLightSet`,
