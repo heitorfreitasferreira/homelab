@@ -1,0 +1,9 @@
+- resources:
+    label: racknerd
+    cpu: true
+    memory: true
+    disk: /
+    expanded: true
+- datetime:
+    text_size: md
+    format: {dateStyle: short, timeStyle: short}
