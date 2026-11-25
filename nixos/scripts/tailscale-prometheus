@@ -1,0 +1,81 @@
+#!/bin/sh
+# Metricas do Tailscale no formato Prometheus, lidas pelo textfile collector do node-exporter.
+# Roda como root pelo tailscale-prometheus.timer. O status nao precisa de rede externa.
+set -eu
+
+out="${TAILSCALE_PROM_FILE:-/var/lib/prometheus/node-exporter/tailscale.prom}"
+tmp="${out}.tmp.$$"
+
+trap 'rm -f "$tmp"' EXIT
+
+falhou() {
+  {
+    echo "# HELP tailscale_up 1 se o tailscaled respondeu ao status."
+    echo "# TYPE tailscale_up gauge"
+    echo "tailscale_up 0"
+    echo "# HELP tailscale_exporter_success 1 se a coleta terminou sem erro."
+    echo "# TYPE tailscale_exporter_success gauge"
+    echo "tailscale_exporter_success 0"
+  } > "$tmp"
+  chmod 0644 "$tmp"
+  mv "$tmp" "$out"
+}
+
+if ! status=$(tailscale status --json 2>/dev/null); then
+  falhou
+  exit 0
+fi
+
+if ! printf '%s' "$status" | jq -r '
+  def esc: tostring | gsub("\\\\"; "\\\\") | gsub("\""; "\\\"") | gsub("\n"; "\\n");
+  def epoch: if . == null then 0 else (sub("\\.[0-9]+"; "") | fromdateiso8601) end;
+
+  [
+    "# HELP tailscale_up 1 se o tailscaled respondeu ao status.",
+    "# TYPE tailscale_up gauge",
+    "tailscale_up 1",
+    "# HELP tailscale_exporter_success 1 se a coleta terminou sem erro.",
+    "# TYPE tailscale_exporter_success gauge",
+    "tailscale_exporter_success 1",
+    "# HELP tailscale_health_problems Avisos de saude do cliente.",
+    "# TYPE tailscale_health_problems gauge",
+    "tailscale_health_problems \(.Health // [] | length)",
+    "# HELP tailscale_health Aviso de saude do cliente.",
+    "# TYPE tailscale_health gauge",
+    "# HELP tailscale_peer_online 1 se o peer esta online.",
+    "# TYPE tailscale_peer_online gauge",
+    "# HELP tailscale_peer_direct 1 se o peer esta por conexao direta.",
+    "# TYPE tailscale_peer_direct gauge",
+    "# HELP tailscale_peer_rx_bytes Bytes recebidos do peer.",
+    "# TYPE tailscale_peer_rx_bytes counter",
+    "# HELP tailscale_peer_tx_bytes Bytes enviados ao peer.",
+    "# TYPE tailscale_peer_tx_bytes counter",
+    "# HELP tailscale_peer_relay_info Peer usando DERP.",
+    "# TYPE tailscale_peer_relay_info gauge",
+    "# HELP tailscale_peer_key_expiry_timestamp_seconds Validade da chave do peer.",
+    "# TYPE tailscale_peer_key_expiry_timestamp_seconds gauge"
+  ]
+  + [
+    .Peer[] |
+    .HostName as $p |
+    .OS as $os |
+    ("tailscale_peer_online{peer=\"\($p | esc)\",os=\"\($os | esc)\"} \(if .Online then 1 else 0 end)"),
+    ("tailscale_peer_direct{peer=\"\($p | esc)\",os=\"\($os | esc)\"} \(if .Online and (.CurAddr != "") then 1 else 0 end)"),
+    ("tailscale_peer_rx_bytes{peer=\"\($p | esc)\",os=\"\($os | esc)\"} \(.RxBytes // 0)"),
+    ("tailscale_peer_tx_bytes{peer=\"\($p | esc)\",os=\"\($os | esc)\"} \(.TxBytes // 0)"),
+    (if .KeyExpiry != null then "tailscale_peer_key_expiry_timestamp_seconds{peer=\"\($p | esc)\",os=\"\($os | esc)\"} \(.KeyExpiry | epoch)" else empty end),
+    (if .Online and .CurAddr == "" and .Relay != "" then "tailscale_peer_relay_info{peer=\"\($p | esc)\",relay=\"\(.Relay | esc)\"} 1" else empty end)
+  ]
+  + (
+    .Health // [] |
+    map("tailscale_health{message=\"\(.|esc)\"} 1")
+  )
+  | .[]
+' > "$tmp"
+then
+  falhou
+  exit 0
+fi
+
+chmod 0644 "$tmp"
+mv "$tmp" "$out"
