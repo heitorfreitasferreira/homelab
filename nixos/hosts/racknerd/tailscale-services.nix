@@ -10,7 +10,7 @@ let
   ts = "${config.services.tailscale.package}/bin/tailscale";
   services = {
     grafana = 3000;
-    home = 3002;
+    home = 3003;
     pihole = 8053;
     waha = 3001;
     prowlarr = 9696;

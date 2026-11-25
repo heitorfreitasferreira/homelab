@@ -25,7 +25,7 @@ nixos/
 | Backup | restic diario no R2 (`htr-backups/restic/racknerd`), com dumps e snapshots SQLite antes |
 
 Dados dos apps em `/srv/<app>`. Portas em 127.0.0.1: nextcloud 8081, securo 8000 (api),
-8082 (web) e 8765 (mcp), waha 3001, homepage 3002, grafana 3000, vm 8428, audiobookshelf 13378,
+8082 (web) e 8765 (mcp), waha 3001, glance 3003, grafana 3000, vm 8428, audiobookshelf 13378,
 readmeabook 3030, prowlarr 9696, transmission 9091, pihole web 8053.
 
 ## Operacao
@@ -74,7 +74,7 @@ Resultado com o backup de 2026-11-24:
 - Bancos restaurados iguais aos dumps: Nextcloud 151 tabelas, Securo 67, readmeabook 28.
 - Nextcloud 35.0.3 sobe com o config.php antigo, lista as pastas e baixa fotos do R2.
 - Securo, audiobookshelf (2 usuarios, 2 progressos, 8 itens), readmeabook, prowlarr, transmission,
-  Pi-hole, homepage e Grafana respondem. Os aliases mantem os nomes do cluster validos no readmeabook.
+  Pi-hole, Glance e Grafana respondem. Os aliases mantem os nomes do cluster validos no readmeabook.
 - Hermes reinstalado no commit de producao com as mesmas versoes de Node, npm e Python (nix-ld).
 - Memoria com o ensaio todo no ar: 2,0 GB usados, swap vazio. Os servicos desligados no ensaio
   somam cerca de 1,5 GB na producao.

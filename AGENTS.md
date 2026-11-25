@@ -20,7 +20,7 @@ Este repositorio declara o homelab pessoal. A fonte de verdade das escolhas e
 - `nixos/`: config declarativa dos hosts NixOS. `nixos/README.md` tem o fluxo,
   a operacao e o runbook da virada.
 - `nixos/hosts/racknerd/`: tudo do racknerd, um arquivo por assunto (containers,
-  postgres, caddy, nextcloud, securo, waha, pihole, audiobooks, homepage,
+  postgres, caddy, nextcloud, securo, waha, pihole, audiobooks, glance,
   monitoring, agents, backup).
 - `nixos/secrets/<host>.sops.yaml`: secrets do host, cifrados com a chave age.
 - `ansible/`: so o `casa` (Debian + Podman).
@@ -90,7 +90,7 @@ use os spaces `7bef7m` nem `723ija`.
 - Pi-hole com `hostNetwork` e DNS preso em `tailscale0`, web em `:8053`.
   E o DNS global da tailnet.
 - Monitoring: VictoriaMetrics, vmalert, Alertmanager no Telegram e Grafana.
-- Homepage em `home.tail76c1c6.ts.net`.
+- Pagina inicial (Glance) em `home.tail76c1c6.ts.net`.
 - Grafana em `grafana.tail76c1c6.ts.net`, metricas em
   `metricas.tail76c1c6.ts.net`.
 - OpenCode em `racknerd.tail76c1c6.ts.net:8443` e o dashboard do Hermes em

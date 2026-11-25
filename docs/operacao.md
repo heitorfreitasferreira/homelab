@@ -48,7 +48,7 @@ free -m; uptime; df -h /
 
 Servicos por app: `podman-<app>.service` (nextcloud, securo-backend,
 securo-worker, securo-frontend, securo-mcp, waha, pihole, audiobookshelf,
-readmeabook, prowlarr, transmission, homepage). Banco: `postgresql.service`.
+readmeabook, prowlarr, transmission, glance). Banco: `postgresql.service`.
 Entradas: `caddy.service`. Metricas: `victoriametrics.service`,
 `vmalert-homelab.service`, `alertmanager.service`, `grafana.service`.
 Agentes: `hermes-gateway.service`, `hermes-dashboard.service`,
