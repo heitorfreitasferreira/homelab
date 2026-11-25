@@ -15,6 +15,7 @@
     ./pihole.nix
     ./audiobooks.nix
     ./homepage.nix
+    ./glance.nix
     ./monitoring.nix
     ./agents.nix
     ./backup.nix
