@@ -91,5 +91,11 @@ in
     AWS_DEFAULT_REGION=auto
   '';
 
-  systemd.tmpfiles.rules = [ "d ${dumps} 0750 root root -" ];
+  # O postgresqlBackup nao cria o diretorio de destino e o servico roda como postgres.
+  systemd.tmpfiles.rules = [
+    "d ${dumps} 0750 root root -"
+    "d ${dumps}/postgresql 0700 postgres postgres -"
+    "d ${dumps}/readmeabook 0750 root root -"
+    "d ${dumps}/sqlite 0750 root root -"
+  ];
 }
