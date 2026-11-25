@@ -5,7 +5,7 @@ let
   publicMeta = {
     nuvem = { title = "Nextcloud"; icon = "di:nextcloud"; };
     audio = { title = "Audiobookshelf"; icon = "di:audiobookshelf"; };
-    pedidos = { title = "ReadMeABook"; icon = "di:readmeabook"; };
+    pedidos = { title = "ReadMeABook"; icon = "mdi:book-search"; };
     securo = { title = "Securo"; icon = "https://securo.htrlab.duckdns.org/favicon.ico"; };
     casa = { title = "Home Assistant"; icon = "di:home-assistant"; };
   };
@@ -25,7 +25,7 @@ let
     { title = "Transmission"; url = "https://transmission.tail76c1c6.ts.net"; check-url = "http://127.0.0.1:9091/transmission/web/"; icon = "di:transmission"; }
     { title = "VictoriaMetrics"; url = "https://metricas.tail76c1c6.ts.net"; check-url = "http://127.0.0.1:8428/health"; icon = "di:victoriametrics"; }
     { title = "Matter Hub"; url = "https://casa.tail76c1c6.ts.net:8443/"; icon = "di:matter"; }
-    { title = "Waha"; url = "https://waha.tail76c1c6.ts.net/dashboard"; alt-status-codes = [ 401 ]; icon = "di:waha"; }
+    { title = "Waha"; url = "https://waha.tail76c1c6.ts.net/dashboard"; alt-status-codes = [ 401 ]; icon = "https://cdn.jsdelivr.net/gh/devlikeapro/waha@master/logo.png"; }
   ];
 
   # CPU, RAM e disco do casa no formato do widget de server-stats.
@@ -155,7 +155,7 @@ let
 
   casaHostCard = {
     type = "custom-api";
-    title = "Servidor";
+    title = "casa";
     cache = "30s";
     url = "http://127.0.0.1:8428/api/v1/query?query=" + lib.escapeURL casaQuery;
     template = ''
@@ -229,6 +229,8 @@ let
           .page-column { display: block !important; }
           .page-column-full { order: 1; }
           .page-column-small { order: 2; }
+          .page-columns:has(.home-clock) .page-column-small { order: 1; }
+          .page-columns:has(.home-clock) .page-column-full { order: 2; }
         }
         @media (max-width: 550px) {
           .header-container { --header-items-gap: 1.2rem; }
@@ -244,6 +246,7 @@ let
           {
             size = "small";
             widgets = [
+              { type = "clock"; hour-format = "24h"; css-class = "home-clock"; }
               {
                 type = "server-stats";
                 servers = [
@@ -255,7 +258,7 @@ let
                   }
                 ];
               }
-              { type = "clock"; hour-format = "24h"; }
+              casaHostCard
             ];
           }
           {
@@ -279,7 +282,6 @@ let
             size = "small";
             widgets = [
               { type = "weather"; location = "Uberlandia, Brazil"; units = "metric"; hour-format = "24h"; }
-              casaHostCard
               { type = "calendar"; first-day-of-week = "monday"; }
             ];
           }
