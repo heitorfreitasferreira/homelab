@@ -16,13 +16,13 @@
 	// Hosts com tag:server podem servir estes servicos sem aprovacao manual.
 	"autoApprovers": {
 		"services": {
-			"svc:grafana": ["tag:server"],
-			"svc:home": ["tag:server"],
-			"svc:pihole": ["tag:server"],
-			"svc:waha": ["tag:server"],
-			"svc:prowlarr": ["tag:server"],
-			"svc:transmission": ["tag:server"],
-			"svc:metricas": ["tag:server"],
+			"svc:grafana":    ["tag:server"],
+			"svc:home":       ["tag:server"],
+			"svc:pihole":     ["tag:server"],
+			"svc:waha":       ["tag:server"],
+			"svc:prowlarr":   ["tag:server"],
+			"svc:transmission":["tag:server"],
+			"svc:metricas":   ["tag:server"],
 			"svc:securo-mcp": ["tag:server"],
 		},
 	},
