@@ -73,21 +73,25 @@
   };
 
   # So os nomes da tailnet vao ao MagicDNS. O resto usa os resolvedores globais do host.
+  # O tailscaled (com --accept-dns=false) limpa o DNS do link quando reconfigura:
+  # um timer reaplica a cada 30 s.
   services.resolved.enable = true;
   systemd.services.tailscale-dns-route = {
     description = "Rota DNS de tail76c1c6.ts.net para o MagicDNS";
     after = [ "tailscaled.service" ];
-    partOf = [ "tailscaled.service" ];
-    wantedBy = [ "tailscaled.service" ];
-    serviceConfig = {
-      Type = "oneshot";
-      RemainAfterExit = true;
-    };
+    serviceConfig.Type = "oneshot";
     script = ''
-      until ${pkgs.iproute2}/bin/ip link show tailscale0 >/dev/null 2>&1; do sleep 1; done
+      ${pkgs.iproute2}/bin/ip link show tailscale0 >/dev/null 2>&1 || exit 0
       ${pkgs.systemd}/bin/resolvectl dns tailscale0 100.100.100.100
       ${pkgs.systemd}/bin/resolvectl domain tailscale0 '~tail76c1c6.ts.net'
     '';
+  };
+  systemd.timers.tailscale-dns-route = {
+    wantedBy = [ "timers.target" ];
+    timerConfig = {
+      OnBootSec = "20s";
+      OnUnitActiveSec = "30s";
+    };
   };
 
   # Binarios prontos (Hermes, OpenCode, Anytype) esperam um /lib64/ld-linux.

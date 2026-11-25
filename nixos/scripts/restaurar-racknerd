@@ -67,7 +67,11 @@ done
 ssh_ "sudo -u postgres psql -v ON_ERROR_STOP=1 -d securo -c 'CREATE EXTENSION IF NOT EXISTS vector'"
 restore_pg() {
   local dump=$1 db=$2 role=$3
-  ssh_ "sudo -u postgres pg_restore --clean --if-exists --no-owner --no-acl --role=$role -d $db" < "$B/pg/$dump"
+  # O dump do Securo traz DROP e COMMENT da extensao vector, que e do superusuario: dois erros
+  # esperados e ignorados pelo pg_restore, que mesmo assim sai com codigo 1. A conferencia de
+  # verdade e a contagem de linhas contra o banco de origem.
+  ssh_ "sudo -u postgres pg_restore --clean --if-exists --no-owner --no-acl --role=$role -d $db" < "$B/pg/$dump" ||
+    echo "aviso: pg_restore de $db terminou com erros ignorados (confira as contagens)"
   echo "ok pg $db"
 }
 restore_pg nextcloud-app.dump app app
