@@ -11,6 +11,10 @@ biblioteca e serve as páginas. O Mihon do celular lê pelo plugin Suwayomi.
 
 Só tailnet, sem senha, como o transmission. Fora da tailnet não responde.
 
+O serviço `svc:manga` precisa existir antes: Services > Add service, nome
+`manga`, porta `tcp:443`. O `tailscale serve` só vira host depois disso. O
+autoApprover do policy libera o racknerd, mas não cria o serviço.
+
 ## Primeiro acesso
 
 1. Abrir o endereço acima e conferir se a loja Keiyoushi apareceu em
