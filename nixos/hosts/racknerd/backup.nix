@@ -92,8 +92,9 @@ in
   '';
 
   # O postgresqlBackup nao cria o diretorio de destino e o servico roda como postgres.
+  # /var/backup precisa de travessia para o postgres chegar em postgresql/ (0700 dele).
   systemd.tmpfiles.rules = [
-    "d ${dumps} 0750 root root -"
+    "d ${dumps} 0755 root root -"
     "d ${dumps}/postgresql 0700 postgres postgres -"
     "d ${dumps}/readmeabook 0750 root root -"
     "d ${dumps}/sqlite 0750 root root -"
