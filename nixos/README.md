@@ -108,6 +108,4 @@ restauracao e o transmission precisou de restart para ler a config restaurada.
 - STT (whisper) do Hermes: sem substituto depois dos pods do k3s. O browser ja
   usa o Chrome do notebook por CDP (`100.90.131.64:9222`).
 - Healthchecks: check novo alertmanager-watchdog criado, falta trocar a URL (nixos/scripts/rotacionar healthchecks).
-- Remover da tailnet os nos k8s-operator-racknerd e racknerd-ingress-0, o svc:argocd e o vcluster.
-- Atualizar o `DECISIONS.md` para a arquitetura NixOS (decisao 1 e as de k3s).
 - Hosts `casa` (por ultimo, roda o Home Assistant) e `pc-wsl` (NixOS-WSL, worker sob demanda).

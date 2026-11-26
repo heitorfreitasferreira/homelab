@@ -140,7 +140,7 @@
         },
         {
           "alert": "CasaCpuAlta",
-          "expr": "100 * (1 - avg(rate(node_cpu_seconds_total{instance=\"casa\",mode=\"idle\"}[5m]))) > 90",
+          "expr": "100 * (1 - avg(rate(node_cpu_seconds_total{instance=\"casa\",mode=\"idle\"}[5m]))) > 95",
           "for": "15m",
           "labels": {
             "severity": "warning"

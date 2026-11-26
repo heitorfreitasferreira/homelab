@@ -80,7 +80,8 @@ in
       KillMode = "mixed";
       KillSignal = "SIGTERM";
       TimeoutStopSec = 70;
-      MemoryMax = "1G";
+      # O gateway chegava ao teto de 1G e ia para swap.
+      MemoryMax = "1536M";
     };
   };
 
