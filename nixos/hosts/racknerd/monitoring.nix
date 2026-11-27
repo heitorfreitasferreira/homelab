@@ -148,15 +148,18 @@ in
     port = 9093;
     checkConfig = false;
     configuration = {
+      # Tudo vai para o Ops do Hermes, que descarta duplicata e decide o que passar.
+      # O backoff exponencial de alerta repetido fica no script da rota (alert-backoff.py):
+      # o repeat_interval de 1h so da a ele a chance de reavisar.
       route = {
-        receiver = "telegram";
+        receiver = "hermes";
         group_by = [
           "alertname"
           "instance"
         ];
         group_wait = "30s";
         group_interval = "5m";
-        repeat_interval = "12h";
+        repeat_interval = "1h";
         routes = [
           {
             receiver = "healthchecks";
@@ -165,9 +168,26 @@ in
             group_interval = "1m";
             repeat_interval = "1m";
           }
+          # Se a entrega ao Hermes falhar, o aviso vai direto ao Telegram.
+          {
+            receiver = "telegram";
+            matchers = [ ''alertname="NotificacaoFalhou"'' ];
+            repeat_interval = "6h";
+          }
         ];
       };
       receivers = [
+        {
+          name = "hermes";
+          webhook_configs = [
+            {
+              url = "http://127.0.0.1:8644/p/ops/webhooks/alertas";
+              send_resolved = true;
+              max_alerts = 30;
+              http_config.http_headers."X-Gitlab-Token".files = [ (cred "hermes") ];
+            }
+          ];
+        }
         {
           name = "telegram";
           telegram_configs = [
@@ -198,9 +218,16 @@ in
   systemd.services.alertmanager.serviceConfig.LoadCredential = [
     "telegram:${config.sops.secrets."alertmanager_telegram_token".path}"
     "healthchecks:${config.sops.secrets."alertmanager_healthchecks_url".path}"
+    "hermes:${config.sops.secrets."alertmanager_hermes_webhook".path}"
   ];
   sops.secrets."alertmanager_telegram_token" = { };
   sops.secrets."alertmanager_healthchecks_url" = { };
+  # Token da rota de alertas do Hermes (header X-Gitlab-Token). Legivel pelo htr para a
+  # rota do Hermes usar o mesmo valor.
+  sops.secrets."alertmanager_hermes_webhook" = {
+    owner = "htr";
+    mode = "0400";
+  };
 
   services.grafana = {
     enable = true;
