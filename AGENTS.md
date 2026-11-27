@@ -76,9 +76,11 @@ Este repositorio declara o homelab pessoal. A fonte de verdade das escolhas e
 ## Geoffrey e o space de organizacao
 
 O assistente se chama Geoffrey. Ele e o mordomo: o Heitor conversa so com ele, na
-Bot Chat do Webapp, e ele repassa o resto aos bots Carreira, Financas, Casa e Ops
-(`message_agent`). O Telegram (`@personal_geoffrey_bot`) e o canal de aviso urgente
-e continua aceitando conversa, mas la o Geoffrey nao repassa aos bots.
+Bot Chat do Webapp, e ele repassa o resto aos bots Carreira, Financas, Casa, Ops e
+Hilbert (`message_agent`). O Hilbert cuida da vida a dois com a Vitoria, e le o
+WhatsApp so por um proxy de leitura: nunca envia mensagem. O Telegram
+(`@personal_geoffrey_bot`) e o canal de aviso urgente e continua aceitando
+conversa, mas la o Geoffrey nao repassa aos bots.
 Os bots estao em `docs/hermes.md`, secao Bots. O schema, as colecoes, as areas, o
 fluxo e as rotinas do Anytype estao em `docs/geoffrey.md`. Use o MCP `anytype`,
 nunca escreva segredo no Anytype e nao use os spaces `7bef7m` nem `723ija`.

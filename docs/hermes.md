@@ -87,6 +87,7 @@ um perfil do Hermes, com SOUL, memoria, skills, MCPs e crons proprios.
 | Financas (`financas`) | Securo, orcamento, financiamento e obra, FGTS, holerite, 13o, ponto | `securo-finance`, `ponto-jornada`, `pdf` | `securo` | `~/.hermes` |
 | Casa (`casa`) | Home Assistant: robo, ar, chuva, TV, solar, usuarios da familia | `home-assistant-ops` | `home-assistant` | `~` |
 | Ops (`ops`) | NixOS e comin, alertas, Grafana, Tailscale, Pi-hole, Nextcloud, OpenCode, o proprio Hermes | `homelab-ops`, `hermes-agent`, `peer-agent-briefs`, `github` | `grafana`, `tailscale`, `pihole` | `~/homelab` |
+| Hilbert (`hilbert`) | vida a dois com a Vitoria: datas, presentes, ideias, viagens | `relacao`, `whatsapp`, `anytype-api` | `anytype` | `~` |
 
 - Perfis em `~/.hermes/profiles/<nome>/`. Titulo e descricao no `profile.yaml`
   (`ui_meta.hermes-bots.title`). Esse bloco liga o Bot Mode e o `message_agent`.
@@ -104,6 +105,22 @@ um perfil do Hermes, com SOUL, memoria, skills, MCPs e crons proprios.
   tenta o OpenCode do notebook (`100.90.131.64:49375`) e, sem resposta em 4 s,
   abre no da racknerd (`127.0.0.1:49374`), sempre no agente `plan`. A senha do
   notebook fica em `~/.config/hermes-secrets/opencode-notebook.password`.
+
+### Hilbert
+
+- Cuida do namoro a distancia com a Vitoria: datas, presentes, ideias e viagens.
+  Space proprio no Anytype (`r3ujxy`), com Presentes, Datas, Gente, Viagens e
+  Painel.
+- WhatsApp **so de leitura**, para nao mandar mensagem no lugar dele. O Caddy
+  serve um proxy em `http://127.0.0.1:3002` que aceita GET de conversas e
+  mensagens da sessao `heitor` e injeta a chave do WAHA. Enviar responde 403. O
+  `.env` dele nao tem a chave inteira.
+- Crons: `Resposta atrasada` (de hora em hora, 8h as 23h, script puro, avisa no
+  Telegram pelo `avisar.py`), `Datas proximas` (08:00, le o Anytype) e `Painel de
+  domingo` (19:00, le a semana de conversa). Datas e Painel entregam na Bot Chat
+  dele.
+- Nao usa o token do Telegram no `.env`: o gateway recusa dois perfis com a
+  mesma credencial, entao o aviso sai pelo `avisar.py` do perfil `default`.
 
 ## Alertas
 
