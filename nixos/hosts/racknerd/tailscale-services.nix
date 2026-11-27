@@ -41,9 +41,10 @@ in
           ${ts} serve --service=svc:${name} --https=443 --bg http://127.0.0.1:${toString port}
         '') services
       )}
-      # No proprio: OpenCode (443) e dashboard do Hermes (8443).
+      # No proprio: OpenCode (443), dashboard do Hermes (8443) e Webapp do Hermes (9443).
       ${ts} serve --https=443 --bg http://127.0.0.1:49374
       ${ts} serve --https=8443 --bg http://127.0.0.1:9119
+      ${ts} serve --https=9443 --bg http://127.0.0.1:9120
     '';
   };
 }
