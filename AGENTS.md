@@ -95,8 +95,9 @@ use os spaces `7bef7m` nem `723ija`.
 - Pagina inicial (Glance) em `home.tail76c1c6.ts.net`.
 - Grafana em `grafana.tail76c1c6.ts.net`, metricas em
   `metricas.tail76c1c6.ts.net`.
-- OpenCode em `racknerd.tail76c1c6.ts.net` (443 da tailnet) e o dashboard do
-  Hermes em `racknerd.tail76c1c6.ts.net:8443`.
+- OpenCode em `racknerd.tail76c1c6.ts.net` (443 da tailnet), o dashboard do
+  Hermes em `racknerd.tail76c1c6.ts.net:8443` e o Webapp do Hermes em
+  `racknerd.tail76c1c6.ts.net:9443`.
 - Backup: wal-g (WAL e base diaria do Postgres) e restic diario, os dois no R2
   em `htr-backups`.
 - Browser do Hermes: CDP no Chrome do notebook (`100.90.131.64:9222`, servido por `tailscale serve --tcp 9222`).

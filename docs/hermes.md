@@ -51,6 +51,19 @@ Assistente pessoal do homelab. Roda na VPS, so pela tailnet e pelo Telegram.
 - O dashboard custa cerca de 320 MB. Ele duplica parte do runtime do gateway,
   entao a VPS fica com pouca memoria livre ate o upgrade.
 
+## Webapp
+
+- O gateway serve o workspace do Hermes Desktop no navegador em
+  `127.0.0.1:9120` (`webapp:` no `~/.hermes/config.yaml`), publicado pelo
+  Tailscale serve em `https://racknerd.tail76c1c6.ts.net:9443`, so na tailnet.
+- Login com o mesmo usuario e senha do dashboard (`HERMES_DASHBOARD_BASIC_AUTH_*`
+  no `.env`). No celular, Chrome com "Adicionar a tela inicial".
+- O bundle e compilado por `hermes webapp --build-only`, com o Node de
+  `~/.hermes/tools` no PATH. Depois de `hermes update`, recompile e reinicie o
+  gateway.
+- O app `ai.sol.hermes` da Play Store nao e da Nous. O app oficial e o Hermes
+  Mobile, em beta fechado.
+
 ## Geoffrey
 
 - O bot se chama Geoffrey. O Telegram e a interface principal.
