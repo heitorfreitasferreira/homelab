@@ -106,8 +106,10 @@ nunca escreva segredo no Anytype e nao use os spaces `7bef7m` nem `723ija`.
 - Backup: wal-g (WAL e base diaria do Postgres) e restic diario, os dois no R2
   em `htr-backups`.
 - Browser do Hermes: o interno, no Bot Screen de cada bot (Chromium visivel na
-  racknerd). O Heitor assume a tela pelo Webapp para login, 2FA e captcha. STT
-  ainda sem substituto.
+  racknerd). As sessoes vem do Chrome do notebook por
+  `scripts/hermes/hermes-sessoes-bots` (sem bancos, Google, Microsoft, trabalho,
+  paineis de infraestrutura, contas de IA e homelab). Senha, 2FA e captcha
+  continuam pelo Take over no Webapp. STT ainda sem substituto.
 - Vagas: `vagas-buscar` e skill `vagas`, runbook em `docs/vagas.md`. Preparar e
   abrir o formulario e o padrao. Nunca envie candidatura sem confirmacao.
 - Email: use `hermes-mail` (`accounts`, `list`, `search`, `read`, `send`).

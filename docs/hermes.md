@@ -309,8 +309,14 @@ Hand back.
   O icone Browser do dock abre o mesmo binario e o mesmo perfil do agente, e o
   `Exec` dele e reescrito quando a tela sobe.
 - Comandos: `hermes -p <bot> computer-use screen status|start|stop`.
-- As sessoes de site (LinkedIn, Jobscan e outros) ficam no perfil de navegador de
-  cada bot. O login e feito uma vez pelo Take over, na tela do bot que usa o site.
+- As sessoes de site ficam no perfil de navegador de cada bot. `hermes-sessoes-bots`
+  (no notebook, em `scripts/hermes/`) copia os cookies do Chrome do Heitor para
+  os cinco bots, por CDP e por um tunel SSH, sem fechar o Chrome. Ficam de fora
+  bancos, pagamentos, investimentos, cripto, gov.br, gerenciadores de senha,
+  conta Google, Microsoft, sistemas do trabalho, paineis de infraestrutura,
+  contas de IA com chave de API e os servicos do homelab.
+  `--simular` mostra o que iria. Dominio em que o bot ja tem cookie fica como
+  esta, salvo `--substituir`. Senha, 2FA e captcha continuam pelo Take over.
 - O CDP do Chrome do notebook (`tailscale serve --tcp 9222` no notebook) ficou sem
   uso. Pode ser desligado.
 - O STT (Speaches) era `apps/hermes-whisper`, removido na virada e ainda sem

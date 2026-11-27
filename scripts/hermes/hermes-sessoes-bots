@@ -1,0 +1,344 @@
+#!/usr/bin/env node
+'use strict';
+/*
+ * hermes-sessoes-bots: copia as sessoes (cookies) do Chrome do notebook para o Chromium dos bots do Hermes.
+ *
+ * Le os cookies pelo CDP do Chrome do notebook (127.0.0.1:9222, perfil google-chrome-cdp) e grava no perfil de
+ * navegador de cada bot na racknerd, pelo CDP do Chromium do bot, por um tunel SSH. Os valores nao passam por
+ * disco nem por stdout. Ficam de fora: servicos do homelab, sistemas do trabalho (Agro-E, AWS, Salesforce),
+ * Microsoft (365 do trabalho e Hotmail), conta Google, gov.br, paineis de infraestrutura, contas de IA com
+ * chave de API, gerenciadores de senha, cripto, pagamentos (Pluggy inclusive), investimentos e bancos. Dominio
+ * em que o bot ja tem cookie fica como esta, salvo os listados em --substituir.
+ *
+ * Uso:
+ *   hermes-sessoes-bots --simular                mostra o que seria copiado, sem tocar nos bots
+ *   hermes-sessoes-bots                          copia para os cinco bots
+ *   hermes-sessoes-bots --bots carreira,ops      so para esses bots
+ *   hermes-sessoes-bots --substituir indeed.com  troca a sessao do bot pela do notebook nesses dominios
+ *
+ * Precisa de Node 22 ou mais novo, do Chrome do notebook com --remote-debugging-port=9222 (chrome-flags.conf) e
+ * de SSH sem senha para htr@racknerd. Com o Chromium do bot fechado, abre um headless no perfil dele e fecha
+ * no fim, o que grava os cookies em disco.
+ */
+const { spawn } = require('node:child_process');
+const net = require('node:net');
+
+const HOST = 'htr@racknerd';
+const CDP_NOTEBOOK = 'http://127.0.0.1:9222';
+const BOTS = ['default', 'carreira', 'financas', 'casa', 'ops'];
+const LOTE = 200;
+
+// Nome do dominio base (antes do sufixo publico) por categoria que fica de fora.
+const ROTULOS = {
+  google: ['google', 'youtube', 'gmail', 'googleusercontent'],
+  senhas: ['1password', 'bitwarden', 'lastpass', 'dashlane', 'keepersecurity', 'nordpass', 'proton', 'enpass',
+    'roboform'],
+  cripto: ['binance', 'coinbase', 'foxbit', 'mercadobitcoin', 'kraken', 'bybit', 'okx', 'kucoin', 'bitso',
+    'novadax', 'bitpreco', 'metamask', 'phantom', 'ledger', 'trezor', 'crypto', 'blockchain', 'bitget', 'uphold',
+    'nexo', 'bitfinex', 'bitstamp'],
+  pagamentos: ['paypal', 'picpay', 'pagseguro', 'pagbank', 'mercadopago', 'mercadolivre', 'mercadolibre', 'stone',
+    'ton', 'infinitepay', 'stripe', 'wise', 'revolut', 'recargapay', 'amedigital', 'iugu', 'asaas', 'vindi',
+    'sumup', 'payoneer', 'skrill', 'remessaonline', 'westernunion'],
+  investimentos: ['xpi', 'xp', 'rico', 'clear', 'nuinvest', 'btg', 'btgpactual', 'avenue', 'nomad',
+    'toroinvestimentos', 'warren', 'genial', 'orama', 'easynvest', 'b3', 'tesourodireto', 'modalmais'],
+  bancos: ['santander', 'bb', 'bancobrasil', 'itau', 'bradesco', 'nubank', 'nu', 'inter', 'bancointer', 'c6bank',
+    'bancooriginal', 'original', 'sicoob', 'sicredi', 'banrisul', 'bancopan', 'neon', 'next', 'safra', 'mercantil',
+    'agibank', 'bmg', 'digio', 'willbank', 'credicard', 'americanexpress', 'amex', 'caixa', 'brb', 'banese',
+    'banestes', 'daycoval', 'n26'],
+  // Painel que apaga, reinstala ou redireciona o homelab passaria por cima dos limites dos MCPs (DECISIONS 28 a 30).
+  infraestrutura: ['cloudflare', 'racknerd', 'tailscale', 'duckdns', 'github', 'gitlab', 'bitbucket', 'backblaze',
+    'digitalocean', 'hetzner', 'vultr', 'linode', 'ovh', 'contabo', 'registro', 'healthchecks', 'grafana', 'npmjs',
+    'docker', 'vercel', 'netlify', 'heroku', 'render', 'supabase', 'sentry', 'datadog', 'namecheap', 'godaddy',
+    'porkbun'],
+  ia: ['openrouter', 'opencode', 'claude', 'anthropic', 'openai', 'chatgpt', 'nousresearch', 'perplexity',
+    'mistral', 'groq', 'huggingface', 'deepseek'],
+};
+// Regras pelo dominio inteiro, antes das de cima.
+const POR_DOMINIO = [
+  ['homelab', (d) => d === 'localhost' || d.includes(':') || /^\d{1,3}(\.\d{1,3}){3}$/.test(d) ||
+    /\.(local|lan|internal|localhost|ts\.net)$/.test(d) || /(^|\.)htrlab\.(duckdns|eu)\.org$/.test(d)],
+  ['trabalho', (d) => /(^|\.)(agro-e\.com\.br|aws\.amazon\.com|amazonaws\.com|awsapps\.com|salesforce\.com)$/.test(d) ||
+    d.includes('agromercantil')],
+  ['microsoft', (d) => /(^|\.)(microsoft|microsoftonline|live|office|office365|sharepoint|onedrive|skype|azure|azureedge|officeapps|msn|bing)\.(com|net)$/.test(d) ||
+    /\.microsoft$/.test(d)],
+  ['gov.br', (d) => /(^|\.)gov\.br$/.test(d)],
+  ['infraestrutura', (d) => /(^|\.)eu\.org$/.test(d)],
+  ['pagamentos', (d) => d.includes('pluggy')],
+];
+const SEGUNDO_NIVEL = new Set(['com', 'net', 'org', 'gov', 'edu', 'co', 'ac', 'mil', 'art', 'blog', 'adv', 'eng',
+  'med', 'ind', 'inf', 'nom', 'tv']);
+// So para a simulacao: dominios que ficam e merecem um olhar.
+const SUSPEITOS = /pay|invest|cripto|crypto|coin|wallet|card|cartao|cred|financ|seguro|tesouro|corretora|bolsa|cambio|pix|cash|bank|banc/;
+const COMPRAS = ['amazon', 'shopee', 'aliexpress', 'magazineluiza', 'magalu', 'americanas', 'ifood', 'uber',
+  'rappi', 'shein', 'kabum', 'casasbahia', 'submarino', 'netshoes', 'temu', 'ebay', 'carrefour', 'drogasil',
+  'drogaraia', '99app', 'olx', 'centauro'];
+
+// Abre o Chromium do bot (headless se estiver fechado) e devolve a porta do DevTools.
+const REMOTO_ABRIR = String.raw`
+set -eu
+umask 077
+bot=$1
+if [ "$bot" = default ]; then h="$HOME/.hermes"; else h="$HOME/.hermes/profiles/$bot"; fi
+[ -f "$h/config.yaml" ] || { echo "o bot $bot nao existe em $h" >&2; exit 2; }
+d="$h/bot-desktop/browser-profile"
+mkdir -p "$d"
+if pgrep -u "$(id -u)" -f -- "--user-data-dir=$d( |\$)" > /dev/null; then
+  lancado=0
+else
+  rm -f "$d/DevToolsActivePort"
+  setsid nohup /run/current-system/sw/bin/chromium --headless=new --password-store=basic \
+    --user-data-dir="$d" --remote-debugging-port=0 --no-first-run --no-default-browser-check \
+    about:blank > "$h/bot-desktop/sessoes-headless.log" 2>&1 < /dev/null &
+  lancado=1
+fi
+for _ in $(seq 1 40); do [ -s "$d/DevToolsActivePort" ] && break; sleep 0.5; done
+[ -s "$d/DevToolsActivePort" ] || { echo "o Chromium do $bot nao abriu o DevTools" >&2; exit 3; }
+echo "PORTA=$(head -1 "$d/DevToolsActivePort") LANCADO=$lancado"
+`;
+
+// Espera o headless aberto pelo REMOTO_ABRIR sair. Nunca toca no Chromium visivel do bot.
+const REMOTO_FECHAR = String.raw`
+set -u
+bot=$1
+if [ "$bot" = default ]; then h="$HOME/.hermes"; else h="$HOME/.hermes/profiles/$bot"; fi
+p="--headless=new.*--user-data-dir=$h/bot-desktop/browser-profile( |\$)"
+for _ in $(seq 1 20); do pgrep -u "$(id -u)" -f -- "$p" > /dev/null || exit 0; sleep 0.5; done
+pkill -TERM -u "$(id -u)" -f -- "$p"
+for _ in $(seq 1 20); do pgrep -u "$(id -u)" -f -- "$p" > /dev/null || exit 0; sleep 0.5; done
+echo "o Chromium headless do $bot nao fechou" >&2
+exit 1
+`;
+
+function base(dominio) {
+  const partes = dominio.replace(/^\./, '').toLowerCase().split('.');
+  if (partes.length <= 2) return partes.join('.');
+  const ultimo = partes[partes.length - 1];
+  const penultimo = partes[partes.length - 2];
+  return partes.slice(ultimo.length === 2 && SEGUNDO_NIVEL.has(penultimo) ? -3 : -2).join('.');
+}
+
+function categoria(dominio) {
+  const d = dominio.replace(/^\./, '').toLowerCase();
+  for (const [nome, regra] of POR_DOMINIO) if (regra(d)) return nome;
+  const rotulo = base(d).split('.')[0];
+  for (const [nome, lista] of Object.entries(ROTULOS)) if (lista.includes(rotulo)) return nome;
+  if (/banco|bank/.test(rotulo)) return 'bancos';
+  return null;
+}
+
+function argumentos(lista) {
+  const op = { simular: false, bots: BOTS, substituir: [] };
+  for (let i = 0; i < lista.length; i++) {
+    const a = lista[i];
+    if (a === '--simular') op.simular = true;
+    else if (a === '--bots') op.bots = (lista[++i] || '').split(',').filter(Boolean);
+    else if (a === '--substituir') op.substituir = (lista[++i] || '').split(',').filter(Boolean).map(base);
+    else if (a === '-h' || a === '--help') { console.log('uso: hermes-sessoes-bots [--simular] [--bots a,b] [--substituir dominio,...]'); process.exit(0); }
+    else throw new Error(`argumento desconhecido: ${a}`);
+  }
+  const estranhos = op.bots.filter((b) => !BOTS.includes(b));
+  if (estranhos.length || !op.bots.length) throw new Error(`bots validos: ${BOTS.join(', ')}`);
+  return op;
+}
+
+async function conectar(urlWs) {
+  const ws = new WebSocket(urlWs);
+  await new Promise((ok, falha) => {
+    ws.onopen = ok;
+    ws.onerror = () => falha(new Error(`websocket recusado em ${new URL(urlWs).host}`));
+  });
+  let seq = 0;
+  const pendentes = new Map();
+  ws.onmessage = (m) => {
+    const d = JSON.parse(m.data);
+    const p = pendentes.get(d.id);
+    if (!p) return;
+    pendentes.delete(d.id);
+    if (d.error) p.falha(new Error(`${d.error.message}${d.error.data ? ` (${d.error.data})` : ''}`));
+    else p.ok(d.result);
+  };
+  ws.onclose = () => {
+    for (const p of pendentes.values()) p.falha(new Error('o CDP fechou a conexao'));
+    pendentes.clear();
+  };
+  const chamar = (metodo, params = {}, ms = 30000) => new Promise((ok, falha) => {
+    const id = ++seq;
+    const timer = setTimeout(() => { pendentes.delete(id); falha(new Error(`${metodo}: sem resposta em ${ms / 1000} s`)); }, ms);
+    pendentes.set(id, { ok: (r) => { clearTimeout(timer); ok(r); }, falha: (e) => { clearTimeout(timer); falha(e); } });
+    ws.send(JSON.stringify({ id, method: metodo, params }));
+  });
+  return { chamar, fechar: () => ws.close() };
+}
+
+async function urlDoNavegador(baseHttp, ms) {
+  const fim = Date.now() + ms;
+  let erro;
+  while (Date.now() < fim) {
+    try {
+      const r = await fetch(`${baseHttp}/json/version`, { signal: AbortSignal.timeout(3000) });
+      const v = await r.json();
+      return `ws://${new URL(baseHttp).host}${new URL(v.webSocketDebuggerUrl).pathname}`;
+    } catch (e) {
+      erro = e;
+      await new Promise((ok) => setTimeout(ok, 300));
+    }
+  }
+  throw new Error(`DevTools sem resposta em ${baseHttp}: ${erro && erro.message}`);
+}
+
+function ssh(script, args) {
+  return new Promise((ok, falha) => {
+    const p = spawn('ssh', ['-o', 'BatchMode=yes', HOST, 'bash', '-s', '--', ...args], { stdio: ['pipe', 'pipe', 'pipe'] });
+    let saida = '';
+    let erro = '';
+    p.stdout.on('data', (b) => { saida += b; });
+    p.stderr.on('data', (b) => { erro += b; });
+    p.on('error', falha);
+    p.on('close', (codigo) => (codigo === 0 ? ok(saida) : falha(new Error(erro.trim() || `ssh saiu com ${codigo}`))));
+    p.stdin.end(script);
+  });
+}
+
+function portaLivre() {
+  return new Promise((ok, falha) => {
+    const s = net.createServer();
+    s.on('error', falha);
+    s.listen(0, '127.0.0.1', () => {
+      const { port } = s.address();
+      s.close(() => ok(port));
+    });
+  });
+}
+
+function param(c) {
+  const p = { name: c.name, value: c.value, path: c.path, secure: c.secure, httpOnly: c.httpOnly };
+  if (c.domain.startsWith('.')) {
+    p.domain = c.domain;
+  } else {
+    // Cookie so do host (inclusive __Host-): vai por url, para nao virar cookie de dominio.
+    const padrao = c.secure ? 443 : 80;
+    const porta = Number.isInteger(c.sourcePort) && c.sourcePort > 0 && c.sourcePort !== padrao ? `:${c.sourcePort}` : '';
+    p.url = `${c.secure ? 'https' : 'http'}://${c.domain}${porta}${c.path || '/'}`;
+  }
+  if (c.sameSite) p.sameSite = c.sameSite;
+  if (!c.session && c.expires > 0) p.expires = c.expires;
+  if (c.priority) p.priority = c.priority;
+  if (c.sourceScheme) p.sourceScheme = c.sourceScheme;
+  if (Number.isInteger(c.sourcePort) && c.sourcePort > 0) p.sourcePort = c.sourcePort;
+  if (c.partitionKey) p.partitionKey = c.partitionKey;
+  return p;
+}
+
+async function gravar(cdp, cookies) {
+  let ok = 0;
+  const falhas = [];
+  for (let i = 0; i < cookies.length; i += LOTE) {
+    const lote = cookies.slice(i, i + LOTE);
+    try {
+      await cdp.chamar('Storage.setCookies', { cookies: lote.map(param) });
+      ok += lote.length;
+    } catch {
+      // Um cookie invalido derruba o lote inteiro: refaz um a um para isolar.
+      for (const c of lote) {
+        try {
+          await cdp.chamar('Storage.setCookies', { cookies: [param(c)] });
+          ok++;
+        } catch (e) {
+          falhas.push(`${c.domain} ${c.name}: ${e.message}`);
+        }
+      }
+    }
+  }
+  return { ok, falhas };
+}
+
+const chave = (c) => `${c.domain}\t${c.path}\t${c.name}\t${c.partitionKey ? JSON.stringify(c.partitionKey) : ''}`;
+
+async function copiarParaBot(bot, cookies, substituir) {
+  const preparo = await ssh(REMOTO_ABRIR, [bot]);
+  const m = /PORTA=(\d+) LANCADO=([01])/.exec(preparo);
+  if (!m) throw new Error(`resposta inesperada da racknerd: ${preparo.trim()}`);
+  const [, portaRemota, lancadoTxt] = m;
+  const lancado = lancadoTxt === '1';
+  const portaLocal = await portaLivre();
+  const tunel = spawn('ssh', ['-o', 'BatchMode=yes', '-o', 'ExitOnForwardFailure=yes', '-N', '-L',
+    `127.0.0.1:${portaLocal}:127.0.0.1:${portaRemota}`, HOST], { stdio: 'ignore' });
+  try {
+    const cdp = await conectar(await urlDoNavegador(`http://127.0.0.1:${portaLocal}`, 15000));
+    try {
+      const { cookies: antes } = await cdp.chamar('Storage.getCookies');
+      const doBot = new Set(antes.map((c) => base(c.domain)));
+      const trocar = new Set(substituir);
+      const apagar = antes.filter((c) => trocar.has(base(c.domain)));
+      if (apagar.length) await gravar(cdp, apagar.map((c) => ({ ...c, value: '', session: false, expires: 1 })));
+      const mantidos = new Set();
+      const enviar = cookies.filter((c) => {
+        const b = base(c.domain);
+        if (doBot.has(b) && !trocar.has(b)) { mantidos.add(b); return false; }
+        return true;
+      });
+      const { falhas } = await gravar(cdp, enviar);
+      const { cookies: depois } = await cdp.chamar('Storage.getCookies');
+      const presentes = new Set(depois.map(chave));
+      const confirmados = enviar.filter((c) => presentes.has(chave(c))).length;
+      const dominios = new Set(enviar.map((c) => base(c.domain))).size;
+      let linha = `${bot}: ${confirmados} de ${enviar.length} cookies gravados, em ${dominios} dominios`;
+      if (mantidos.size) linha += `. Mantidos do bot: ${[...mantidos].sort().join(', ')}`;
+      if (falhas.length) linha += `. ${falhas.length} falharam`;
+      console.log(linha);
+      for (const f of falhas.slice(0, 10)) console.log(`  falhou: ${f}`);
+      if (lancado) await cdp.chamar('Browser.close', {}, 10000).catch(() => {});
+    } finally {
+      cdp.fechar();
+    }
+  } finally {
+    tunel.kill();
+  }
+  if (lancado) await ssh(REMOTO_FECHAR, [bot]);
+}
+
+async function main() {
+  const op = argumentos(process.argv.slice(2));
+  let fonte;
+  try {
+    const cdp = await conectar(await urlDoNavegador(CDP_NOTEBOOK, 3000));
+    try { ({ cookies: fonte } = await cdp.chamar('Storage.getCookies')); } finally { cdp.fechar(); }
+  } catch (e) {
+    throw new Error(`Chrome do notebook sem CDP em ${CDP_NOTEBOOK}. Abra o Chrome, que liga a porta pelo chrome-flags.conf. (${e.message})`);
+  }
+  const fora = {};
+  const copiar = [];
+  for (const c of fonte) {
+    const cat = categoria(c.domain);
+    if (cat) (fora[cat] ??= []).push(c);
+    else copiar.push(c);
+  }
+  const bases = (lista) => [...new Set(lista.map((c) => base(c.domain)))].sort();
+  console.log(`Chrome do notebook: ${fonte.length} cookies em ${bases(fonte).length} dominios.`);
+  for (const [cat, lista] of Object.entries(fora)) {
+    const doms = bases(lista);
+    console.log(`Fora (${cat}): ${lista.length} cookies em ${doms.length} dominios${op.simular ? `: ${doms.join(', ')}` : ''}.`);
+  }
+  console.log(`A copiar: ${copiar.length} cookies em ${bases(copiar).length} dominios.`);
+  if (op.simular) {
+    const ficam = bases(copiar);
+    console.log(`Ficam, mas parecem financeiros: ${ficam.filter((d) => SUSPEITOS.test(d.split('.')[0])).join(', ') || 'nenhum'}.`);
+    console.log(`Ficam, com conta de compra: ${ficam.filter((d) => COMPRAS.includes(d.split('.')[0])).join(', ') || 'nenhum'}.`);
+    return;
+  }
+  let erros = 0;
+  for (const bot of op.bots) {
+    try {
+      await copiarParaBot(bot, copiar, op.substituir);
+    } catch (e) {
+      erros++;
+      console.log(`${bot}: falhou: ${e.message}`);
+    }
+  }
+  process.exitCode = erros ? 1 : 0;
+}
+
+main().catch((e) => {
+  console.error(`hermes-sessoes-bots: ${e.message}`);
+  process.exit(1);
+});

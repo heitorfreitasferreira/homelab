@@ -12,6 +12,15 @@ trabalho. A racknerd recebe `~/.hermes/linkedin/latest.md` e `~/.hermes/vagas/`.
   `eventually`, o `ESTADO.md` dos posts, o curriculo base, a triagem de vagas e
   uma busca de vagas. Monta um pacote e envia para a racknerd. Timer diario as
   18:20.
+- `hermes-sessoes-bots`: copia as sessoes (cookies) do Chrome do notebook para
+  o Chromium dos cinco bots na racknerd, por CDP e por um tunel SSH, sem fechar
+  o Chrome. Ficam de fora bancos, pagamentos, investimentos, cripto, gov.br,
+  gerenciadores de senha, conta Google, Microsoft, trabalho, paineis de
+  infraestrutura, contas de IA e os servicos do homelab. `--simular` mostra o
+  que iria, `--bots a,b` limita os bots e `--substituir dominio` troca a sessao
+  do bot pela do notebook naquele dominio. Roda quando o Heitor loga em algo
+  novo. Com o navegador do bot fechado, abre um Chromium headless no perfil
+  dele e fecha no fim, o que grava os cookies em disco.
 - `hermes-linkedin-pull`: traz os rascunhos gerados pelo Hermes de
   `~/.hermes/linkedin/drafts` para
   `~/agromercantil/linkedin-posts/hermes-drafts`. Timer diario as 18:50.
