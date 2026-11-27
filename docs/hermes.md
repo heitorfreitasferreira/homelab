@@ -1,11 +1,14 @@
 # Hermes e Anytype na racknerd
 
-Assistente pessoal do homelab. Roda na VPS, so pela tailnet e pelo Telegram.
+Assistente pessoal do homelab. Roda na VPS, so pela tailnet. A conversa e com o
+Geoffrey, na Bot Chat do Webapp. O Telegram so recebe aviso urgente.
 
 ## O que roda
 
 - `hermes-gateway.service` (systemd de sistema, usuario `htr`): Hermes Agent
   v0.23.2, modelo `opencode-go/deepseek-v4.1-flash`, cwd `/home/htr/homelab`.
+  Um gateway so atende os 5 bots (`gateway.multiplex_profiles: true`).
+  `MemoryHigh=2560M` e `MemoryMax=3G`, por causa do Bot Screen.
 - `hermes-dashboard.service` (systemd de sistema, usuario `htr`): dashboard web
   em `127.0.0.1:9119`, publicado pelo Tailscale serve em `:8443`.
 - `anytype.service` (systemd de usuario de `htr`, linger ligado): anytype-cli
@@ -24,6 +27,9 @@ Assistente pessoal do homelab. Roda na VPS, so pela tailnet e pelo Telegram.
 
 ## Telegram
 
+- Canal de aviso urgente, sem conversa. O Geoffrey e o Ops mandam aviso com
+  `python3 ~/.hermes/scripts/avisar.py "texto"`, que le o token do `.env`. As
+  rotinas do Geoffrey (manha, fechamento, revisao e lembretes) tambem saem aqui.
 - Reutiliza o bot `@personal_geoffrey_bot` (id 9080173042) do Alertmanager e do
   Home Assistant.
 - O token esta em `~/.hermes/.env` (`TELEGRAM_BOT_TOKEN`) e em
@@ -63,6 +69,52 @@ Assistente pessoal do homelab. Roda na VPS, so pela tailnet e pelo Telegram.
   gateway.
 - O app `ai.sol.hermes` da Play Store nao e da Nous. O app oficial e o Hermes
   Mobile, em beta fechado.
+
+## Bots
+
+O Heitor conversa so com o Geoffrey, na Bot Chat dele (Webapp, aba BOTS). O
+Geoffrey resolve o que e dele e repassa o resto com `message_agent`. Cada bot e
+um perfil do Hermes, com SOUL, memoria, skills, MCPs e crons proprios.
+
+| Bot (perfil) | Cuida de | Skills | MCPs | cwd |
+|---|---|---|---|---|
+| Geoffrey (`default`) | organizacao, agenda, Anytype, e-mail pessoal, diario, lembretes, livros | `anytype-api`, `google-workspace`, `multi-mail`, `email-inbox-triage`, `hotmail-graph`, `weekly-review-planning`, `livros`, `pdf` | `anytype` | `~/homelab` |
+| Carreira (`carreira`) | vagas, CV, candidaturas, LinkedIn, recrutadores | `vagas`, `linkedin-posts`, `hotmail-graph`, `email-inbox-triage`, `multi-mail`, `pdf`, `blocked-page-recovery` | nenhum | `~/.hermes/vagas` |
+| Financas (`financas`) | Securo, orcamento, financiamento e obra, FGTS, holerite, 13o, ponto | `securo-finance`, `ponto-jornada`, `pdf` | `securo` | `~/.hermes` |
+| Casa (`casa`) | Home Assistant: robo, ar, chuva, TV, solar, usuarios da familia | `home-assistant-ops` | `home-assistant` | `~` |
+| Ops (`ops`) | NixOS e comin, alertas, Grafana, Tailscale, Pi-hole, Nextcloud, OpenCode, o proprio Hermes | `homelab-ops`, `hermes-agent`, `peer-agent-briefs`, `github` | `grafana`, `tailscale`, `pihole` | `~/homelab` |
+
+- Perfis em `~/.hermes/profiles/<nome>/`. Titulo e descricao no `profile.yaml`
+  (`ui_meta.hermes-bots.title`). Esse bloco liga o Bot Mode e o `message_agent`.
+- Pedido repassado pelo Geoffrey nao roda comando que precise de aprovacao. O
+  Heitor aprova abrindo o chat do especialista.
+- Cada bot tem so as chaves do proprio dominio no `.env`.
+- Crons: as rotinas do Geoffrey entregam em `telegram,bot-chat`. Os jobs de
+  agente dos especialistas entregam em `bot-chat:default`: o Geoffrey le, decide
+  o que vira aviso no Telegram e responde `[SILENT]` no resto. Os jobs so de
+  script (robo, chuva, varredura do Securo, obra, vigia do LinkedIn no Hotmail)
+  ficam no perfil `default`, onde estao os scripts, e entregam na Bot Chat do
+  Geoffrey. A chuva roda so das 07:00 as 22:30.
+- O Ops delega trabalho pesado com
+  `python3 ~/.hermes/scripts/opencode-delegar.py --titulo "..." @briefing.md`:
+  tenta o OpenCode do notebook (`100.90.131.64:49375`) e, sem resposta em 4 s,
+  abre no da racknerd (`127.0.0.1:49374`), sempre no agente `plan`. A senha do
+  notebook fica em `~/.config/hermes-secrets/opencode-notebook.password`.
+
+## Alertas
+
+- O Alertmanager manda tudo para `http://127.0.0.1:8644/p/ops/webhooks/alertas`
+  (webhook do Hermes, so em loopback), com o token `alertmanager_hermes_webhook`
+  do sops no header `X-Gitlab-Token`. Token errado volta 404.
+- A rota roda `alert-backoff.py` antes de qualquer LLM: descarta duplicata e
+  reavisa alerta repetido so depois de 1 h, 2 h, 4 h, 8 h e 16 h, com teto de
+  24 h. O resolvido passa uma vez. Estado em
+  `~/.hermes/profiles/ops/alertas-estado.json`.
+- O que passa dispara o cron `[bot:ops] Triagem de alertas`, que explica causa e
+  proximo passo, descarta o que nao pede acao, propoe mudanca de regra como diff
+  e entrega ao Geoffrey.
+- `NotificacaoFalhou` (entrega ao Hermes falhou) vai direto ao Telegram. O
+  `Watchdog` continua indo para o Healthchecks.
 
 ## Geoffrey
 
@@ -128,9 +180,11 @@ Assistente pessoal do homelab. Roda na VPS, so pela tailnet e pelo Telegram.
   Controle de dispositivos fica fora do Hermes.
 - O Anytype pode criar e editar objetos, mas `API-delete-*` e
   `API-batch-delete-*` estao bloqueados.
-- Browser e TTS ligados. O TTS usa Edge TTS. O browser fala CDP com o Chrome do
-  notebook, o mesmo em que o Heitor esta logado: veja "Browser do Hermes" abaixo.
-  O STT continua fora ate virar container no PC.
+- Browser e TTS ligados. O TTS usa Edge TTS. O browser e o interno do Hermes, no
+  Bot Screen: veja "Browser do Hermes" abaixo. O STT continua fora ate virar
+  container no PC.
+- `command_allowlist` sem `reverse shell via /dev/tcp` e sem `git reset --hard`
+  (tirados em 27/11). Os padroes do k3s sairam do `approvals.deny`.
 - Rotina de cluster pelo `/usr/local/sbin/hermes-ops`: `status`, `sync`, `logs`,
   `restart` e `revert`. O runbook esta em `docs/operacao.md`. Os comandos crus
   (`sudo`, `ssh`, `tailscale`) continuam negados. `git add`, `git commit` e
@@ -215,9 +269,14 @@ hermes doctor
 - Atualizar Hermes: `hermes update` e `sudo systemctl restart hermes-gateway`.
 - Reinicio diario as 04:30 pelo `hermes-gateway-restart.timer`, porque os MCPs
   stdio (`lazy`, `idle_timeout_seconds: 600`) somem do indice de ferramentas com
-  o gateway rodando ha muito tempo. O mesmo servico serve para o Hermes se
-  reiniciar: `sudo systemctl start --no-block hermes-gateway-restart.service`.
-  Units em `nixos/hosts/racknerd/agents.nix`.
+  o gateway rodando ha muito tempo.
+- O proprio Hermes pede reinicio sem sudo: `date > ~/.hermes/reiniciar.pedido`.
+  A unidade `hermes-gateway-restart.path` ve o arquivo e roda o servico, que
+  espera 20 s e reinicia, no maximo 3 vezes a cada 15 min. Units em
+  `nixos/hosts/racknerd/agents.nix`.
+- O `hermes gateway status` avisa que a unit esta desatualizada: e esperado,
+  porque ela e do NixOS. Nunca rode `hermes gateway restart --system` nem
+  `hermes gateway install`.
 - Dashboard: `sudo systemctl status hermes-dashboard` e
   `sudo journalctl -u hermes-dashboard -f`.
 - Atualizar Anytype: `anytype update` e `systemctl --user restart anytype`.
@@ -227,30 +286,28 @@ hermes doctor
 
 ## Browser do Hermes
 
-O Hermes dirige o Chrome **do notebook**, com o perfil real do Heitor. Assim ele
-navega e preenche formulario com as sessoes que ja existem, e o Heitor resolve o
-CAPTCHA na propria janela.
+Desde 27/11 o Hermes usa o navegador interno, sem depender do notebook. Cada bot
+tem uma tela virtual (Bot Screen: TigerVNC, Xfce e Chromium visivel na racknerd)
+com perfil de navegador proprio. O Heitor ve e assume a tela pelo Webapp: aba
+BOTS, o bot, Screen, Take over. Assim ele faz login, 2FA e captcha e devolve com
+Hand back.
 
-- No notebook, `~/.config/chrome-flags.conf` com duas linhas:
-  `--user-data-dir=/home/heitor/.config/google-chrome-cdp` e
-  `--remote-debugging-port=9222`. O perfil e uma copia do perfil real, feita com
-  o Chrome fechado, porque o Chrome 136+ recusa a porta de depuracao no perfil
-  padrao ("DevTools remote debugging requires a non-default data directory").
-  O Chrome so escuta em `127.0.0.1`, entao precisa nascer com as duas flags.
-- Publicacao na tailnet: `sudo tailscale serve --bg --tcp 9222
-  tcp://127.0.0.1:9222`. Sem isso o racknerd nao alcanca a porta. Fica so na
-  tailnet, nunca na LAN.
-- No Hermes: `browser.cdp_url: http://100.90.131.64:9222` e
-  `use_real_profile: true`.
-- Teste rapido, do racknerd: `curl http://100.90.131.64:9222/json/version`.
-- Se o Chrome do notebook nao estiver aberto, as ferramentas de browser falham.
-  Fechar e reabrir o Chrome desfaz a flag ate ele subir de novo.
-- O Chrome aceita um depurador por aba: a extensao do OpenCode e o Hermes nao
-  devem usar a mesma aba ao mesmo tempo.
+- Pacotes no `agents.nix` (tigervnc, xfwm4, xfce4-panel, xfdesktop,
+  xfce4-settings, xauth, xdpyinfo, setxkbmap, xprop, dejavu_fonts, chromium).
+- Config: `browser.headed: true`, `browser.cdp_url: ''`,
+  `browser.use_real_profile: false`, `bot_desktop.auto_start: true`. A tela sobe
+  quando um agente precisa e para depois de 30 min sem uso
+  (`bot_desktop.idle_stop_minutes`). Ela se recusa a subir com menos de 1536 MB
+  livres (`bot_desktop.min_free_memory_mb`).
+- Comandos: `hermes -p <bot> computer-use screen status|start|stop`.
+- As sessoes de site (LinkedIn, Jobscan e outros) ficam no perfil de navegador de
+  cada bot. O login e feito uma vez pelo Take over, na tela do bot que usa o site.
+- O CDP do Chrome do notebook (`tailscale serve --tcp 9222` no notebook) ficou sem
+  uso. Pode ser desligado.
 - O STT (Speaches) era `apps/hermes-whisper`, removido na virada e ainda sem
   substituto: `stt.provider: openai`, `stt.openai.base_url`,
   `stt.openai.model` seguem apontando para o pod que nao existe.
-- Config no `~/.hermes/config.yaml`: `browser.cdp_url`, `stt.provider: openai`,
+- Config de voz no `~/.hermes/config.yaml`: `stt.provider: openai`,
   `stt.openai.base_url`, `stt.openai.model`, `tts.provider: edge` e
   `tts.edge.voice: pt-BR-FranciscaNeural`.
 
@@ -259,6 +316,8 @@ CAPTCHA na propria janela.
 - Gateway: cerca de 150 MB em regime, com pico de 600 MB ao carregar os MCPs.
 - Dashboard: cerca de 320 MB.
 - Anytype: cerca de 30 MB.
+- Bot Screen: Xvnc e Xfce em torno de 180 MB parados, mais 0,5 a 1 GB com o
+  Chromium aberto numa pagina.
 - Sem o dashboard, a VPS ficava com cerca de 700 a 800 MB disponiveis. Com ele,
   fica com cerca de 400 a 500 MB e 8 GB de swap. O dashboard mostra um aviso de
   memoria elevada nesse estado. Os MCPs stdio usam `lazy` e

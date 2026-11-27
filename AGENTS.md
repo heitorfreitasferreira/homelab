@@ -75,10 +75,12 @@ Este repositorio declara o homelab pessoal. A fonte de verdade das escolhas e
 
 ## Geoffrey e o space de organizacao
 
-O assistente se chama Geoffrey. O Telegram e o `@personal_geoffrey_bot`. O
-schema, as colecoes, as areas, o fluxo e as rotinas estao em
-`docs/geoffrey.md`. Use o MCP `anytype`, nunca escreva segredo no Anytype e nao
-use os spaces `7bef7m` nem `723ija`.
+O assistente se chama Geoffrey. Ele e o mordomo: o Heitor conversa so com ele, na
+Bot Chat do Webapp, e ele repassa o resto aos bots Carreira, Financas, Casa e Ops
+(`message_agent`). O Telegram (`@personal_geoffrey_bot`) so recebe aviso urgente.
+Os bots estao em `docs/hermes.md`, secao Bots. O schema, as colecoes, as areas, o
+fluxo e as rotinas do Anytype estao em `docs/geoffrey.md`. Use o MCP `anytype`,
+nunca escreva segredo no Anytype e nao use os spaces `7bef7m` nem `723ija`.
 
 ## Servicos
 
@@ -91,7 +93,9 @@ use os spaces `7bef7m` nem `723ija`.
   `http://192.168.100.207:8123`.
 - Pi-hole com `hostNetwork` e DNS preso em `tailscale0`, web em `:8053`.
   E o DNS global da tailnet.
-- Monitoring: VictoriaMetrics, vmalert, Alertmanager no Telegram e Grafana.
+- Monitoring: VictoriaMetrics, vmalert, Alertmanager e Grafana. Os alertas vao
+  para o Ops do Hermes, que filtra e passa ao Geoffrey (`docs/hermes.md`, secao
+  Alertas).
 - Pagina inicial (Glance) em `home.tail76c1c6.ts.net`.
 - Grafana em `grafana.tail76c1c6.ts.net`, metricas em
   `metricas.tail76c1c6.ts.net`.
@@ -100,8 +104,9 @@ use os spaces `7bef7m` nem `723ija`.
   `racknerd.tail76c1c6.ts.net:9443`.
 - Backup: wal-g (WAL e base diaria do Postgres) e restic diario, os dois no R2
   em `htr-backups`.
-- Browser do Hermes: CDP no Chrome do notebook (`100.90.131.64:9222`, servido por `tailscale serve --tcp 9222`).
-  Perfil real do Heitor, que resolve o CAPTCHA na propria janela. STT ainda sem substituto.
+- Browser do Hermes: o interno, no Bot Screen de cada bot (Chromium visivel na
+  racknerd). O Heitor assume a tela pelo Webapp para login, 2FA e captcha. STT
+  ainda sem substituto.
 - Vagas: `vagas-buscar` e skill `vagas`, runbook em `docs/vagas.md`. Preparar e
   abrir o formulario e o padrao. Nunca envie candidatura sem confirmacao.
 - Email: use `hermes-mail` (`accounts`, `list`, `search`, `read`, `send`).
@@ -122,7 +127,7 @@ use os spaces `7bef7m` nem `723ija`.
 - Antes de reiniciar algo, avise e espere aprovacao.
 - O gateway do Hermes reinicia todo dia as 04:30 pelo
   `hermes-gateway-restart.timer`. Se os MCPs sumirem do indice de ferramentas,
-  o Hermes pode se reiniciar sozinho, sem pedir: avise no Telegram e rode
-  `sudo systemctl start --no-block hermes-gateway-restart.service`. O servico
+  o Hermes pode se reiniciar sozinho, sem pedir e sem sudo: avise e rode
+  `date > ~/.hermes/reiniciar.pedido`. A unidade `.path` dispara o servico, que
   espera 20 s e reinicia o gateway por fora, entao a resposta sai antes da
-  queda. O gateway volta em cerca de 1 min.
+  queda. O gateway volta em cerca de 1 min. No maximo 3 vezes a cada 15 min.
