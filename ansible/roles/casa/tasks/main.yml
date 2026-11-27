@@ -99,20 +99,65 @@
     mode: "0644"
     validate: nft -c -f %s
   notify: Reload nftables
+  tags: [firewall, proxy]
 
 - name: nftables enabled
   ansible.builtin.service:
     name: nftables
     state: started
     enabled: true
+  tags: [firewall, proxy]
 
 - name: Apply firewall now
   ansible.builtin.meta: flush_handlers
+  tags: [firewall, proxy]
 
 - name: Tailscale as subnet router for the LAN (no Tailscale SSH, local DNS untouched)
   ansible.builtin.command: >-
     tailscale set --advertise-routes={{ casa_lan_cidr }} --ssh=false --accept-dns=false
   changed_when: false
+
+# --- Proxy SOCKS do navegador dos bots: o trafego sai pelo IP de casa ----------------------
+- name: microsocks installed
+  ansible.builtin.apt:
+    name: microsocks
+    state: present
+    update_cache: true
+    cache_valid_time: 3600
+  tags: [proxy]
+
+- name: microsocks unit (so na tailnet, so o racknerd alcanca pelo nftables)
+  ansible.builtin.copy:
+    dest: /etc/systemd/system/microsocks.service
+    mode: "0644"
+    content: |
+      [Unit]
+      Description=Proxy SOCKS do navegador dos bots do Hermes
+      After=network-online.target tailscaled.service
+      Wants=network-online.target
+
+      [Service]
+      # Escuta so no IP da tailnet: fora dela nao ha o que alcancar.
+      ExecStart=/usr/bin/microsocks -i {{ casa_proxy_ip }} -p {{ casa_proxy_port }}
+      DynamicUser=yes
+      NoNewPrivileges=yes
+      ProtectSystem=strict
+      ProtectHome=yes
+      PrivateTmp=yes
+      Restart=always
+      RestartSec=5
+
+      [Install]
+      WantedBy=multi-user.target
+  tags: [proxy]
+
+- name: microsocks running
+  ansible.builtin.systemd_service:
+    name: microsocks.service
+    state: started
+    enabled: true
+    daemon_reload: true
+  tags: [proxy]
 
 # --- Servidor: tampa fechada, sem suspender, watchdog, disco, temperatura ------------------
 - name: systemd drop-in directories

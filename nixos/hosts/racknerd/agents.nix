@@ -64,7 +64,27 @@ in
     xprop
     dejavu_fonts
     chromium
+    # Temas de icone do Bot Screen (o launcher procura em /usr/share/icons e ~/.icons).
+    papirus-icon-theme
+    adwaita-icon-theme
+    numix-icon-theme-circle
   ]);
+
+  # A NixOS nao tem /usr/share/icons: o link põe os temas onde o launcher do Bot Screen
+  # procura. Sem ele o dock e a area de trabalho ficam sem icone.
+  systemd.tmpfiles.rules = [
+    "L+ /home/htr/.icons - - - - /run/current-system/sw/share/icons"
+  ];
+
+  # O navegador dos bots sai pelo IP de casa (SOCKS do `casa`): o IP do racknerd e barrado
+  # no Cloudflare do Indeed, Glassdoor, Catho, Jooble e Vagas.com.br. A politica vale para
+  # o navegador do agente e para o icone Browser do dock, e o resto da VPS segue direto.
+  environment.etc."chromium/policies/managed/proxy-casa.json".text = builtins.toJSON {
+    ProxyMode = "fixed_servers";
+    ProxyServer = "socks5://100.112.62.47:1080";
+    # A VPS e a tailnet continuam diretas: so o que e internet sai pelo casa.
+    ProxyBypassRules = "localhost,127.0.0.1,::1,100.64.0.0/10,*.ts.net";
+  };
 
   systemd.services.hermes-gateway = {
     description = "Hermes Agent Gateway - Messaging Platform Integration";

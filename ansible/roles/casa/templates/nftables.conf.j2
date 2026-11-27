@@ -14,6 +14,9 @@ table inet casa {
 
     meta l4proto { icmp, ipv6-icmp } accept
 
+    # Proxy SOCKS do navegador dos bots: so o racknerd alcanca.
+    iifname "tailscale0" tcp dport {{ casa_proxy_port }} ip saddr != {{ casa_proxy_client }} drop
+
     # Tailscale: tudo que vem da tailnet (SSH, Home Assistant).
     iifname "tailscale0" accept
     udp dport 41641 accept

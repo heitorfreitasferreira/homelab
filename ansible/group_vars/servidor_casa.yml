@@ -23,6 +23,13 @@ casa_matterhub_http_port: 8482
 casa_matterhub_serve_port: 8443
 casa_matterhub_host: casa.tail76c1c6.ts.net
 
+# Proxy SOCKS do navegador dos bots do Hermes: o trafego sai pelo IP de casa, porque o
+# racknerd e barrado no Cloudflare do Indeed, Glassdoor, Catho, Jooble e Vagas.com.br.
+# Escuta so na tailnet e so o racknerd alcanca (DECISIONS.md, item 37).
+casa_proxy_ip: 100.112.62.47
+casa_proxy_port: 1080
+casa_proxy_client: 100.104.129.86
+
 # Satelite de voz (Linux Voice Assistant 1.1.18). Microfone e caixa USB/P2 no proprio `casa`.
 # O HA conecta pela ESPHome API em 127.0.0.1:6053.
 casa_lva_image: ghcr.io/ohf-voice/linux-voice-assistant@sha256:089f321a4e7408c61fbcd1ec691eb073961be022d651139f32b0dbead9b2af58
