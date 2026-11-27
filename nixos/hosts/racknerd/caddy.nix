@@ -1,4 +1,5 @@
 # Entradas publicas com HTTPS automatico (Let's Encrypt por HTTP-01), no lugar de Traefik + cert-manager.
+{ config, ... }:
 {
   services.caddy = {
     enable = true;
@@ -35,6 +36,28 @@
       "casa.htrlab.duckdns.org".extraConfig = ''
         reverse_proxy 100.112.62.47:8123
       '';
+      # WAHA so de leitura para o bot Hilbert: GET de conversas e mensagens, com a chave
+      # injetada aqui. O perfil dele nao tem a chave inteira, entao nao consegue enviar.
+      "http://127.0.0.1:3002".extraConfig = ''
+        @leitura {
+          method GET
+          path /api/heitor/chats*
+        }
+        handle @leitura {
+          reverse_proxy 127.0.0.1:3001 {
+            header_up X-Api-Key {env.WAHA_API_KEY}
+          }
+        }
+        handle {
+          respond "somente leitura" 403
+        }
+      '';
     };
   };
+
+  # A chave vai no ambiente do caddy, nunca no Store.
+  systemd.services.caddy.serviceConfig.EnvironmentFile = config.sops.templates."waha-readonly.env".path;
+  sops.templates."waha-readonly.env".content = ''
+    WAHA_API_KEY=${config.sops.placeholder."waha_api_key"}
+  '';
 }

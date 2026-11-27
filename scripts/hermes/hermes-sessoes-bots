@@ -25,7 +25,7 @@ const net = require('node:net');
 
 const HOST = 'htr@racknerd';
 const CDP_NOTEBOOK = 'http://127.0.0.1:9222';
-const BOTS = ['default', 'carreira', 'financas', 'casa', 'ops'];
+const BOTS = ['default', 'carreira', 'financas', 'casa', 'ops', 'hilbert'];
 const LOTE = 200;
 
 // Nome do dominio base (antes do sufixo publico) por categoria que fica de fora.
