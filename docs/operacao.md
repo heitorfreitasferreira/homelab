@@ -143,3 +143,11 @@ systemctl start restic-backups-r2.timer wal-g-backup.timer 'postgresqlBackup-*.t
   `-e ansible_host=casa.local` quando estiver na LAN de casa.
 - Home Assistant em `casa.htrlab.duckdns.org` e o interno em
   `http://192.168.100.207:8123`.
+- `go2rtc` (camera do fundo) nao esta no Ansible: o container Quadlet e o
+  `/var/lib/go2rtc/go2rtc.yaml` sao editar a mao no host. Em 27/11 o `preload`
+  do `fundo_sub` saiu, porque mantinha o ffmpeg convertendo HEVC para H.264 a
+  74% de CPU 24 h por dia. A camera agora so converte enquanto alguem abre o
+  painel, e a primeira imagem demora alguns segundos.
+- `microsocks` (pacote `proxy` do playbook) escuta em `100.112.62.47:1080`, so
+  na tailnet, e so o racknerd alcanca pelo nftables. E o proxy do navegador dos
+  bots do Hermes.

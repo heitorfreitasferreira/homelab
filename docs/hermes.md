@@ -308,6 +308,17 @@ Hand back.
   (`~/.hermes/tools/chromium-1248`) nao roda na NixOS: falta `libglib-2.0.so.0`.
   O icone Browser do dock abre o mesmo binario e o mesmo perfil do agente, e o
   `Exec` dele e reescrito quando a tela sobe.
+- O navegador sai pelo IP de casa. O IP do racknerd e barrado no Cloudflare do
+  Indeed, Glassdoor, Catho, Jooble e Vagas.com.br. Uma politica do Chromium
+  (`/etc/chromium/policies/managed/proxy-casa.json`, no `agents.nix`) manda tudo
+  para `socks5://100.112.62.47:1080`, o `microsocks` do casa, e deixa
+  `localhost`, `127.0.0.1`, `100.64.0.0/10` e `*.ts.net` diretos. Vale para o
+  navegador do agente e para o do dock. O resto da VPS segue no link proprio.
+- Temas de icone: `papirus-icon-theme`, `adwaita-icon-theme` e
+  `numix-icon-theme-circle` no `agents.nix`, com `~/.icons` apontando para
+  `/run/current-system/sw/share/icons`, porque o launcher do Bot Screen so
+  procura tema em `/usr/share/icons` e `~/.icons`. O tema escolhido e
+  Papirus-Dark.
 - Comandos: `hermes -p <bot> computer-use screen status|start|stop`.
 - As sessoes de site ficam no perfil de navegador de cada bot. `hermes-sessoes-bots`
   (no notebook, em `scripts/hermes/`) copia os cookies do Chrome do Heitor para
