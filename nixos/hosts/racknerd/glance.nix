@@ -26,6 +26,8 @@ let
     { title = "VictoriaMetrics"; url = "https://metricas.tail76c1c6.ts.net"; check-url = "http://127.0.0.1:8428/health"; icon = "di:victoriametrics"; }
     { title = "Matter Hub"; url = "https://casa.tail76c1c6.ts.net:8443/"; icon = "di:matter"; }
     { title = "Waha"; url = "https://waha.tail76c1c6.ts.net/dashboard"; alt-status-codes = [ 401 ]; icon = "https://cdn.jsdelivr.net/gh/devlikeapro/waha@master/logo.png"; }
+    { title = "Hermes Dashboard"; url = "https://racknerd.tail76c1c6.ts.net:8443/"; check-url = "http://127.0.0.1:9119/"; icon = "mdi:view-dashboard-variant"; }
+    { title = "Hermes Webapp"; url = "https://racknerd.tail76c1c6.ts.net:9443/"; check-url = "http://127.0.0.1:9120/"; icon = "mdi:robot-happy"; }
   ];
 
   # CPU, RAM e disco do casa no formato do widget de server-stats.
