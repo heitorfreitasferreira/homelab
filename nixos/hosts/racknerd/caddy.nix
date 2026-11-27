@@ -10,6 +10,7 @@
     '';
     virtualHosts = {
       "nuvem.htrlab.duckdns.org".extraConfig = ''
+        bind 23.254.208.229
         request_body {
           max_size 4GB
         }
@@ -18,12 +19,15 @@
         reverse_proxy 127.0.0.1:8081
       '';
       "audio.htrlab.duckdns.org".extraConfig = ''
+        bind 23.254.208.229
         reverse_proxy 127.0.0.1:13378
       '';
       "pedidos.htrlab.duckdns.org".extraConfig = ''
+        bind 23.254.208.229
         reverse_proxy 127.0.0.1:3030
       '';
       "securo.htrlab.duckdns.org".extraConfig = ''
+        bind 23.254.208.229
         @api path /api /api/*
         handle @api {
           reverse_proxy 127.0.0.1:8000
@@ -34,6 +38,7 @@
       '';
       # Home Assistant no casa, pela tailnet.
       "casa.htrlab.duckdns.org".extraConfig = ''
+        bind 23.254.208.229
         reverse_proxy 100.112.62.47:8123
       '';
       # WAHA so de leitura para o bot Hilbert: GET de conversas e mensagens, com a chave
