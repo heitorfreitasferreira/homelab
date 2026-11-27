@@ -1,7 +1,8 @@
 # Hermes e Anytype na racknerd
 
 Assistente pessoal do homelab. Roda na VPS, so pela tailnet. A conversa e com o
-Geoffrey, na Bot Chat do Webapp. O Telegram so recebe aviso urgente.
+Geoffrey, na Bot Chat do Webapp. O Telegram e o canal de aviso urgente e continua
+aceitando conversa.
 
 ## O que roda
 
@@ -27,7 +28,10 @@ Geoffrey, na Bot Chat do Webapp. O Telegram so recebe aviso urgente.
 
 ## Telegram
 
-- Canal de aviso urgente, sem conversa. O Geoffrey e o Ops mandam aviso com
+- Canal de aviso urgente. A entrada continua aberta, por escolha do Heitor em
+  27/11: o Geoffrey responde la, mas o `message_agent` so existe na Bot Chat,
+  entao no Telegram ele nao repassa aos especialistas.
+- O Geoffrey e o Ops mandam aviso com
   `python3 ~/.hermes/scripts/avisar.py "texto"`, que le o token do `.env`. As
   rotinas do Geoffrey (manha, fechamento, revisao e lembretes) tambem saem aqui.
 - Reutiliza o bot `@personal_geoffrey_bot` (id 9080173042) do Alertmanager e do
