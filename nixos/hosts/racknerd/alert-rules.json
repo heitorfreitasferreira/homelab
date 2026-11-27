@@ -31,7 +31,7 @@
         },
         {
           "alert": "MemoriaBaixa",
-          "expr": "node_memory_MemAvailable_bytes{node!=\"pc-heito-wsl\"} / node_memory_MemTotal_bytes{node!=\"pc-heito-wsl\"} < 0.10",
+          "expr": "node_memory_MemAvailable_bytes{node!~\"pc-heito-wsl|casa\"} / node_memory_MemTotal_bytes{node!~\"pc-heito-wsl|casa\"} < 0.10",
           "for": "10m",
           "labels": {
             "severity": "warning"
