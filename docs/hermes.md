@@ -154,6 +154,44 @@ Assistente pessoal do homelab. Roda na VPS, so pela tailnet e pelo Telegram.
 - Para o bot entrar num space seu, gere o convite no app (Share/Invite) e rode
   `anytype space join "<link>"`. A API e a CLI nao criam convite.
 
+## Securo MCP
+
+- O MCP (`securo-mcp`, `https://securo-mcp.tail76c1c6.ts.net/mcp`) aceita so JWT
+  de "External MCP access". O `sct_` do `securo.env` e da API REST e nao serve.
+- Com `AGENTS_ENABLED=false` o Securo nao monta `/api/agents/mcp-tokens`. O token
+  sai da funcao `mint_token` dentro do proprio container, com o usuario dono do
+  workspace e 90 dias de validade, e vai para `SECURO_MCP_TOKEN` no `~/.hermes/.env`:
+
+```bash
+sudo podman exec -i securo-mcp python - <<'PY'
+import uuid
+from app.agents.mcp.auth import mint_token
+print(mint_token(user_id=uuid.UUID("<user_id>"), workspace_id=uuid.UUID("<workspace_id>"),
+                 ttl_seconds=90*86400, external=True))
+PY
+```
+
+- O `user_id` sai de `workspace_members` no banco `securo` (papel `owner`). O
+  workspace e o `SECURO_WORKSPACE` do `securo.env`. Grave sem imprimir, teste com
+  `hermes mcp test securo` e reinicie o gateway.
+- O token atual vence em 24/02/2027. O job `Securo: renovar token do MCP` avisa
+  em 17/02/2027.
+
+## Fontes de vagas com chave
+
+- `~/.hermes/vagas/api.env` (600): `JOOBLE_KEY`, `SERPAPI_KEY`, `ADZUNA_APP_ID`,
+  `ADZUNA_APP_KEY` e `WAHA_READ_KEY`. Contas do `jogoshloko@gmail.com`, criadas
+  em 27/11/2026.
+- Jooble: 100 buscas por dia, chave do `jooble.org` global. SerpApi: plano Free,
+  250 buscas por mes. Adzuna: 25 chamadas de teste no total, ate cadastrar cartao
+  e escolher plano.
+- Jobscan: conta pelo Google `jogoshloko@gmail.com`, plano gratis com 5 scans
+  por mes. E uma das fontes de validacao do CV, nao a unica.
+- O MCP do Indeed (`mcp.indeed.com/claude/mcp`) so aceita o conector do Claude: o
+  OAuth do Hermes volta `invalid_client`. A entrada `indeed` ficou com
+  `enabled: false` no `config.yaml`. Vaga do Indeed chega pelo SerpApi (Google
+  Jobs) e pelo Jooble.
+
 ## Home Assistant
 
 - MCP remoto em `https://casa.tail76c1c6.ts.net/api/mcp`.
