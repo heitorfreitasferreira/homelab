@@ -49,7 +49,22 @@ in
     } (builtins.readFile ../../../scripts/vagas-buscar))
     cv
     pkgs.poppler-utils
-  ];
+  ]
+  # Bot Screen do Hermes: tela virtual com Chromium visivel, um perfil por agente.
+  # Nada sobe no boot: a tela so abre quando um agente usa o navegador.
+  ++ (with pkgs; [
+    tigervnc
+    xfwm4
+    xfce4-panel
+    xfdesktop
+    xfce4-settings
+    xauth
+    xdpyinfo
+    setxkbmap
+    xprop
+    dejavu_fonts
+    chromium
+  ]);
 
   systemd.services.hermes-gateway = {
     description = "Hermes Agent Gateway - Messaging Platform Integration";
@@ -80,20 +95,32 @@ in
       KillMode = "mixed";
       KillSignal = "SIGTERM";
       TimeoutStopSec = 70;
-      # O gateway chegava ao teto de 1G e ia para swap.
-      MemoryMax = "1536M";
+      # Com o Bot Screen aberto, tela e Chromium somam de 1,1 a 1,5 GB ao gateway.
+      MemoryHigh = "2560M";
+      MemoryMax = "3G";
     };
   };
 
   # Reinicio diario: recarrega os MCPs stdio do gateway.
   systemd.services.hermes-gateway-restart = {
     description = "Reinicia o hermes-gateway (recarrega os MCPs stdio)";
+    # No maximo 3 reinicios a cada 15 min, mesmo que o pedido se repita.
+    unitConfig = {
+      StartLimitIntervalSec = 900;
+      StartLimitBurst = 3;
+    };
     serviceConfig.Type = "oneshot";
     script = ''
       sleep 20
       ${pkgs.systemd}/bin/systemctl restart hermes-gateway.service
     '';
   };
+  # O proprio Hermes pede reinicio sem sudo: date > ~/.hermes/reiniciar.pedido
+  systemd.paths.hermes-gateway-restart = {
+    wantedBy = [ "multi-user.target" ];
+    pathConfig.PathModified = "${home}/.hermes/reiniciar.pedido";
+  };
+
   systemd.timers.hermes-gateway-restart = {
     wantedBy = [ "timers.target" ];
     timerConfig = {
