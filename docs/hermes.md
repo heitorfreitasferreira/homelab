@@ -303,6 +303,11 @@ Hand back.
   quando um agente precisa e para depois de 30 min sem uso
   (`bot_desktop.idle_stop_minutes`). Ela se recusa a subir com menos de 1536 MB
   livres (`bot_desktop.min_free_memory_mb`).
+- Chromium: `browser.executable_path: /run/current-system/sw/bin/chromium` nos
+  cinco perfis, o do `agents.nix`. O Chromium que vem com o Hermes
+  (`~/.hermes/tools/chromium-1248`) nao roda na NixOS: falta `libglib-2.0.so.0`.
+  O icone Browser do dock abre o mesmo binario e o mesmo perfil do agente, e o
+  `Exec` dele e reescrito quando a tela sobe.
 - Comandos: `hermes -p <bot> computer-use screen status|start|stop`.
 - As sessoes de site (LinkedIn, Jobscan e outros) ficam no perfil de navegador de
   cada bot. O login e feito uma vez pelo Take over, na tela do bot que usa o site.
